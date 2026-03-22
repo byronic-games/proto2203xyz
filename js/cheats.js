@@ -244,10 +244,10 @@ function canAddCheatToHand(cheatDef) {
 function getRandomCheatOptions(count = 3) {
   const ownedStartPowerId = state.selectedStartPowerId;
 
-  const pool = CHEATS.filter((c) => {
+ const pool = CHEATS.filter((c) => {
   if (!c.included) return false;
 
-  if (state.metaProgression < (c.unlockAt ?? 0)) {
+  if ((state.metaProgression ?? 0) < (c.unlockAt ?? 0)) {
     return false;
   }
 
