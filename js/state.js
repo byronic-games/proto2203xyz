@@ -31,6 +31,7 @@ function createEmptyState() {
         seenCardIds: new Set(),
         powers: [],
         selectedStartPowerId: "none",
+        metaProgression: loadMetaProgression(),
         cardStats: loadCardStats(),
         cardBackStatuses: loadCardBackStatuses(),
         runSeed: loadLastRunSeed() || randomSeedString(),
