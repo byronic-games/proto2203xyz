@@ -26,6 +26,7 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     const CARD_STATS_KEY = "hl_prototype_card_stats";
     const CARD_BACK_STATUS_KEY = "hl_prototype_card_back_status";
     const RUN_SEED_KEY = "hl_prototype_last_seed";
+    const META_PROGRESSION_KEY = "hl_prototype_meta_progression";
     const GAME_VERSION = "v0.1";
 
     const CHEAT_RARITY = {
