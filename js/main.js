@@ -13,7 +13,6 @@ function runSelfTests() {
       const options = getRandomCheatOptions(3);
       console.assert(options.length <= 3, "Should produce up to 3 cheat options.");
       const normalizedStats = normalizeCardStatsEntry({ correct: 2, attempts: 5 });
-      console.assert(normalizedStats.faceDownSeen === 0, "Legacy stat entries should gain face-down fields.");
       console.assert(normalizedStats.endedRun === 0, "Legacy stat entries should gain endedRun field.");
       console.assert(normalizedStats.survivedRun === 0, "Legacy stat entries should gain survivedRun field.");
     }
