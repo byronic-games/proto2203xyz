@@ -92,15 +92,17 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       localStorage.setItem(BEST_SCORE_KEY, String(score));
     }
 
-    function normalizeCardStatsEntry(entry = {}) {
-      return {
-        correct: Number.isFinite(entry.correct) ? entry.correct : 0,
-        attempts: Number.isFinite(entry.attempts) ? entry.attempts : 0,
-        faceDownSeen: Number.isFinite(entry.faceDownSeen) ? entry.faceDownSeen : 0,
-        endedRun: Number.isFinite(entry.endedRun) ? entry.endedRun : 0,
-        survivedRun: Number.isFinite(entry.survivedRun) ? entry.survivedRun : 0,
-      };
-    }
+function normalizeCardStatsEntry(entry = {}) {
+  const endedRun = Number.isFinite(entry.endedRun) ? entry.endedRun : 0;
+  const survivedRun = Number.isFinite(entry.survivedRun) ? entry.survivedRun : 0;
+
+  return {
+    correct: Number.isFinite(entry.correct) ? entry.correct : 0,
+    attempts: Number.isFinite(entry.attempts) ? entry.attempts : 0,
+    endedRun,
+    survivedRun,
+  };
+}
 
     function loadCardStats() {
       const raw = localStorage.getItem(CARD_STATS_KEY);
@@ -424,7 +426,6 @@ const SUITS = ["♠", "♥", "♦", "♣"];
           if (!state.handCard) {
             const takenCard = state.deck.splice(nextIndex, 1)[0];
             state.handCard = { ...takenCard };
-            recordFaceDownCardSeen(peekNext());
             return `Took ${describeCard(takenCard)} into your hand. It is no longer on top of the deck.`;
           }
 
@@ -432,7 +433,6 @@ const SUITS = ["♠", "♥", "♦", "♣"];
           const heldCard = { ...state.handCard };
           state.deck[nextIndex] = heldCard;
           state.handCard = takenCard;
-          recordFaceDownCardSeen(peekNext());
           return `Took ${describeCard(takenCard)} into your hand and placed ${describeCard(heldCard)} on top of the deck.`;
         },
       },
@@ -471,7 +471,6 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       };
 
       saveLastRunSeed(chosenSeed);
-      recordFaceDownCardSeen(peekNext());
       render();
     }
 
@@ -500,12 +499,11 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       state.seenCardIds.add(card.id);
     }
 
-    function advanceToCard(card) {
-      state.current = card;
-      state.index += 1;
-      markCardSeen(card);
-      recordFaceDownCardSeen(peekNext());
-    }
+function advanceToCard(card) {
+  state.current = card;
+  state.index += 1;
+  markCardSeen(card);
+}
 
     function removeCheatAt(index) {
       state.cheats.splice(index, 1);
@@ -552,23 +550,26 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       saveCardStats(state.cardStats);
     }
 
-    function recordFaceDownCardSeen(card) {
-      if (!card) return;
-      const entry = getCardStatsEntry(card.id);
-      entry.faceDownSeen += 1;
-      saveCardStats(state.cardStats);
-    }
 
-    function recordFaceDownOutcome(card, endedRun) {
-      if (!card) return;
-      const entry = getCardStatsEntry(card.id);
-      if (endedRun) {
-        entry.endedRun += 1;
-      } else {
-        entry.survivedRun += 1;
-      }
-      saveCardStats(state.cardStats);
-    }
+function recordFaceDownOutcome(card, endedRun) {
+  if (!card) return;
+
+  const entry = getCardStatsEntry(card.id);
+
+  if (endedRun) {
+    entry.endedRun += 1;
+  } else {
+    entry.survivedRun += 1;
+  }
+
+  saveCardStats(state.cardStats);
+}
+
+function getFaceDownGuessCount(card) {
+  if (!card) return 0;
+  const entry = getCardStatsEntry(card.id);
+  return entry.endedRun + entry.survivedRun;
+}
 
     function getCardCorrectPercentage(card) {
       if (!card) return null;
@@ -895,18 +896,20 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       deckEl.innerHTML = "";
       deckEl.appendChild(symbol);
 
-      if (next && runHasPower("stats_display")) {
-        const entry = getCardStatsEntry(next.id);
-        const statsBox = document.createElement("div");
-        statsBox.className = "card-back-stats";
-        statsBox.innerHTML = `
-          <div>Seen: ${entry.faceDownSeen}</div>
-          <div>Ended run: ${entry.endedRun}</div>
-          <div>Didn’t end: ${entry.survivedRun}</div>
-        `;
-        deckEl.appendChild(statsBox);
-      }
+if (next && runHasPower("stats_display")) {
+  const entry = getCardStatsEntry(next.id);
+  const guessedCount = getFaceDownGuessCount(next);
 
+  const statsBox = document.createElement("div");
+  statsBox.className = "card-back-stats";
+  statsBox.innerHTML = `
+    <div>Guessed: ${guessedCount}</div>
+    <div>Ended run: ${entry.endedRun}</div>
+    <div>Didn’t end: ${entry.survivedRun}</div>
+  `;
+  deckEl.appendChild(statsBox);
+}
+        
       countEl.innerText = `${getFaceDownCount()} card(s) remain`;
     }
 
@@ -1081,10 +1084,9 @@ const SUITS = ["♠", "♥", "♦", "♣"];
       console.assert(Array.isArray(empty.pendingCheatOptions) && empty.pendingCheatOptions.length === 0, "New state should start with no pending cheat options.");
       const options = getRandomCheatOptions(3);
       console.assert(options.length <= 3, "Should produce up to 3 cheat options.");
-      const normalizedStats = normalizeCardStatsEntry({ correct: 2, attempts: 5 });
-      console.assert(normalizedStats.faceDownSeen === 0, "Legacy stat entries should gain face-down fields.");
-      console.assert(normalizedStats.endedRun === 0, "Legacy stat entries should gain endedRun field.");
-      console.assert(normalizedStats.survivedRun === 0, "Legacy stat entries should gain survivedRun field.");
+    const normalizedStats = normalizeCardStatsEntry({ correct: 2, attempts: 5 });
+    console.assert(normalizedStats.endedRun === 0, "Legacy stat entries should gain endedRun field.");
+    console.assert(normalizedStats.survivedRun === 0, "Legacy stat entries should gain survivedRun field.");
     }
 
     runSelfTests();
