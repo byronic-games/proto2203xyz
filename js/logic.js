@@ -60,6 +60,11 @@ function markCardSeen(card) {
       state.seenCardIds.add(card.id);
     }
 
+function unmarkCardSeen(card) {
+  if (!card) return;
+  state.seenCardIds.delete(card.id);
+}
+
 function advanceToCard(card) {
       state.current = card;
       state.index += 1;
