@@ -112,13 +112,6 @@ function recordCurrentCardGuess(card, wasCorrectGuess) {
       saveCardStats(state.cardStats);
     }
 
-function recordFaceDownCardSeen(card) {
-      if (!card) return;
-      const entry = getCardStatsEntry(card.id);
-      entry.faceDownSeen += 1;
-      saveCardStats(state.cardStats);
-    }
-
 function recordFaceDownOutcome(card, endedRun) {
       if (!card) return;
       const entry = getCardStatsEntry(card.id);
