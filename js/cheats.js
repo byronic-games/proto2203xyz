@@ -358,8 +358,6 @@ const CHEATS = [
   },
 
   {
-    id: "swap",
-    {
   id: "swap",
   name: "Swap",
   rarity: "common",
@@ -380,17 +378,15 @@ const CHEATS = [
     const oldCurrent = state.deck[currentIndex];
     const oldBottom = state.deck[bottomIndex];
 
+    // Swap in deck
     state.deck[currentIndex] = oldBottom;
     state.deck[bottomIndex] = oldCurrent;
 
+    // IMPORTANT: reset seen state correctly
+    unmarkCardSeen(oldCurrent);   // 👈 add this helper
     state.current = state.deck[currentIndex];
     state.currentValueModifier = 0;
-
-    // The seen grid is meant to show cards no longer in the deck.
-    // So remove the card we've just put back into the deck,
-    // and mark the new face-up card as seen.
-    state.seenCardIds.delete(oldCurrent.id);
-    state.seenCardIds.add(state.current.id);
+    markCardSeen(state.current);
 
     return "Swapped with bottom card.";
   },
