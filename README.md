@@ -66,9 +66,10 @@ Each card can retain long-term data across runs.
 Currently tracked:
 - `attempts`
 - `correct`
-- `faceDownSeen`
 - `endedRun`
 - `survivedRun`
+
+On the deck back, `Guessed` is shown as `endedRun + survivedRun`, so it only reflects previous resolved guesses against that card.
 
 This is used for:
 - historical correctness indicators
