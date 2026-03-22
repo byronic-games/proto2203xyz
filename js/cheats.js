@@ -8,6 +8,7 @@ const CHEATS = [
     name: "Above 9?",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -22,6 +23,7 @@ const CHEATS = [
     name: "Below 5?",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -36,6 +38,7 @@ const CHEATS = [
     name: "Same Colour?",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -52,6 +55,7 @@ const CHEATS = [
     name: "Between 5 and 9?",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -68,6 +72,7 @@ const CHEATS = [
     name: "Total of Next Two",
     rarity: "uncommon",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -83,6 +88,7 @@ const CHEATS = [
     name: "Top Half / Bottom Half",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -101,6 +107,7 @@ const CHEATS = [
     name: "Within ±2?",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -119,6 +126,7 @@ const CHEATS = [
     name: "Reveal Red / Black",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -133,6 +141,7 @@ const CHEATS = [
     name: "Chance Higher",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -150,6 +159,7 @@ const CHEATS = [
     name: "Chance Lower",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -167,6 +177,7 @@ const CHEATS = [
   name: "Nudge +1",
   rarity: "common",
   included: true,
+  unlockAt: 0,
   stacking: "stackable",
   consumeOnUse: true,
   poolExcludedIfPowerOwned: "nudge_engine",
@@ -181,6 +192,7 @@ const CHEATS = [
   name: "Nudge -1",
   rarity: "common",
   included: true,
+  unlockAt: 0,
   stacking: "stackable",
   consumeOnUse: true,
   poolExcludedIfPowerOwned: "nudge_engine",
@@ -196,6 +208,7 @@ const CHEATS = [
     name: "Swap",
     rarity: "common",
     included: true,
+    unlockAt: 0,
     stacking: "repeatable",
     consumeOnUse: true,
     use: () => {
@@ -232,25 +245,29 @@ function getRandomCheatOptions(count = 3) {
   const ownedStartPowerId = state.selectedStartPowerId;
 
   const pool = CHEATS.filter((c) => {
-    if (!c.included) return false;
+  if (!c.included) return false;
 
-    if (
-      c.poolExcludedIfPowerOwned &&
-      c.poolExcludedIfPowerOwned === ownedStartPowerId
-    ) {
-      return false;
-    }
+  if (state.metaProgression < (c.unlockAt ?? 0)) {
+    return false;
+  }
 
-    if (
-      c.stacking !== "stackable" &&
-      c.stacking !== "repeatable" &&
-      state.cheats.some((held) => held.id === c.id)
-    ) {
-      return false;
-    }
+  if (
+    c.poolExcludedIfPowerOwned &&
+    c.poolExcludedIfPowerOwned === ownedStartPowerId
+  ) {
+    return false;
+  }
 
-    return true;
-  });
+  if (
+    c.stacking !== "stackable" &&
+    c.stacking !== "repeatable" &&
+    state.cheats.some((held) => held.id === c.id)
+  ) {
+    return false;
+  }
+
+  return true;
+});
 
   const options = [];
 
