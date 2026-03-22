@@ -378,18 +378,17 @@ const CHEATS = [
     const oldCurrent = state.deck[currentIndex];
     const oldBottom = state.deck[bottomIndex];
 
-    const hadOldBefore = state.seenCardIds.has(oldCurrent.id);
-
+    // Swap in deck
     state.deck[currentIndex] = oldBottom;
     state.deck[bottomIndex] = oldCurrent;
 
-    const removedOld = state.seenCardIds.delete(oldCurrent.id);
-
+    // Update seen state correctly
+    state.seenCardIds.delete(oldCurrent.id);
     state.current = state.deck[currentIndex];
     state.currentValueModifier = 0;
     state.seenCardIds.add(state.current.id);
 
-    return `Swapped ${describeCard(oldCurrent)} for ${describeCard(state.current)}. hadOldBefore=${hadOldBefore}, removedOld=${removedOld}`;
+    return "Swapped with bottom card.";
   },
 },
 ];
