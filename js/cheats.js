@@ -1,6 +1,21 @@
+const RANGE_CHEAT_DELTA = 3;
+
+function getNextCardAt(offset = 1) {
+  return state.deck[state.index + offset] || null;
+}
+
+function isPictureCardValue(value) {
+  return value >= 11;
+}
+
+function getParityLabel(value) {
+  if (isPictureCardValue(value)) return "PICTURE CARD";
+  return value % 2 === 0 ? "EVEN" : "ODD";
+}
+
 const CHEATS = [
   // =====================
-  // NEW CHEATS
+  // NEW / ACTIVE CHEATS
   // =====================
 
   {
@@ -76,10 +91,27 @@ const CHEATS = [
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
-      const next = state.deck[state.index + 1];
-      const next2 = state.deck[state.index + 2];
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
       return `Total = ${next.value + next2.value}`;
+    },
+  },
+
+  {
+    id: "next_three_total",
+    name: "Total of Next Three",
+    rarity: "rare",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      const next3 = getNextCardAt(3);
+      if (!next || !next2 || !next3) return "Not enough cards remaining.";
+      return `Total = ${next.value + next2.value + next3.value}`;
     },
   },
 
@@ -95,6 +127,114 @@ const CHEATS = [
       const next = peekNext();
       if (!next) return "No next card.";
       return next.value >= 7 ? "Top half (7+)" : "Bottom half (6-)";
+    },
+  },
+
+  {
+    id: "within_range_3",
+    name: `Within ±${RANGE_CHEAT_DELTA}?`,
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next || !state.current) return "No next card.";
+      const currentVal = getCurrentEffectiveValue();
+      const diff = Math.abs(next.value - currentVal);
+      return diff <= RANGE_CHEAT_DELTA
+        ? `Within ±${RANGE_CHEAT_DELTA}.`
+        : `NOT within ±${RANGE_CHEAT_DELTA}.`;
+    },
+  },
+
+  {
+    id: "one_of_next_two_higher",
+    name: "One of Next 2 Higher?",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      const currentVal = getCurrentEffectiveValue();
+      const found = next.value > currentVal || next2.value > currentVal;
+      return found
+        ? "Yes — at least one is higher."
+        : "No — neither is higher.";
+    },
+  },
+
+  {
+    id: "one_of_next_two_lower",
+    name: "One of Next 2 Lower?",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      const currentVal = getCurrentEffectiveValue();
+      const found = next.value < currentVal || next2.value < currentVal;
+      return found
+        ? "Yes — at least one is lower."
+        : "No — neither is lower.";
+    },
+  },
+
+  {
+    id: "higher_of_next_two",
+    name: "Higher of Next Two",
+    rarity: "uncommon",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return `Higher = ${Math.max(next.value, next2.value)}`;
+    },
+  },
+
+  {
+    id: "lower_of_next_two",
+    name: "Lower of Next Two",
+    rarity: "uncommon",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return `Lower = ${Math.min(next.value, next2.value)}`;
+    },
+  },
+
+  {
+    id: "next_card_parity",
+    name: "Next Card Parity",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      return getParityLabel(next.value);
     },
   },
 
@@ -115,9 +255,7 @@ const CHEATS = [
       if (!next || !state.current) return "No next card.";
       const currentVal = getCurrentEffectiveValue();
       const diff = Math.abs(next.value - currentVal);
-      return diff <= 2
-        ? "Within ±2."
-        : "NOT within ±2.";
+      return diff <= 2 ? "Within ±2." : "NOT within ±2.";
     },
   },
 
@@ -149,7 +287,7 @@ const CHEATS = [
       const val = getCurrentEffectiveValue();
       const remaining = state.deck.slice(state.index + 1);
       if (!remaining.length) return "No next card.";
-      const count = remaining.filter(c => c.value > val).length;
+      const count = remaining.filter((c) => c.value > val).length;
       return `${Math.round((count / remaining.length) * 100)}% higher`;
     },
   },
@@ -167,57 +305,58 @@ const CHEATS = [
       const val = getCurrentEffectiveValue();
       const remaining = state.deck.slice(state.index + 1);
       if (!remaining.length) return "No next card.";
-      const count = remaining.filter(c => c.value < val).length;
+      const count = remaining.filter((c) => c.value < val).length;
       return `${Math.round((count / remaining.length) * 100)}% lower`;
     },
   },
 
-{
-  id: "nudge_up",
-  name: "Nudge +1",
-  rarity: "common",
-  included: true,
-  unlockAt: 0,
-  stacking: "stackable",
-  consumeOnUse: true,
-  poolExcludedIfPowerOwned: "nudge_engine",
-  use: () => {
-    state.currentValueModifier += 1;
-    const effective = getCurrentEffectiveValue();
-    return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+  {
+    id: "nudge_up",
+    name: "Nudge +1",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "stackable",
+    consumeOnUse: true,
+    poolExcludedIfPowerOwned: "nudge_engine",
+    use: () => {
+      state.currentValueModifier += 1;
+      const effective = getCurrentEffectiveValue();
+      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+    },
   },
-},
-{
-  id: "nudge_down",
-  name: "Nudge -1",
-  rarity: "common",
-  included: true,
-  unlockAt: 0,
-  stacking: "stackable",
-  consumeOnUse: true,
-  poolExcludedIfPowerOwned: "nudge_engine",
-  use: () => {
-    state.currentValueModifier -= 1;
-    const effective = getCurrentEffectiveValue();
-    return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
-  },
-},
 
-{
-  id: "tear_corner",
-  name: "Tear Corner",
-  rarity: "common",
-  included: true,
-  unlockAt: 0,
-  stacking: "unique",
-  consumeOnUse: true,
-  use: () => {
-    if (!state.current) return "No current card.";
-    setCardBackStatus(state.current.id, { tornCorner: true });
-    return `${describeCard(state.current)} now has a torn corner on its back.`;
+  {
+    id: "nudge_down",
+    name: "Nudge -1",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "stackable",
+    consumeOnUse: true,
+    poolExcludedIfPowerOwned: "nudge_engine",
+    use: () => {
+      state.currentValueModifier -= 1;
+      const effective = getCurrentEffectiveValue();
+      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+    },
   },
-},  
-  
+
+  {
+    id: "tear_corner",
+    name: "Tear Corner",
+    rarity: "common",
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      setCardBackStatus(state.current.id, { tornCorner: true });
+      return `${describeCard(state.current)} now has a torn corner on its back.`;
+    },
+  },
+
   {
     id: "swap",
     name: "Swap",
@@ -245,44 +384,46 @@ const CHEATS = [
       state.currentValueModifier = 0;
       markCardSeen(state.current);
 
-      return `Swapped with bottom card.`;
+      return "Swapped with bottom card.";
     },
   },
 ];
 
 function canAddCheatToHand(cheatDef) {
   if (!cheatDef.included) return false;
-  if (cheatDef.stacking === "stackable" || cheatDef.stacking === "repeatable") return true;
+  if (cheatDef.stacking === "stackable" || cheatDef.stacking === "repeatable") {
+    return true;
+  }
   return !state.cheats.some((c) => c.id === cheatDef.id);
 }
 
 function getRandomCheatOptions(count = 3) {
   const ownedStartPowerId = state.selectedStartPowerId;
 
- const pool = CHEATS.filter((c) => {
-  if (!c.included) return false;
+  const pool = CHEATS.filter((c) => {
+    if (!c.included) return false;
 
-  if ((state.metaProgression ?? 0) < (c.unlockAt ?? 0)) {
-    return false;
-  }
+    if ((state.metaProgression ?? 0) < (c.unlockAt ?? 0)) {
+      return false;
+    }
 
-  if (
-    c.poolExcludedIfPowerOwned &&
-    c.poolExcludedIfPowerOwned === ownedStartPowerId
-  ) {
-    return false;
-  }
+    if (
+      c.poolExcludedIfPowerOwned &&
+      c.poolExcludedIfPowerOwned === ownedStartPowerId
+    ) {
+      return false;
+    }
 
-  if (
-    c.stacking !== "stackable" &&
-    c.stacking !== "repeatable" &&
-    state.cheats.some((held) => held.id === c.id)
-  ) {
-    return false;
-  }
+    if (
+      c.stacking !== "stackable" &&
+      c.stacking !== "repeatable" &&
+      state.cheats.some((held) => held.id === c.id)
+    ) {
+      return false;
+    }
 
-  return true;
-});
+    return true;
+  });
 
   const options = [];
 
@@ -314,4 +455,3 @@ function pickCheatFromChoice(index) {
   state.pendingCheatOptions = [];
   render();
 }
-
