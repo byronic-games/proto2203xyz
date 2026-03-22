@@ -1,7 +1,12 @@
 function renderScores() {
-      document.getElementById("score").innerText = state.correctAnswers;
-      document.getElementById("best-score").innerText = state.bestScore;
-    }
+  document.getElementById("score").innerText = state.correctAnswers;
+  document.getElementById("best-score").innerText = state.bestScore;
+
+  const metaEl = document.getElementById("meta-progression");
+  if (metaEl) {
+    metaEl.innerText = state.metaProgression ?? 0;
+  }
+}
 
 function renderSeedControls() {
       const seedInput = document.getElementById("run-seed-input");
