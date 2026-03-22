@@ -1,141 +1,271 @@
-# proto2203xyz
-Messing around with GitHub
-# Higher / Lower Roguelike Prototype
+Higher / Lower Roguelike Prototype (proto2203xyz)
 
-A fast-play higher/lower card prototype with roguelike progression, persistent card knowledge, cheat cards, and run modifiers.
+A fast, modular higher/lower card game with roguelike elements, persistent knowledge, and expandable cheat/power systems.
 
-## Current focus
+🔗 Project Entry Point
+Main UI and script loading:
+All logic is split across /js/ files (no monolithic game.js anymore)
+🎯 Core Game Loop
+Standard 52-card deck (A = 1, J/Q/K = 11/12/13)
+First card revealed
+Player guesses Higher or Lower
+Matching value = auto success
+Wrong guess = run ends
+Clear deck = win
 
-Build the game loop quickly and keep the architecture modular so new cheats, powers, and persistent deck modifiers can be added without rewriting core systems.
+Each correct guess:
 
-## Core rules
+Increases score
+Increases Meta Progression
+Advances streak (3 = cheat choice)
+🧠 Key Systems Overview
+1. State System
 
-- Standard 52-card deck
-- Ace is low (`1`)
-- Jack / Queen / King = `11 / 12 / 13`
-- The first card is revealed for free
-- The player guesses whether the next card will be **Higher** or **Lower**
-- Matching values count as an automatic success
-- A wrong guess ends the run
-- Clearing the full deck is the win condition
+Central game state lives in state.js and is recreated each run.
 
-## Current systems
+Key fields:
 
-### Cheats
+deck, index, current
+cheats, pendingCheatOptions
+powers, selectedStartPowerId
+metaProgression
+cardStats, cardBackStatuses
+correctAnswers, streak, bestScore
 
-The game uses data-driven cheat definitions with fields like:
-- `id`
-- `name`
-- `rarity`
-- `stacking`
-- `consumeOnUse`
-- `use(state)`
+State is initialised via:
 
-Current cheat pool includes:
-- Reveal Red / Black
-- Odd / Even / Neither
-- Higher than 6?
-- Picture Card?
-- Chance next card is higher
-- Chance next card is lower
-- Within ±2?
-- Same Number Remaining
-- Not This Suit
-- Is This Dangerous?
-- Average Outcome
-- % Guessed Correctly
-- Nudge +1
-- Nudge -1
-- Swap
-- Tear Corner
+createEmptyState()
 
-### Powers
+and rebuilt in:
+
+startRun()
+
+
+
+
+2. Meta Progression (NEW SYSTEM)
+
+Persistent progression across runs.
+
+Stored in localStorage (META_PROGRESSION_KEY)
+Loaded via loadMetaProgression()
+Increased on correct guesses:
+addMetaProgression(1);
+
+
+
+
+Used to:
+
+Gate cheats via unlockAt
+Future: progression system, unlocks, balancing
+3. Cheats System (CORE EXTENSIBILITY)
+
+Defined in:
+
+Each cheat is a data object:
+
+{
+  id,
+  name,
+  rarity,
+  included,
+  unlockAt,
+  stacking,
+  consumeOnUse,
+  poolExcludedIfPowerOwned?,
+  use: () => {}
+}
+Key mechanics:
+Cheats are offered after 3 correct guesses in a row
+Player chooses 1 of 3
+Cheats can be:
+unique (one copy)
+stackable
+repeatable
+Pool filtering:
+CHEATS.filter(...)
+
+Filters by:
+
+included
+unlockAt <= metaProgression
+poolExcludedIfPowerOwned
+duplicate prevention (for non-stackable)
+4. Powers System
+
+Defined in:
 
 Current powers:
-- **Nudge** — awards directional nudge cheats on correct guesses while active
-- **Stats** — shows persistent face-down card stats on the deck back while active
 
-Notes:
-- Powers can now be toggled during a run
-- While **Stats** is active, **Nudge** rewards are suppressed
+Nudge
+Gives +1 / -1 cheats on correct guesses
+Stats
+Shows card history on deck back
+Suppresses Nudge rewards
 
-### Persistent card knowledge
+Key rule:
 
-Each card can retain long-term data across runs.
+if (runHasPower("nudge_engine") && !runHasPower("stats_display"))
+5. Persistent Card Knowledge
 
-Currently tracked:
-- `attempts`
-- `correct`
-- `endedRun`
-- `survivedRun`
+Stored per card:
 
-On the deck back, `Guessed` is shown as `endedRun + survivedRun`, so it only reflects previous resolved guesses against that card.
+{
+  attempts,
+  correct,
+  endedRun,
+  survivedRun
+}
 
-This is used for:
-- historical correctness indicators
-- danger / average-outcome cheats
-- deck-back information display
 
-### Card back modifiers
 
-Currently supported:
-- `tornCorner`
 
-## Controls
+Used for:
 
-### Main controls
-- `↑` = Higher
-- `↓` = Lower
-- Mouse / touch buttons also supported
+Deck-back stats display
+Future cheat logic (danger, odds, etc.)
+6. Rendering System
 
-### Debug controls
-- `D` = add missing cheats to hand
-- `C` = clear all cheats
-- `R` = reset progression stats
-- `Shift + R` = full reset including best score and seed history
+All UI updates handled in render.js
 
-## Project structure
+Key render functions:
 
-- `index.html` — page structure and UI hooks
-- `styles.css` — layout and styling
-- `game.js` — game state, systems, rendering, input, persistence
+renderScores() → includes Meta Progression
+renderStartPowerSelector()
+renderFaceDownDeck() → stats overlay
+renderCheats() / renderCheatChoice()
 
-## Persistence
+Render is called centrally via:
 
-Stored in `localStorage`:
-- best score
-- card stats
-- card back status
-- last run seed
+render();
+7. Input System
 
-## Design goals
+Handled in:
 
-- Fast, playable prototype first
-- Touch-friendly and eventually mobile-ready
-- Modular systems for cheats and powers
-- Persistent learning across runs
-- Easy to extend with rarity weighting, more powers, and more deck markings
+Controls:
 
-## Suggested next priorities
+↑ = Higher
+↓ = Lower
+Buttons for mouse/touch
 
-1. **Cheat weighting system**
-   - Make rarity meaningfully affect reward rolls
-   - Prepare for common / uncommon / rare / legendary balancing
+Debug:
 
-2. **Multi-power ownership**
-   - Allow runs to own more than one power
-   - Make start-of-run power selection a checklist instead of a single select
+D → add all cheats
+C → clear cheats
+R → reset stats
+Shift + R → full reset (includes Meta Progression)
+🗂 File Structure
+index.html        → UI layout and script loading
+styles.css        → styling
 
-3. **More powers**
-   - Start with 2 cheats
-   - Double streak rewards
-   - Special behaviour for middle-value cards
+/js/
+  constants.js    → cards, seeds, constants
+  storage.js      → localStorage helpers
+  state.js        → initial state
+  logic.js        → game loop + rules
+  render.js       → UI updates
+  input.js        → controls + debug
+  cheats.js       → cheat definitions + pool logic
+  powers.js       → power definitions + behaviour
+  main.js         → boot + tests
+⚙️ Current Features
+Gameplay
+Deterministic seeded runs
+Higher/lower core loop
+Streak-based rewards
+Cheats (examples)
+Above 9?
+Below 5?
+Same Colour?
+Between 5–9?
+Total of next two cards
+Chance higher/lower
+Nudge ±1
+Swap (top ↔ bottom)
+Systems
+Meta progression
+Persistent card memory
+Deck-back visual stats
+Power toggling mid-run
+🧩 Design Philosophy
+Data-driven systems (cheats, powers)
+Composable logic (filters, modifiers)
+Persistent learning layer
+Fast iteration over polish
+🚧 Known Gaps / TODO
+1. Cheat rarity not yet meaningful
 
-4. **UX polish**
-   - Clearer reward feedback
-   - Better card-back stat presentation
-   - Mobile layout tuning
+Currently:
 
-## Notes for iteration
+const CHEAT_RARITY = { common: 1, ... }
 
-When changing logic, prefer adding or editing shared helpers rather than letting individual cheats or powers directly mutate unrelated systems. The long-term goal is to keep all progression, reward, and deck-state changes easy to reason about and safe to expand.
+
+
+
+→ Not used in weighting yet
+
+2. Meta progression only increments
+
+No:
+
+milestones
+unlock feedback
+UI progression layer
+3. Single starting power
+
+Currently:
+
+one selected via dropdown
+
+Future:
+
+multi-select / build system
+4. UX polish needed
+Cheat feedback clarity
+Reward anticipation
+Mobile layout tuning
+🔮 Suggested Next Steps
+High Impact
+Weighted cheat selection
+Use CHEAT_RARITY for probability
+Meta progression unlocks
+Gradually increase unlockAt
+Power expansion
+New mechanics beyond Nudge/Stats
+Medium Impact
+Cheat synergy design
+Deck marking expansion (more than torn corner)
+Run modifiers (daily/seed challenges)
+Low Effort Wins
+Animation / juice
+Sound feedback
+Better messaging clarity
+🧠 Key Concepts for Future Chats
+
+If continuing in a new chat, the important mental model is:
+
+State drives everything
+Cheats = filtered pool → offered → consumed
+Powers modify reward pipeline
+Meta progression gates content
+Render is pure reflection of state
+🧪 Testing
+
+Basic sanity tests run at startup:
+
+Covers:
+
+seeded shuffle determinism
+stat normalization
+cheat option generation
+🏁 Summary
+
+You now have:
+
+A modular roguelike higher/lower engine
+Persistent progression
+Expandable cheat + power systems
+Clean separation of logic / render / input
+
+The foundation is strong and extensible — next phase is depth + balance + feel.
