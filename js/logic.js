@@ -110,6 +110,11 @@ function recordCurrentCardGuess(card, wasCorrectGuess) {
       saveCardStats(state.cardStats);
     }
 
+function addMetaProgression(amount = 1) {
+  state.metaProgression = (state.metaProgression ?? 0) + amount;
+  saveMetaProgression(state.metaProgression);
+}
+
 function recordFaceDownOutcome(card, endedRun) {
       if (!card) return;
       const entry = getCardStatsEntry(card.id);
@@ -172,14 +177,15 @@ function resetAllStatsForDebug() {
     }
 
 function fullResetAllStateForDebug() {
-      localStorage.removeItem(CARD_STATS_KEY);
-      localStorage.removeItem(CARD_BACK_STATUS_KEY);
-      localStorage.removeItem(RUN_SEED_KEY);
-      localStorage.removeItem(BEST_SCORE_KEY);
-      state = createEmptyState();
-      state.message = "🛠 Debug: FULL RESET (everything cleared).";
-      render();
-    }
+  localStorage.removeItem(CARD_STATS_KEY);
+  localStorage.removeItem(CARD_BACK_STATUS_KEY);
+  localStorage.removeItem(RUN_SEED_KEY);
+  localStorage.removeItem(BEST_SCORE_KEY);
+  localStorage.removeItem(META_PROGRESSION_KEY);
+  state = createEmptyState();
+  state.message = "🛠 Debug: FULL RESET (everything cleared).";
+  render();
+}
 
 function makeGuess(type) {
       if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0) return;
@@ -195,6 +201,7 @@ function makeGuess(type) {
         advanceToCard(next);
         state.currentValueModifier = 0;
         state.streak += 1;
+        addMetaProgression(1);
 
         if (state.index >= state.deck.length - 1) {
           state.correctAnswers += 1;
@@ -239,6 +246,7 @@ function makeGuess(type) {
       state.correctAnswers += 1;
       state.currentValueModifier = 0;
       state.streak += 1;
+      addMetaProgression(1);
       updateBestScoreIfNeeded();
 
       if (state.index >= state.deck.length - 1) {
