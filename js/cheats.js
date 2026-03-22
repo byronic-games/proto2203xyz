@@ -283,17 +283,6 @@ function pickCheatFromChoice(index) {
   render();
 }
 
-function pickCheatFromChoice(index) {
-  const cheat = state.pendingCheatOptions[index];
-  if (!cheat) return;
-
-  if (canAddCheatToHand(cheat)) {
-    state.cheats.push({ ...cheat });
-    state.message = `Picked: ${cheat.name}`;
-  } else {
-    state.message = `${cheat.name} already in hand.`;
-  }
-
   state.pendingCheatOptions = [];
   render();
 }
