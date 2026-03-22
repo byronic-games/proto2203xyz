@@ -202,6 +202,21 @@ const CHEATS = [
     return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
   },
 },
+
+{
+  id: "tear_corner",
+  name: "Tear Corner",
+  rarity: "common",
+  included: true,
+  unlockAt: 0,
+  stacking: "unique",
+  consumeOnUse: true,
+  use: () => {
+    if (!state.current) return "No current card.";
+    setCardBackStatus(state.current.id, { tornCorner: true });
+    return `${describeCard(state.current)} now has a torn corner on its back.`;
+  },
+},  
   
   {
     id: "swap",
