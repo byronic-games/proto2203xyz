@@ -359,34 +359,42 @@ const CHEATS = [
 
   {
     id: "swap",
-    name: "Swap",
-    rarity: "common",
-    included: true,
-    unlockAt: 0,
-    stacking: "repeatable",
-    consumeOnUse: true,
-    use: () => {
-      if (!state.current) return "No current card.";
+    {
+  id: "swap",
+  name: "Swap",
+  rarity: "common",
+  included: true,
+  unlockAt: 0,
+  stacking: "repeatable",
+  consumeOnUse: true,
+  use: () => {
+    if (!state.current) return "No current card.";
 
-      const currentIndex = state.index;
-      const bottomIndex = state.deck.length - 1;
+    const currentIndex = state.index;
+    const bottomIndex = state.deck.length - 1;
 
-      if (bottomIndex <= currentIndex) {
-        return "No card left at bottom.";
-      }
+    if (bottomIndex <= currentIndex) {
+      return "No card left at bottom.";
+    }
 
-      const oldCurrent = state.deck[currentIndex];
-      const oldBottom = state.deck[bottomIndex];
+    const oldCurrent = state.deck[currentIndex];
+    const oldBottom = state.deck[bottomIndex];
 
-      state.deck[currentIndex] = oldBottom;
-      state.deck[bottomIndex] = oldCurrent;
-      state.current = state.deck[currentIndex];
-      state.currentValueModifier = 0;
-      markCardSeen(state.current);
+    state.deck[currentIndex] = oldBottom;
+    state.deck[bottomIndex] = oldCurrent;
 
-      return "Swapped with bottom card.";
-    },
+    state.current = state.deck[currentIndex];
+    state.currentValueModifier = 0;
+
+    // The seen grid is meant to show cards no longer in the deck.
+    // So remove the card we've just put back into the deck,
+    // and mark the new face-up card as seen.
+    state.seenCardIds.delete(oldCurrent.id);
+    state.seenCardIds.add(state.current.id);
+
+    return "Swapped with bottom card.";
   },
+},
 ];
 
 function canAddCheatToHand(cheatDef) {
