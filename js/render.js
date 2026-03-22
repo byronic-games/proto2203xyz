@@ -81,38 +81,43 @@ function renderCurrentCard() {
     }
 
 function renderFaceDownDeck() {
-      const deckEl = document.getElementById("face-down-deck");
-      const countEl = document.getElementById("face-down-count");
-      if (!state.current) {
-        deckEl.innerText = "";
-        deckEl.className = "card-back";
-        countEl.innerText = "";
-        return;
-      }
-      const next = peekNext();
-      const backStatus = next ? getCardBackStatus(next.id) : { tornCorner: false };
-      deckEl.className = `card-back ${backStatus.tornCorner ? "torn-corner" : ""}`;
+  const deckEl = document.getElementById("face-down-deck");
+  const countEl = document.getElementById("face-down-count");
 
-      const symbol = document.createElement("div");
-      symbol.className = "card-back-symbol";
-      symbol.innerText = "🂠";
-      deckEl.innerHTML = "";
-      deckEl.appendChild(symbol);
+  if (!state.current) {
+    deckEl.innerText = "";
+    deckEl.className = "card-back";
+    countEl.innerText = "";
+    return;
+  }
 
-      if (next && runHasPower("stats_display")) {
-        const entry = getCardStatsEntry(next.id);
-        const statsBox = document.createElement("div");
-        statsBox.className = "card-back-stats";
-        statsBox.innerHTML = `
-          <div>Seen: ${entry.faceDownSeen}</div>
-          <div>Ended run: ${entry.endedRun}</div>
-          <div>Didn’t end: ${entry.survivedRun}</div>
-        `;
-        deckEl.appendChild(statsBox);
-      }
+  const next = peekNext();
+  const backStatus = next ? getCardBackStatus(next.id) : { tornCorner: false };
+  deckEl.className = `card-back ${backStatus.tornCorner ? "torn-corner" : ""}`;
 
-      countEl.innerText = `${getFaceDownCount()} card(s) remain`;
-    }
+  const symbol = document.createElement("div");
+  symbol.className = "card-back-symbol";
+  symbol.innerText = "🂠";
+
+  deckEl.innerHTML = "";
+  deckEl.appendChild(symbol);
+
+  if (next && runHasPower("stats_display")) {
+    const entry = getCardStatsEntry(next.id);
+    const guessedCount = (entry.endedRun || 0) + (entry.survivedRun || 0);
+
+    const statsBox = document.createElement("div");
+    statsBox.className = "card-back-stats";
+    statsBox.innerHTML = `
+      <div>Guessed: ${guessedCount}</div>
+      <div>Ended run: ${entry.endedRun || 0}</div>
+      <div>Didn’t end: ${entry.survivedRun || 0}</div>
+    `;
+    deckEl.appendChild(statsBox);
+  }
+
+  countEl.innerText = `${getFaceDownCount()} card(s) remain`;
+}
 
 function renderButtons() {
       const disableGuessing = state.gameOver || !state.current || state.pendingCheatOptions.length > 0;
