@@ -905,7 +905,7 @@ if (next && runHasPower("stats_display")) {
   statsBox.innerHTML = `
     <div>Guessed: ${guessedCount}</div>
     <div>Ended run: ${entry.endedRun}</div>
-    <div>Didn’t end: ${entry.survivedRun}</div>
+    <div>Survived: ${entry.survivedRun}</div>
   `;
   deckEl.appendChild(statsBox);
 }
