@@ -23,11 +23,12 @@ function startRun() {
         streak: 0,
         bestScore: loadBestScore(),
         seenCardIds: new Set([deck[0].id]),
-        powers: activePowers,
-        selectedStartPowerId: selectedPowerId,
-        cardStats: loadCardStats(),
-        cardBackStatuses: loadCardBackStatuses(),
-        runSeed: chosenSeed,
+      powers: activePowers,
+      selectedStartPowerId: selectedPowerId,
+      metaProgression: loadMetaProgression(),
+      cardStats: loadCardStats(),
+      cardBackStatuses: loadCardBackStatuses(),
+      runSeed: chosenSeed,
       };
 
       saveLastRunSeed(chosenSeed);
