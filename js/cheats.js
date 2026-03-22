@@ -300,6 +300,3 @@ function pickCheatFromChoice(index) {
   render();
 }
 
-  state.pendingCheatOptions = [];
-  render();
-}
