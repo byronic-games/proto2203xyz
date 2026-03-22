@@ -200,7 +200,8 @@ function makeGuess(type) {
       if (!next) return;
 
       const currentComparisonValue = getCurrentEffectiveValue();
-      document.getElementById("next-info").innerText = `Next: ${describeCard(next)}`;
+      const el = document.getElementById("next-info");
+      if (el) el.innerText = "";
 
       if (next.value === currentComparisonValue) {
         recordFaceDownOutcome(next, false);
