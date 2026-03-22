@@ -9,14 +9,13 @@ function saveBestScore(score) {
     }
 
 function normalizeCardStatsEntry(entry = {}) {
-      return {
-        correct: Number.isFinite(entry.correct) ? entry.correct : 0,
-        attempts: Number.isFinite(entry.attempts) ? entry.attempts : 0,
-        faceDownSeen: Number.isFinite(entry.faceDownSeen) ? entry.faceDownSeen : 0,
-        endedRun: Number.isFinite(entry.endedRun) ? entry.endedRun : 0,
-        survivedRun: Number.isFinite(entry.survivedRun) ? entry.survivedRun : 0,
-      };
-    }
+  return {
+    correct: Number.isFinite(entry.correct) ? entry.correct : 0,
+    attempts: Number.isFinite(entry.attempts) ? entry.attempts : 0,
+    endedRun: Number.isFinite(entry.endedRun) ? entry.endedRun : 0,
+    survivedRun: Number.isFinite(entry.survivedRun) ? entry.survivedRun : 0,
+  };
+}
 
 function loadCardStats() {
       const raw = localStorage.getItem(CARD_STATS_KEY);
