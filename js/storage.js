@@ -56,6 +56,17 @@ function saveLastRunSeed(seed) {
       localStorage.setItem(RUN_SEED_KEY, seed);
     }
 
+function loadMetaProgression() {
+  const raw = localStorage.getItem(META_PROGRESSION_KEY);
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function saveMetaProgression(value) {
+  localStorage.setItem(META_PROGRESSION_KEY, String(value));
+}
+
+
 function loadLastRunSeed() {
       return localStorage.getItem(RUN_SEED_KEY) || "";
     }
