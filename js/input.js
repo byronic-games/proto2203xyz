@@ -28,11 +28,11 @@ document.getElementById("higher-btn").onclick = () => makeGuess("higher");
         clearCheatsForDebug();
         return;
       }
-      if ((e.key === "r" || e.key === "R") && !e.shiftKey) {
+      if ((e.key === "f" || e.key === "F") && !e.shiftKey) {
         resetAllStatsForDebug();
         return;
       }
-      if ((e.key === "r" || e.key === "R") && e.shiftKey) {
+      if ((e.key === "f" || e.key === "F") && e.shiftKey) {
         fullResetAllStateForDebug();
         return;
       }
