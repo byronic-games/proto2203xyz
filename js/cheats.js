@@ -1,8 +1,106 @@
 const CHEATS = [
+  // =====================
+  // NEW CHEATS
+  // =====================
+
+  {
+    id: "above_9",
+    name: "Above 9?",
+    rarity: "common",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      return next.value > 9 ? "Yes — above 9." : "No — 9 or below.";
+    },
+  },
+
+  {
+    id: "below_5",
+    name: "Below 5?",
+    rarity: "common",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      return next.value < 5 ? "Yes — below 5." : "No — 5 or above.";
+    },
+  },
+
+  {
+    id: "same_colour",
+    name: "Same Colour?",
+    rarity: "common",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next || !state.current) return "No next card.";
+      return isRed(next) === isRed(state.current)
+        ? "Same colour."
+        : "Different colour.";
+    },
+  },
+
+  {
+    id: "mid_range",
+    name: "Between 5 and 9?",
+    rarity: "common",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      return next.value >= 5 && next.value <= 9
+        ? "Yes — between 5 and 9."
+        : "No — outside 5–9.";
+    },
+  },
+
+  {
+    id: "next_two_total",
+    name: "Total of Next Two",
+    rarity: "uncommon",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = state.deck[state.index + 1];
+      const next2 = state.deck[state.index + 2];
+      if (!next || !next2) return "Not enough cards remaining.";
+      return `Total = ${next.value + next2.value}`;
+    },
+  },
+
+  {
+    id: "top_bottom_half",
+    name: "Top Half / Bottom Half",
+    rarity: "common",
+    included: true,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      return next.value >= 7 ? "Top half (7+)" : "Bottom half (6-)";
+    },
+  },
+
+  // =====================
+  // EXISTING CHEATS
+  // =====================
+
   {
     id: "within_range",
     name: "Within ±2?",
     rarity: "common",
+    included: true,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
@@ -11,206 +109,64 @@ const CHEATS = [
       const currentVal = getCurrentEffectiveValue();
       const diff = Math.abs(next.value - currentVal);
       return diff <= 2
-        ? "Next card is within ±2 of current value."
-        : "Next card is NOT within ±2.";
+        ? "Within ±2."
+        : "NOT within ±2.";
     },
   },
-  {
-    id: "avg_outcome",
-    name: "Average Outcome",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      const entry = state.cardStats[next.id];
-      if (!entry || entry.attempts === 0) return "No data yet.";
-      const ratio = entry.correct / entry.attempts;
-      if (ratio > 0.6) return "Historically favourable.";
-      if (ratio < 0.4) return "Historically unfavourable.";
-      return "Historically neutral.";
-    },
-  },
-  {
-    id: "danger_indicator",
-    name: "Is This Dangerous?",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      const entry = state.cardStats[next.id];
-      if (!entry || entry.attempts < 5) return "Not enough data.";
-      const ratio = entry.correct / entry.attempts;
-      return ratio < 0.45 ? "⚠️ This card is dangerous." : "This card seems safe.";
-    },
-  },
-  {
-    id: "not_suit",
-    name: "Not This Suit",
-    rarity: "common",
-    stacking: "repeatable",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      const suits = ["♠", "♥", "♦", "♣"];
-      const notSuit = suits.filter((s) => s !== next.suit);
-      const random = notSuit[Math.floor(Math.random() * notSuit.length)];
-      return `Next card is NOT ${random}.`;
-    },
-  },
+
   {
     id: "red_black",
     name: "Reveal Red / Black",
     rarity: "common",
+    included: true,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return isRed(next) ? "Next card is Red." : "Next card is Black.";
+      return isRed(next) ? "Red." : "Black.";
     },
   },
-  {
-    id: "odd_even_neither",
-    name: "Odd / Even / Neither",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      if (isPictureCard(next)) return "Next card is Neither.";
-      if (next.value % 2 === 0) return "Next card is Even.";
-      return "Next card is Odd.";
-    },
-  },
-  {
-    id: "higher_than_6",
-    name: "Higher than 6?",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      return next.value > 6 ? "Yes — it is higher than 6." : "No — it is 6 or lower.";
-    },
-  },
-  {
-    id: "picture_card",
-    name: "Picture Card?",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      return isPictureCard(next) ? "Yes — it is a picture card." : "No — not a picture card.";
-    },
-  },
+
   {
     id: "chance_higher",
-    name: "Chance Next Card Is Higher",
+    name: "Chance Higher",
     rarity: "common",
+    included: true,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
       if (!state.current) return "No current card.";
-      const currentComparisonValue = getCurrentEffectiveValue();
-      const remainingCards = state.deck.slice(state.index + 1);
-      if (remainingCards.length === 0) return "No next card.";
-      const higherCount = remainingCards.filter((card) => card.value > currentComparisonValue).length;
-      const percentage = Math.round((higherCount / remainingCards.length) * 100);
-      return `${percentage}% chance the next card is higher.`;
+      const val = getCurrentEffectiveValue();
+      const remaining = state.deck.slice(state.index + 1);
+      if (!remaining.length) return "No next card.";
+      const count = remaining.filter(c => c.value > val).length;
+      return `${Math.round((count / remaining.length) * 100)}% higher`;
     },
   },
+
   {
     id: "chance_lower",
-    name: "Chance Next Card Is Lower",
+    name: "Chance Lower",
     rarity: "common",
+    included: true,
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
       if (!state.current) return "No current card.";
-      const currentComparisonValue = getCurrentEffectiveValue();
-      const remainingCards = state.deck.slice(state.index + 1);
-      if (remainingCards.length === 0) return "No next card.";
-      const lowerCount = remainingCards.filter((card) => card.value < currentComparisonValue).length;
-      const percentage = Math.round((lowerCount / remainingCards.length) * 100);
-      return `${percentage}% chance the next card is lower.`;
+      const val = getCurrentEffectiveValue();
+      const remaining = state.deck.slice(state.index + 1);
+      if (!remaining.length) return "No next card.";
+      const count = remaining.filter(c => c.value < val).length;
+      return `${Math.round((count / remaining.length) * 100)}% lower`;
     },
   },
-  {
-    id: "correct_percent",
-    name: "% Guessed Correctly",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      const percentage = getCardCorrectPercentage(next);
-      if (percentage === null) return "No tracked history yet for this card.";
-      return `${percentage}% of previous Higher/Lower guesses were correct when this card was the face-up card.`;
-    },
-  },
-  {
-    id: "tear_corner",
-    name: "Tear Corner",
-    rarity: "common",
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      if (!state.current) return "No current card.";
-      setCardBackStatus(state.current.id, { tornCorner: true });
-      return `${describeCard(state.current)} now has a torn corner on its back.`;
-    },
-  },
-  {
-    id: "same_value_remaining",
-    name: "Same Number Remaining",
-    rarity: "common",
-    stacking: "repeatable",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      const remaining = countUnseenCardsOfRank(next.rank);
-      return `${remaining} card(s) of this value remain in the face-down deck.`;
-    },
-  },
-  {
-    id: "nudge_up",
-    name: "Nudge +1",
-    rarity: "common",
-    stacking: "stackable",
-    consumeOnUse: true,
-    use: () => {
-      state.currentValueModifier += 1;
-      const effective = getCurrentEffectiveValue();
-      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
-    },
-  },
-  {
-    id: "nudge_down",
-    name: "Nudge -1",
-    rarity: "common",
-    stacking: "stackable",
-    consumeOnUse: true,
-    use: () => {
-      state.currentValueModifier -= 1;
-      const effective = getCurrentEffectiveValue();
-      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
-    },
-  },
+
   {
     id: "swap",
     name: "Swap",
     rarity: "common",
+    included: true,
     stacking: "repeatable",
     consumeOnUse: true,
     use: () => {
@@ -220,7 +176,7 @@ const CHEATS = [
       const bottomIndex = state.deck.length - 1;
 
       if (bottomIndex <= currentIndex) {
-        return "No card left at the bottom of the deck to swap with.";
+        return "No card left at bottom.";
       }
 
       const oldCurrent = state.deck[currentIndex];
@@ -232,23 +188,26 @@ const CHEATS = [
       state.currentValueModifier = 0;
       markCardSeen(state.current);
 
-      return `Swapped ${describeCard(oldCurrent)} with bottom card ${describeCard(oldBottom)}. ${describeCard(oldBottom)} is now face up.`;
+      return `Swapped with bottom card.`;
     },
   },
 ];
 
 function canAddCheatToHand(cheatDef) {
+  if (!cheatDef.included) return false;
   if (cheatDef.stacking === "stackable" || cheatDef.stacking === "repeatable") return true;
   return !state.cheats.some((c) => c.id === cheatDef.id);
 }
 
 function getRandomCheatOptions(count = 3) {
-  const pool = [...CHEATS];
+  const pool = CHEATS.filter(c => c.included);
   const options = [];
+
   while (options.length < count && pool.length > 0) {
     const idx = Math.floor(Math.random() * pool.length);
     options.push(pool.splice(idx, 1)[0]);
   }
+
   return options;
 }
 
@@ -266,7 +225,7 @@ function pickCheatFromChoice(index) {
     state.cheats.push({ ...cheat });
     state.message = `Picked: ${cheat.name}`;
   } else {
-    state.message = `${cheat.name} was already in hand.`;
+    state.message = `${cheat.name} already in hand.`;
   }
 
   state.pendingCheatOptions = [];
