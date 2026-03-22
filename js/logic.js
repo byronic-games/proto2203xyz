@@ -31,7 +31,6 @@ function startRun() {
       };
 
       saveLastRunSeed(chosenSeed);
-      recordFaceDownCardSeen(peekNext());
       render();
     }
 
@@ -64,7 +63,6 @@ function advanceToCard(card) {
       state.current = card;
       state.index += 1;
       markCardSeen(card);
-      recordFaceDownCardSeen(peekNext());
     }
 
 function removeCheatAt(index) {
