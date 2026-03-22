@@ -162,6 +162,35 @@ const CHEATS = [
     },
   },
 
+{
+  id: "nudge_up",
+  name: "Nudge +1",
+  rarity: "common",
+  included: true,
+  stacking: "stackable",
+  consumeOnUse: true,
+  poolExcludedIfPowerOwned: "nudge_engine",
+  use: () => {
+    state.currentValueModifier += 1;
+    const effective = getCurrentEffectiveValue();
+    return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+  },
+},
+{
+  id: "nudge_down",
+  name: "Nudge -1",
+  rarity: "common",
+  included: true,
+  stacking: "stackable",
+  consumeOnUse: true,
+  poolExcludedIfPowerOwned: "nudge_engine",
+  use: () => {
+    state.currentValueModifier -= 1;
+    const effective = getCurrentEffectiveValue();
+    return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+  },
+},
+  
   {
     id: "swap",
     name: "Swap",
@@ -199,8 +228,30 @@ function canAddCheatToHand(cheatDef) {
   return !state.cheats.some((c) => c.id === cheatDef.id);
 }
 
-function getRandomCheatOptions(count = 3) {
-  const pool = CHEATS.filter(c => c.included);
+function function getRandomCheatOptions(count = 3) {
+  const ownedStartPowerId = state.selectedStartPowerId;
+
+  const pool = CHEATS.filter((c) => {
+    if (!c.included) return false;
+
+    if (
+      c.poolExcludedIfPowerOwned &&
+      c.poolExcludedIfPowerOwned === ownedStartPowerId
+    ) {
+      return false;
+    }
+
+    if (
+      c.stacking !== "stackable" &&
+      c.stacking !== "repeatable" &&
+      state.cheats.some((held) => held.id === c.id)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
   const options = [];
 
   while (options.length < count && pool.length > 0) {
