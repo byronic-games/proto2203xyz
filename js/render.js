@@ -36,11 +36,18 @@ function renderStartPowerSelector() {
     selectEl.appendChild(option);
   });
 
-  // ✅ FORCE DEFAULT TO NUDGE ON FIRST LOAD
-  const selected = state.selectedStartPowerId || "nudge";
+  const validPowerIds = POWERS.map((power) => power.id);
+
+  let selected = state.selectedStartPowerId;
+
+  if (!selected || selected === "none" || !validPowerIds.includes(selected)) {
+    const nudgePower = POWERS.find((power) => power.name === "Nudge");
+    selected = nudgePower ? nudgePower.id : (POWERS[0]?.id || "none");
+    state.selectedStartPowerId = selected;
+  }
+
   selectEl.value = selected;
 
-  // ✅ Persist user choice when changed
   selectEl.onchange = () => {
     state.selectedStartPowerId = selectEl.value;
   };
