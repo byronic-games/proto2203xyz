@@ -22,10 +22,7 @@ function renderStartPowerSelector() {
   const selectEl = document.getElementById("start-power-select");
   if (!selectEl) return;
 
-  const previousValue =
-    (selectEl.value && selectEl.value !== "none") ? selectEl.value :
-    (state.selectedStartPowerId && state.selectedStartPowerId !== "none") ? state.selectedStartPowerId :
-    "nudge";
+  const preferredValue = state.selectedStartPowerId || "nudge";
 
   selectEl.innerHTML = "";
 
@@ -42,7 +39,11 @@ function renderStartPowerSelector() {
   });
 
   const allowedValues = ["none", ...POWERS.map((power) => power.id)];
-  selectEl.value = allowedValues.includes(previousValue) ? previousValue : "nudge";
+  selectEl.value = allowedValues.includes(preferredValue) ? preferredValue : "nudge";
+
+  if (!selectEl.value || selectEl.value === "none") {
+    selectEl.value = "nudge";
+  }
 }
 
 function renderActivePowers() {
