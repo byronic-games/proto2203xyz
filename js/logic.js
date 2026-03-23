@@ -205,6 +205,8 @@ function fullResetAllStateForDebug() {
 }
 
 function makeGuess(type) {
+      state.restartConfirmArmed = false;
+  
       if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0) return;
 
       const next = peekNext();
