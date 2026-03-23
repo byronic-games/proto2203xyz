@@ -21,7 +21,7 @@ function renderSeedControls() {
 function renderStartPowerSelector() {
       const selectEl = document.getElementById("start-power-select");
       if (!selectEl) return;
-      const previousValue = selectEl.value || state.selectedStartPowerId || "none";
+      const previousValue = selectEl.value || state.selectedStartPowerId || "nudge";
       selectEl.innerHTML = "";
       const noneOption = document.createElement("option");
       noneOption.value = "none";
