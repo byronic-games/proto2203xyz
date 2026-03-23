@@ -24,6 +24,14 @@ function renderSeedControls() {
   }
 }
 
+function renderRestartButton() {
+  const btn = document.getElementById("restart-btn");
+  if (!btn) return;
+
+  const runIsActive = !state.gameOver && !!state.current;
+  btn.innerText = (runIsActive && state.restartConfirmArmed) ? "Confirm Restart" : "Start Run";
+}
+
 function renderStartPowerSelector() {
   const selectEl = document.getElementById("start-power-select");
   if (!selectEl) return;
@@ -328,6 +336,7 @@ function render() {
   renderCheats();
   renderCheatChoice();
   renderSeenGrid();
+  renderRestartButton();
   renderMessage();
   renderNextInfo();
 }
