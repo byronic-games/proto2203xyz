@@ -71,6 +71,41 @@ h3 {
   max-width: 260px;
 }
 
+#cheat-guide-box {
+  background: #171717;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+#cheat-guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cheat-guide-item {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.cheat-guide-name {
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.cheat-guide-desc {
+  color: #ccc;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 #instructions-box {
   background: #171717;
   border: 1px solid #2a2a2a;
