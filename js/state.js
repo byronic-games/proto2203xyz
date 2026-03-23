@@ -1,18 +1,20 @@
 function createDeck(seedString) {
-      const deck = [];
-      for (const suit of SUITS) {
-        for (const rank of RANKS) {
-          deck.push({
-            id: getCardId(suit, rank.r),
-            suit,
-            rank: rank.r,
-            value: rank.v,
-          });
-        }
-      }
-      seededShuffle(deck, seedString);
-      return deck;
+  const deck = [];
+
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push({
+        id: getCardId(suit, rank.r),
+        suit,
+        rank: rank.r,
+        value: rank.v,
+      });
     }
+  }
+
+  seededShuffle(deck, seedString);
+  return deck;
+}
 
 function createEmptyState() {
   return {
@@ -36,6 +38,7 @@ function createEmptyState() {
     cardBackStatuses: loadCardBackStatuses(),
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
+    luckySevenArmed: false,
   };
 }
 
