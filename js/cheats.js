@@ -13,6 +13,27 @@ function getParityLabel(value) {
   return value % 2 === 0 ? "EVEN" : "ODD";
 }
 
+const CHEAT_DESCRIPTIONS = {
+  "Above 9?": "Is the next face down card above 9?",
+  "Below 5?": "Is the next face down card below 5?",
+  "Between 5 and 9 inclusive?": "Is the value of the next face down card a 5, 6, 7, 8 or 9?",
+  "Total of next two cards": "Reveals the total of the next two face down cards.",
+  "Total of next three cards": "Reveals the total of the next three face down cards.",
+  "Top half or bottom half?": "Is the next card below 7 or is it 7 and above?",
+  "Within +-3": "Is the next card within three above or below the current face card?",
+  "One next 2 higher?": "Reveals if at least one of the next two cards is higher than the current card.",
+  "One next 2 lower?": "Reveals if at least one of the next two cards is lower than the current card.",
+  "Lower of next two": "Reveals lowest value of the next two face down cards.",
+  "Higher of next two": "Reveals highest value of the next two face down cards.",
+  "Next card parity?": "Reveals if the next card is odd, even or neither (picture card).",
+  "Chance higher?": "Calculates the probability that one of the remaining cards is higher than the current card.",
+  "Chance lower?": "Calculates the probability that one of the remaining cards is lower than the current card.",
+  "Nudge +1": "Increases the value of the current face card by one.",
+  "Nudge -1": "Decreases the value of the current face card by one.",
+  "Swap": "Replace the current face card with the card at the bottom of the deck.",
+  "Tear Corner": "Tear off the top left corner of the current face card (affects future runs)."
+};
+
 const CHEATS = [
   // =====================
   // NEW / ACTIVE CHEATS
