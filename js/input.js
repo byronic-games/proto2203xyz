@@ -1,7 +1,23 @@
 document.getElementById("higher-btn").onclick = () => makeGuess("higher");
 document.getElementById("lower-btn").onclick = () => makeGuess("lower");
 
-document.getElementById("restart-btn").onclick = () => startRun(true);
+document.getElementById("restart-btn").onclick = () => {
+  const runIsActive = !state.gameOver && !!state.current;
+
+  if (!runIsActive) {
+    startRun(true);
+    return;
+  }
+
+  if (!state.restartConfirmArmed) {
+    state.restartConfirmArmed = true;
+    state.message = "Click Start Run again to confirm restart.";
+    render();
+    return;
+  }
+
+  startRun(true);
+};
 
 document.getElementById("run-seed-input")?.addEventListener("blur", (e) => {
   e.target.value = normalizeSeed(e.target.value);
