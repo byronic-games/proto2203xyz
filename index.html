@@ -39,55 +39,88 @@
     </div>
 
     <div id="main-layout">
-      <div id="left-panel">
-        <div id="card-area">
-          <div id="card-row">
-            <div class="card-column">
-              <div id="current-card" class="card-face">?</div>
-              <div id="current-effective-value"></div>
-            </div>
-            <div class="card-column">
-              <div id="face-down-deck" class="card-back"></div>
-              <div id="face-down-count"></div>
-            </div>
-          </div>
-          <div id="next-info"></div>
+
+  <div id="left-panel">
+
+    <div id="card-area">
+
+      <div id="card-row">
+        <div class="card-column">
+
+          <div id="current-card" class="card-face">?</div>
+
+          <div id="current-effective-value"></div>
+
         </div>
 
-        <div id="controls">
-          <button id="higher-btn">HIGHER</button>
-          <button id="lower-btn">LOWER</button>
+        <div class="card-column">
+
+          <div id="face-down-deck" class="card-back"></div>
+
+          <div id="face-down-count"></div>
+
         </div>
 
-        <div id="powers-area">
-          <h3>Active Powers</h3>
-          <div id="active-powers">No active Powers.</div>
-        </div>
-
-        <div id="swap-area">
-          <h3>Card In Hand</h3>
-          <div id="swap-card">Empty</div>
-        </div>
-
-        <div id="cheats">
-          <h3>Cheats In Hand</h3>
-          <div id="cheat-list"></div>
-          <div id="cheat-choice-container">
-            <h3>Choose 1 Cheat</h3>
-            <div id="cheat-choice-list"></div>
-          </div>
-        </div>
-
-        <div id="message"></div>
-        <button id="restart-btn">Start Run</button>
       </div>
 
-      <div id="right-panel">
-        <h3>Cards Seen This Run</h3>
-        <div id="seen-grid"></div>
-      </div>
+      <div id="next-info"></div>
+
     </div>
+
+    <div id="controls">
+
+      <button id="higher-btn">HIGHER</button>
+
+      <button id="lower-btn">LOWER</button>
+
+    </div>
+
+    <div id="powers-area">
+
+      <h3>Active Powers</h3>
+      <div id="active-powers">No active Powers.</div>
+
+    </div>
+
+    <div id="swap-area">
+
+      <h3>Card In Hand</h3>
+
+      <div id="swap-card">Empty</div>
+
+    </div>
+
+    <div id="message"></div>
+
+    <button id="restart-btn">Start Run</button>
+
   </div>
+
+  <div id="right-panel">
+
+    <h3>Cards Seen This Run</h3>
+
+    <div id="seen-grid"></div>
+
+    <div id="cheats" style="margin-top: 12px;">
+
+      <h3>Cheats In Hand</h3>
+
+      <div id="cheat-list"></div>
+
+      <div id="cheat-choice-container">
+
+        <h3>Choose 1 Cheat</h3>
+
+        <div id="cheat-choice-list"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
   <script src="js/constants.js"></script>
   <script src="js/storage.js"></script>
