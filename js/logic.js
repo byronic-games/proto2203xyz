@@ -1,39 +1,49 @@
-function startRun() {
-      const seedInput = document.getElementById("run-seed-input");
-      const chosenSeed = normalizeSeed(seedInput?.value) || randomSeedString();
-      const deck = createDeck(chosenSeed);
-      const selectedPowerId = document.getElementById("start-power-select")?.value || "none";
-      const activePowers = selectedPowerId !== "none"
-        ? getPowerToggleStateForSelection(selectedPowerId)
-        : [];
+function startRun(forceRandom = false) {
+  const seedInput = document.getElementById("run-seed-input");
 
-      state = {
-        deck,
-        index: 0,
-        current: deck[0],
-        cheats: [],
-        pendingCheatOptions: [],
-        message: activePowers.length > 0
-          ? `Run started with seed ${chosenSeed} and power: ${activePowers.map(getPowerName).join(", ")}.`
-          : `Run started with seed ${chosenSeed}.`,
-        gameOver: false,
-        handCard: null,
-        currentValueModifier: 0,
-        correctAnswers: 0,
-        streak: 0,
-        bestScore: loadBestScore(),
-        seenCardIds: new Set([deck[0].id]),
-      powers: activePowers,
-      selectedStartPowerId: selectedPowerId,
-      metaProgression: loadMetaProgression(),
-      cardStats: loadCardStats(),
-      cardBackStatuses: loadCardBackStatuses(),
-      runSeed: chosenSeed,
-      };
+  let chosenSeed = "";
 
-      saveLastRunSeed(chosenSeed);
-      render();
-    }
+  if (forceRandom) {
+    chosenSeed = randomSeedString();
+    if (seedInput) seedInput.value = chosenSeed;
+  } else {
+    chosenSeed = normalizeSeed(seedInput?.value) || randomSeedString();
+    if (seedInput) seedInput.value = chosenSeed;
+  }
+
+  const deck = createDeck(chosenSeed);
+  const selectedPowerId = document.getElementById("start-power-select")?.value || "none";
+  const activePowers = selectedPowerId !== "none"
+    ? getPowerToggleStateForSelection(selectedPowerId)
+    : [];
+
+  state = {
+    deck,
+    index: 0,
+    current: deck[0],
+    cheats: [],
+    pendingCheatOptions: [],
+    message: activePowers.length > 0
+      ? `Run started with seed ${chosenSeed} and power: ${activePowers.map(getPowerName).join(", ")}.`
+      : `Run started with seed ${chosenSeed}.`,
+    gameOver: false,
+    handCard: null,
+    currentValueModifier: 0,
+    correctAnswers: 0,
+    streak: 0,
+    bestScore: loadBestScore(),
+    seenCardIds: new Set([deck[0].id]),
+    powers: activePowers,
+    selectedStartPowerId: selectedPowerId,
+    metaProgression: loadMetaProgression(),
+    cardStats: loadCardStats(),
+    cardBackStatuses: loadCardBackStatuses(),
+    runSeed: chosenSeed,
+  };
+
+  saveLastRunSeed(chosenSeed);
+  render();
+}
 
 function updateBestScoreIfNeeded() {
       if (state.correctAnswers > state.bestScore) {
