@@ -22,8 +22,6 @@ function renderStartPowerSelector() {
   const selectEl = document.getElementById("start-power-select");
   if (!selectEl) return;
 
-  const preferredValue = state.selectedStartPowerId || "nudge";
-
   selectEl.innerHTML = "";
 
   const noneOption = document.createElement("option");
@@ -38,12 +36,14 @@ function renderStartPowerSelector() {
     selectEl.appendChild(option);
   });
 
-  const allowedValues = ["none", ...POWERS.map((power) => power.id)];
-  selectEl.value = allowedValues.includes(preferredValue) ? preferredValue : "nudge";
+  // ✅ FORCE DEFAULT TO NUDGE ON FIRST LOAD
+  const selected = state.selectedStartPowerId || "nudge";
+  selectEl.value = selected;
 
-  if (!selectEl.value || selectEl.value === "none") {
-    selectEl.value = "nudge";
-  }
+  // ✅ Persist user choice when changed
+  selectEl.onchange = () => {
+    state.selectedStartPowerId = selectEl.value;
+  };
 }
 
 function renderActivePowers() {
