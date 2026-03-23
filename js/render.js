@@ -42,7 +42,8 @@ function renderCheatGuide() {
     item.appendChild(desc);
     listEl.appendChild(item);
   });
-
+}
+  
 function renderCheatChoice() {
       const container = document.getElementById("cheat-choice-container");
       const list = document.getElementById("cheat-choice-list");
