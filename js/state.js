@@ -15,27 +15,28 @@ function createDeck(seedString) {
     }
 
 function createEmptyState() {
-      return {
-        deck: [],
-        index: 0,
-        current: null,
-        cheats: [],
-        pendingCheatOptions: [],
-        message: "Press Start Run.",
-        gameOver: true,
-        handCard: null,
-        currentValueModifier: 0,
-        correctAnswers: 0,
-        streak: 0,
-        bestScore: loadBestScore(),
-        seenCardIds: new Set(),
-        powers: [],
-        selectedStartPowerId: "null",
-        metaProgression: loadMetaProgression(),
-        cardStats: loadCardStats(),
-        cardBackStatuses: loadCardBackStatuses(),
-        runSeed: loadLastRunSeed() || randomSeedString(),
-      };
-    }
+  return {
+    deck: [],
+    index: 0,
+    current: null,
+    cheats: [],
+    pendingCheatOptions: [],
+    message: "Press Start Run.",
+    gameOver: true,
+    handCard: null,
+    currentValueModifier: 0,
+    correctAnswers: 0,
+    streak: 0,
+    bestScore: loadBestScore(),
+    seenCardIds: new Set(),
+    powers: [],
+    selectedStartPowerId: null,
+    metaProgression: loadMetaProgression(),
+    cardStats: loadCardStats(),
+    cardBackStatuses: loadCardBackStatuses(),
+    runSeed: loadLastRunSeed() || randomSeedString(),
+    restartConfirmArmed: false,
+  };
+}
 
 let state = createEmptyState();
