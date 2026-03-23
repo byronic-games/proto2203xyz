@@ -30,7 +30,7 @@ function createEmptyState() {
         bestScore: loadBestScore(),
         seenCardIds: new Set(),
         powers: [],
-        selectedStartPowerId: "none",
+        selectedStartPowerId: "nudge",
         metaProgression: loadMetaProgression(),
         cardStats: loadCardStats(),
         cardBackStatuses: loadCardBackStatuses(),
