@@ -242,7 +242,9 @@ button {
 #higher-btn,
 #lower-btn {
   min-width: 110px;
-  min-height: 56px;
+  height: 60px;           /* force height */
+  padding: 0 16px;        /* remove vertical padding influence */
+  font-size: 16px;
 }
 
 #higher-btn:disabled,
