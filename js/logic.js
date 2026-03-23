@@ -39,6 +39,7 @@ function startRun(forceRandom = false) {
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
     runSeed: chosenSeed,
+    restartConfirmArmed: false,
   };
 
   saveLastRunSeed(chosenSeed);
