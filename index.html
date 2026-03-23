@@ -15,7 +15,7 @@
         <div class="score-label">Run Seed</div>
         <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
         <div style="margin-top:6px; display:flex; gap:6px; justify-content:center;">
-          <button id="random-seed-btn" type="button">Random</button>
+          <button id="random-seed-btn" type="button">Restart</button>
           <button id="copy-seed-btn" type="button">Copy</button>
         </div>
         <div id="current-seed"></div>
@@ -75,18 +75,19 @@
 
     </div>
 
-    <div id="powers-area">
+    <div id="cheats">
 
-      <h3>Active Powers</h3>
-      <div id="active-powers">No active Powers.</div>
+      <h3>Cheats In Hand</h3>
 
-    </div>
+      <div id="cheat-list"></div>
 
-    <div id="swap-area">
+      <div id="cheat-choice-container">
 
-      <h3>Card In Hand</h3>
+        <h3>Choose 1 Cheat</h3>
 
-      <div id="swap-card">Empty</div>
+        <div id="cheat-choice-list"></div>
+
+      </div>
 
     </div>
 
@@ -102,19 +103,19 @@
 
     <div id="seen-grid"></div>
 
-    <div id="cheats" style="margin-top: 12px;">
+    <div id="powers-area" style="margin-top: 12px;">
 
-      <h3>Cheats In Hand</h3>
+      <h3>Active Powers</h3>
 
-      <div id="cheat-list"></div>
+      <div id="active-powers">No active Powers.</div>
 
-      <div id="cheat-choice-container">
+    </div>
 
-        <h3>Choose 1 Cheat</h3>
+    <div id="swap-area">
 
-        <div id="cheat-choice-list"></div>
+      <h3>Card In Hand</h3>
 
-      </div>
+      <div id="swap-card">Empty</div>
 
     </div>
 
