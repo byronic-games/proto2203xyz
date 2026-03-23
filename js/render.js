@@ -251,6 +251,7 @@ function renderCheats() {
     btn.innerText = cheat.name;
     btn.onclick = () => {
       if (state.gameOver || state.pendingCheatOptions.length > 0) return;
+      state.restartConfirmArmed = false;
       const result = cheat.use();
       state.message = result;
       if (cheat.consumeOnUse) removeCheatAt(index);
