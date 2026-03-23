@@ -66,12 +66,31 @@ h3 {
   word-break: break-word;
 }
 
+#instructions-panel {
+  flex: 0 0 260px;
+  max-width: 260px;
+}
+
+#instructions-box {
+  background: #171717;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: left;
+}
+
+#instructions-text {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #ddd;
+}
+
+
 #main-layout {
   display: flex;
   gap: 16px;
   align-items: flex-start;
   justify-content: center;
-  flex-wrap: nowrap;
 }
 
 #left-panel {
