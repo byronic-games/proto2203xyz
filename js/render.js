@@ -19,23 +19,31 @@ function renderSeedControls() {
     }
 
 function renderStartPowerSelector() {
-      const selectEl = document.getElementById("start-power-select");
-      if (!selectEl) return;
-      const previousValue = selectEl.value || state.selectedStartPowerId || "nudge";
-      selectEl.innerHTML = "";
-      const noneOption = document.createElement("option");
-      noneOption.value = "none";
-      noneOption.innerText = "No Power";
-      selectEl.appendChild(noneOption);
-      POWERS.forEach((power) => {
-        const option = document.createElement("option");
-        option.value = power.id;
-        option.innerText = power.name;
-        selectEl.appendChild(option);
-      });
-      const allowedValues = ["none", ...POWERS.map((power) => power.id)];
-      selectEl.value = allowedValues.includes(previousValue) ? previousValue : "none";
-    }
+  const selectEl = document.getElementById("start-power-select");
+  if (!selectEl) return;
+
+  const previousValue =
+    (selectEl.value && selectEl.value !== "none") ? selectEl.value :
+    (state.selectedStartPowerId && state.selectedStartPowerId !== "none") ? state.selectedStartPowerId :
+    "nudge";
+
+  selectEl.innerHTML = "";
+
+  const noneOption = document.createElement("option");
+  noneOption.value = "none";
+  noneOption.innerText = "No Power";
+  selectEl.appendChild(noneOption);
+
+  POWERS.forEach((power) => {
+    const option = document.createElement("option");
+    option.value = power.id;
+    option.innerText = power.name;
+    selectEl.appendChild(option);
+  });
+
+  const allowedValues = ["none", ...POWERS.map((power) => power.id)];
+  selectEl.value = allowedValues.includes(previousValue) ? previousValue : "nudge";
+}
 
 function renderActivePowers() {
       const activePowersEl = document.getElementById("active-powers");
