@@ -261,17 +261,18 @@ function renderNextInfo() {
     }
 
 function render() {
-      renderScores();
-      renderSeedControls();
-      renderStartPowerSelector();
-      renderActivePowers();
-      renderCurrentCard();
-      renderFaceDownDeck();
-      renderButtons();
-      renderHandCard();
-      renderCheats();
-      renderCheatChoice();
-      renderSeenGrid();
-      renderMessage();
-      renderNextInfo();
-    }
+  renderScores();
+  renderSeedControls();
+  renderStartPowerSelector();
+  renderActivePowers();
+  renderCurrentCard();
+  renderFaceDownDeck();
+  renderButtons();
+  renderHandCard();
+  renderCheats();
+  renderCheatChoice();
+  renderSeenGrid();
+  renderCheatGuide();
+  renderMessage();
+  renderNextInfo();
+}
