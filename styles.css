@@ -227,6 +227,10 @@ h3 {
   flex-wrap: wrap;
 }
 
+#controls button {
+  flex: 1;
+}
+
 input,
 select,
 button {
