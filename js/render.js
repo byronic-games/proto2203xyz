@@ -59,31 +59,54 @@ function renderStartPowerSelector() {
   };
 }
 
-function renderCheatGuide() {
-  const listEl = document.getElementById("cheat-guide-list");
-  if (!listEl) return;
-
-  listEl.innerHTML = "";
-
-  const cheatsToShow = CHEATS.filter((cheat) => cheat.included !== false);
-
-  cheatsToShow.forEach((cheat) => {
-    const item = document.createElement("div");
-    item.className = "cheat-guide-item";
-
-    const name = document.createElement("div");
-    name.className = "cheat-guide-name";
-    name.innerText = cheat.name;
-
-    const desc = document.createElement("div");
-    desc.className = "cheat-guide-desc";
-    desc.innerText = CHEAT_DESCRIPTIONS[cheat.name] || "No description yet.";
-
-    item.appendChild(name);
-    item.appendChild(desc);
-    listEl.appendChild(item);
-  });
-}
+  function renderCheatGuide() {
+    const listEl = document.getElementById("cheat-guide-list");
+    if (!listEl) return;
+  
+    listEl.innerHTML = "";
+  
+    const cheatsToShow = [];
+    const seenIds = new Set();
+  
+    state.cheats.forEach((cheat) => {
+      if (!seenIds.has(cheat.id)) {
+        cheatsToShow.push(cheat);
+        seenIds.add(cheat.id);
+      }
+    });
+  
+    state.pendingCheatOptions.forEach((cheat) => {
+      if (!seenIds.has(cheat.id)) {
+        cheatsToShow.push(cheat);
+        seenIds.add(cheat.id);
+      }
+    });
+  
+    if (!cheatsToShow.length) {
+      const empty = document.createElement("div");
+      empty.className = "cheat-guide-desc";
+      empty.innerText = "Cheat descriptions will appear here for cheats in hand and current cheat choices.";
+      listEl.appendChild(empty);
+      return;
+    }
+  
+    cheatsToShow.forEach((cheat) => {
+      const item = document.createElement("div");
+      item.className = "cheat-guide-item";
+  
+      const name = document.createElement("div");
+      name.className = "cheat-guide-name";
+      name.innerText = cheat.name;
+  
+      const desc = document.createElement("div");
+      desc.className = "cheat-guide-desc";
+      desc.innerText = CHEAT_DESCRIPTIONS[cheat.name] || "No description yet.";
+  
+      item.appendChild(name);
+      item.appendChild(desc);
+      listEl.appendChild(item);
+    });
+  }
 
 function renderActivePowers() {
   const activePowersEl = document.getElementById("active-powers");
