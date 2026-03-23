@@ -18,6 +18,32 @@ function renderSeedControls() {
       }
     }
 
+function renderCheatGuide() {
+  const listEl = document.getElementById("cheat-guide-list");
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+
+  const cheatsToShow = CHEATS.filter((cheat) => cheat.included !== false);
+
+  cheatsToShow.forEach((cheat) => {
+    const item = document.createElement("div");
+    item.className = "cheat-guide-item";
+
+    const name = document.createElement("div");
+    name.className = "cheat-guide-name";
+    name.innerText = cheat.name;
+
+    const desc = document.createElement("div");
+    desc.className = "cheat-guide-desc";
+    desc.innerText = CHEAT_DESCRIPTIONS[cheat.name] || "No description yet.";
+
+    item.appendChild(name);
+    item.appendChild(desc);
+    listEl.appendChild(item);
+  });
+}
+
 function renderStartPowerSelector() {
   const selectEl = document.getElementById("start-power-select");
   if (!selectEl) return;
