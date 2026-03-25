@@ -576,10 +576,6 @@ function offerCheatChoice() {
   const newlyMetaUnlocked = markMetaUnlockedCheats();
   state.pendingCheatOptions = getRandomCheatOptions(3);
 
-  state.pendingCheatOptions.forEach((cheat) => {
-    markCheatDiscovered(cheat, "random");
-  });
-
   if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {
@@ -593,13 +589,19 @@ function pickCheatFromChoice(index) {
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
 
-  if (canAddCheatToHand(cheat)) {
-    state.cheats.push({ ...cheat });
-    const wasJustUnlocked = state.justUnlockedCheatIds.includes(cheat.id);
-    state.message = wasJustUnlocked ? `Picked NEW cheat: ${cheat.name}` : `Picked: ${cheat.name}`;
-  } else {
-    state.message = `${cheat.name} already in hand.`;
+if (canAddCheatToHand(cheat)) {
+  const wasNew = !hasCheatBeenDiscovered(cheat.id);
+
+  if (wasNew) {
+    markCheatDiscovered(cheat, "random");
   }
+
+  state.cheats.push({ ...cheat });
+
+  state.message = wasNew
+    ? `Picked NEW cheat: ${cheat.name}`
+    : `Picked: ${cheat.name}`;
+}
 
   state.pendingCheatOptions = [];
   render();
