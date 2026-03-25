@@ -66,7 +66,20 @@ function saveMetaProgression(value) {
   localStorage.setItem(META_PROGRESSION_KEY, String(value));
 }
 
+function loadCheatUnlocks() {
+  const raw = localStorage.getItem(CHEAT_UNLOCKS_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 
+function saveCheatUnlocks(unlocks) {
+  localStorage.setItem(CHEAT_UNLOCKS_KEY, JSON.stringify(unlocks));
+}
 function loadLastRunSeed() {
       return localStorage.getItem(RUN_SEED_KEY) || "";
     }
