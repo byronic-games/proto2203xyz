@@ -62,6 +62,7 @@ function markMetaUnlockedCheats() {
   const newlyUnlocked = CHEATS.filter((cheat) => {
     if (!cheat.included) return false;
     if ((state.metaProgression ?? 0) < (cheat.unlockAt ?? 0)) return false;
+    if ((cheat.unlockAt ?? 0) <= 0) return false;
     return !hasCheatBeenDiscovered(cheat.id);
   });
 
