@@ -214,6 +214,7 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(RUN_SEED_KEY);
   localStorage.removeItem(BEST_SCORE_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
+  localStorage.removeItem(CHEAT_UNLOCKS_KEY);
 
   state = createEmptyState();
   state.message = " Debug: FULL RESET (everything cleared).";
