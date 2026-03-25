@@ -16,6 +16,22 @@ function createDeck(seedString) {
   return deck;
 }
 
+function createDeck(seedString) {
+  const deck = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push({
+        id: getCardId(suit, rank.r),
+        suit,
+        rank: rank.r,
+        value: rank.v,
+      });
+    }
+  }
+  seededShuffle(deck, seedString);
+  return deck;
+}
+
 function createEmptyState() {
   return {
     deck: [],
@@ -36,9 +52,10 @@ function createEmptyState() {
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
+    cheatUnlocks: loadCheatUnlocks(),
+    justUnlockedCheatIds: [],
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
-    luckySevenArmed: false,
   };
 }
 
