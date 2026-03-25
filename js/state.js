@@ -54,6 +54,7 @@ function createEmptyState() {
     cardBackStatuses: loadCardBackStatuses(),
     cheatUnlocks: loadCheatUnlocks(),
     justUnlockedCheatIds: [],
+    lucky7Armed: false,
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
   };
