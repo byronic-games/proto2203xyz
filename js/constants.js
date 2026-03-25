@@ -30,11 +30,13 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     const GAME_VERSION = "v0.1";
 
     const CHEAT_RARITY = {
-      common: 1,
-      uncommon: 1,
-      rare: 1,
-      legendary: 1,
+      common: 60,
+      uncommon: 25,
+      rare: 10,
+      legendary: 5,
     };
+
+const CHEAT_UNLOCKS_KEY = "hl_prototype_cheat_unlocks";;
 
 function mulberry32(a) {
       return function () {
