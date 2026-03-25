@@ -20,7 +20,7 @@ function startRun(forceRandom = false) {
       ? getPowerToggleStateForSelection(selectedPowerId)
       : [];
 
-  state = {
+    state = {
     deck,
     index: 0,
     current: deck[0],
@@ -44,9 +44,11 @@ function startRun(forceRandom = false) {
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
+    cheatUnlocks: loadCheatUnlocks(),
+    justUnlockedCheatIds: [],
     runSeed: chosenSeed,
     restartConfirmArmed: false,
-    luckySevenArmed: false,
+    lucky7Armed: false,
   };
 
   saveLastRunSeed(chosenSeed);
@@ -232,8 +234,8 @@ function makeGuess(type) {
   const el = document.getElementById("next-info");
   if (el) el.innerText = "";
 
-  const luckySevenWasArmed = !!state.luckySevenArmed;
-  state.luckySevenArmed = false;
+  const lucky7WasArmed = !!state.lucky7Armed;
+  state.lucky7Armed = false;
 
   if (next.value === currentComparisonValue) {
     recordFaceDownOutcome(next, false);
@@ -257,7 +259,7 @@ function makeGuess(type) {
       return;
     }
 
-    state.message = luckySevenWasArmed
+    state.message = lucky7WasArmed
       ? "✅ Match! Lucky 7 was spent."
       : "✅ Match!";
     render();
@@ -268,8 +270,8 @@ function makeGuess(type) {
     (type === "higher" && next.value > currentComparisonValue) ||
     (type === "lower" && next.value < currentComparisonValue);
 
-  const rescuedByLuckySeven = !normallyCorrect && luckySevenWasArmed;
-  const finalCorrect = normallyCorrect || rescuedByLuckySeven;
+  const rescuedByLucky7 = !normallyCorrect && lucky7WasArmed;
+  const finalCorrect = normallyCorrect || rescuedByLucky7;
 
   if (!finalCorrect) {
     recordCurrentCardGuess(state.current, false);
@@ -308,7 +310,7 @@ function makeGuess(type) {
     return;
   }
 
-  if (rescuedByLuckySeven) {
+  if (rescuedByLucky7) {
     state.message = `🍀 Lucky 7! Counted as correct — it was ${describeCard(next)}.`;
     render();
     return;
@@ -320,7 +322,7 @@ function makeGuess(type) {
     return;
   }
 
-  if (normallyCorrect && luckySevenWasArmed) {
+  if (normallyCorrect && lucky7WasArmed) {
     state.message = "✅ Correct! Lucky 7 was spent.";
     render();
     return;
