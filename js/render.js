@@ -276,7 +276,8 @@ function renderCheatChoice() {
 
   state.pendingCheatOptions.forEach((cheat, index) => {
     const btn = document.createElement("button");
-    btn.innerText = `[${cheat.rarity}] ${cheat.name}`;
+    const isNew = state.justUnlockedCheatIds.includes(cheat.id);
+    btn.innerText = `${isNew ? "[NEW] " : ""}[${cheat.rarity}] ${cheat.name}`;
     btn.onclick = () => pickCheatFromChoice(index);
     list.appendChild(btn);
   });
