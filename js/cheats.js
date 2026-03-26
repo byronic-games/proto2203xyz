@@ -95,7 +95,7 @@ const CHEAT_DESCRIPTIONS = {
   "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
   "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
   "Double Trouble": "Treat the current card as double its value for the next guess, up to King.",
-  "Odd One Out": "Can only be used on an odd numbered card. If your next guess is correct, you lose.",
+  "Odd One Out": "For the next card only: if it is odd, you lose. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
   "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
   "Swap": "Replace the current face card with the card at the bottom of the deck.",
@@ -468,12 +468,8 @@ const CHEATS = [
     consumeOnUse: true,
     use: () => {
       if (!state.current) return "No current card.";
-      const current = getCurrentEffectiveValue();
-      if (current % 2 === 0 || isPictureCardValue(current)) {
-        return "Odd One Out can only be used on an odd numbered card.";
-      }
       state.oddOneOutArmed = true;
-      return "Odd One Out armed — if your next guess is correct, you lose.";
+      return "Odd One Out armed — if the next face-up card is odd, you lose. Otherwise you survive.";
     },
   },
   {
