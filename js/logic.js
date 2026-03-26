@@ -20,7 +20,7 @@ function startRun(forceRandom = false) {
       ? getPowerToggleStateForSelection(selectedPowerId)
       : [];
 
-    state = {
+  state = {
     deck,
     index: 0,
     current: deck[0],
@@ -49,6 +49,8 @@ function startRun(forceRandom = false) {
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     lucky7Armed: false,
+    fiveAliveArmed: false,
+    oddOneOutArmed: false,
   };
 
   saveLastRunSeed(chosenSeed);
@@ -236,9 +238,27 @@ function makeGuess(type) {
   if (el) el.innerText = "";
 
   const lucky7WasArmed = !!state.lucky7Armed;
+  const fiveAliveWasArmed = !!state.fiveAliveArmed;
+  const oddOneOutWasArmed = !!state.oddOneOutArmed;
+
   state.lucky7Armed = false;
+  state.fiveAliveArmed = false;
+  state.oddOneOutArmed = false;
 
   if (next.value === currentComparisonValue) {
+    if (oddOneOutWasArmed) {
+      recordCurrentCardGuess(state.current, false);
+      recordFaceDownOutcome(next, true);
+      advanceToCard(next);
+      state.currentValueModifier = 0;
+      state.streak = 0;
+      state.message = `💀 Odd One Out! Match counted against you — it was ${describeCard(next)}.`;
+      state.gameOver = true;
+      updateBestScoreIfNeeded();
+      render();
+      return;
+    }
+
     recordFaceDownOutcome(next, false);
     advanceToCard(next);
     state.currentValueModifier = 0;
@@ -260,9 +280,19 @@ function makeGuess(type) {
       return;
     }
 
-    state.message = lucky7WasArmed
-      ? "✅ Match! Lucky 7 was spent."
-      : "✅ Match!";
+    if (lucky7WasArmed) {
+      state.message = "✅ Match! Lucky 7 was spent.";
+      render();
+      return;
+    }
+
+    if (fiveAliveWasArmed) {
+      state.message = "✅ Match! Five Alive was spent.";
+      render();
+      return;
+    }
+
+    state.message = "✅ Match!";
     render();
     return;
   }
@@ -272,7 +302,9 @@ function makeGuess(type) {
     (type === "lower" && next.value < currentComparisonValue);
 
   const rescuedByLucky7 = !normallyCorrect && lucky7WasArmed;
-  const finalCorrect = normallyCorrect || rescuedByLucky7;
+  const rescuedByFiveAlive = !normallyCorrect && fiveAliveWasArmed;
+  const finalCorrect = normallyCorrect || rescuedByLucky7 || rescuedByFiveAlive;
+  const cursedByOddOneOut = normallyCorrect && oddOneOutWasArmed;
 
   if (!finalCorrect) {
     recordCurrentCardGuess(state.current, false);
@@ -281,6 +313,19 @@ function makeGuess(type) {
     state.currentValueModifier = 0;
     state.streak = 0;
     state.message = `❌ Wrong! It was ${describeCard(next)}.`;
+    state.gameOver = true;
+    updateBestScoreIfNeeded();
+    render();
+    return;
+  }
+
+  if (cursedByOddOneOut) {
+    recordCurrentCardGuess(state.current, false);
+    recordFaceDownOutcome(next, true);
+    advanceToCard(next);
+    state.currentValueModifier = 0;
+    state.streak = 0;
+    state.message = `💀 Odd One Out! Your correct guess ended the run — it was ${describeCard(next)}.`;
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
@@ -317,6 +362,12 @@ function makeGuess(type) {
     return;
   }
 
+  if (rescuedByFiveAlive) {
+    state.message = `🖐️ Five Alive! Wrong guess survived — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
   if (powerAwards.length > 0) {
     state.message = `✅ Correct! Power gained: ${powerAwards.join(", ")}.`;
     render();
@@ -325,6 +376,12 @@ function makeGuess(type) {
 
   if (normallyCorrect && lucky7WasArmed) {
     state.message = "✅ Correct! Lucky 7 was spent.";
+    render();
+    return;
+  }
+
+  if (normallyCorrect && fiveAliveWasArmed) {
+    state.message = "✅ Correct! Five Alive was spent.";
     render();
     return;
   }
