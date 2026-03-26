@@ -628,10 +628,21 @@ function pickCheatFromChoice(index) {
     }
 
     state.cheats.push({ ...cheat });
-    state.message = wasNew ? `Picked NEW cheat: ${cheat.name}` : `Picked: ${cheat.name}`;
+
+    state.message = wasNew
+      ? `Picked NEW cheat: ${cheat.name}`
+      : `Picked: ${cheat.name}`;
   } else {
     state.message = `${cheat.name} already in hand.`;
   }
+
+  state.pendingCheatOptions = [];
+
+  // ✅ THIS IS THE FIX
+  state.justUnlockedCheatIds = [];
+
+  render();
+}
 
   state.pendingCheatOptions = [];
   render();
