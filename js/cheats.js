@@ -73,31 +73,6 @@ function markMetaUnlockedCheats() {
   return newlyUnlocked;
 }
 
-const CHEAT_DESCRIPTIONS = {
-  "Above 9?": "Is the next face down card above 9?",
-  "Below 5?": "Is the next face down card below 5?",
-  "Between 5 and 9?": "Is the value of the next face down card a 5, 6, 7, 8 or 9?",
-  "Total of Next Two": "Reveals the total of the next two face down cards.",
-  "Total of Next Three": "Reveals the total of the next three face down cards.",
-  "Top Half / Bottom Half": "Is the next card below 7 or is it 7 and above?",
-  "Within ±3?": "Is the next card within three above or below the current face card?",
-  "One of Next 2 Higher?": "Reveals if at least one of the next two cards is higher than the current card.",
-  "One of Next 2 Lower?": "Reveals if at least one of the next two cards is lower than the current card.",
-  "Lower of Next Two": "Reveals the lowest value of the next two face down cards.",
-  "Higher of Next Two": "Reveals the highest value of the next two face down cards.",
-  "Difference Between Next 2 Cards": "Reveals the spread between the next two cards by subtracting the lower from the higher.",
-  "Next Card Parity": "Reveals if the next card is odd, even or neither (picture card).",
-  "Chance Higher": "Calculates the probability that one of the remaining cards is higher than the current card.",
-  "Chance Lower": "Calculates the probability that one of the remaining cards is lower than the current card.",
-  "Nudge +1": "Increases the value of the current face card by one.",
-  "Nudge -1": "Decreases the value of the current face card by one.",
-  "Nudge +2": "Increases the value of the current face card by two, stopping at King.",
-  "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
-  "Lucky 7": "Can only be used on a 7. Your next higher/lower guess counts as correct even if it is wrong.",
-  "Swap": "Replace the current face card with the card at the bottom of the deck.",
-  "Tear Corner": "Tear off the top left corner of the current face card (affects future runs).",
-};
-
 const CHEATS = [
   {
     id: "above_9",
@@ -127,21 +102,6 @@ const CHEATS = [
       const next = peekNext();
       if (!next) return "No next card.";
       return next.value < 5 ? "Yes — below 5." : "No — 5 or above.";
-    },
-  },
-  {
-    id: "same_colour",
-    name: "Same Colour?",
-    rarity: "common",
-    weight: 1,
-    included: false,
-    unlockAt: 0,
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next || !state.current) return "No next card.";
-      return isRed(next) === isRed(state.current) ? "Same colour." : "Different colour.";
     },
   },
   {
@@ -330,38 +290,6 @@ const CHEATS = [
     },
   },
   {
-    id: "within_range",
-    name: "Within ±2?",
-    rarity: "common",
-    weight: 1,
-    included: false,
-    unlockAt: 0,
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next || !state.current) return "No next card.";
-      const currentVal = getCurrentEffectiveValue();
-      const diff = Math.abs(next.value - currentVal);
-      return diff <= 2 ? "Within ±2." : "NOT within ±2.";
-    },
-  },
-  {
-    id: "red_black",
-    name: "Reveal Red / Black",
-    rarity: "common",
-    weight: 1,
-    included: false,
-    unlockAt: 0,
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      return isRed(next) ? "Red." : "Black.";
-    },
-  },
-  {
     id: "chance_higher",
     name: "Chance Higher",
     rarity: "common",
@@ -464,6 +392,62 @@ const CHEATS = [
     },
   },
   {
+    id: "halve_it",
+    name: "Halve It",
+    rarity: "uncommon",
+    weight: 1,
+    included: true,
+    unlockAt: 3,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const current = getCurrentEffectiveValue();
+      if (current % 2 !== 0) {
+        return "Halve It can only be used on an even card.";
+      }
+      const nextValue = clampCardValue(Math.floor(current / 2));
+      state.currentValueModifier += nextValue - current;
+      return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
+    },
+  },
+  {
+    id: "double_trouble",
+    name: "Double Trouble",
+    rarity: "rare",
+    weight: 1,
+    included: true,
+    unlockAt: 7,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const current = getCurrentEffectiveValue();
+      const nextValue = clampCardValue(current * 2);
+      state.currentValueModifier += nextValue - current;
+      return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
+    },
+  },
+  {
+    id: "odd_one_out",
+    name: "Odd One Out",
+    rarity: "rare",
+    weight: 1,
+    included: true,
+    unlockAt: 6,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const current = getCurrentEffectiveValue();
+      if (current % 2 === 0 || isPictureCardValue(current)) {
+        return "Odd One Out can only be used on an odd numbered card.";
+      }
+      state.oddOneOutArmed = true;
+      return "Odd One Out armed — if your next guess is correct, you lose.";
+    },
+  },
+  {
     id: "lucky_7",
     name: "Lucky 7",
     rarity: "rare",
@@ -478,6 +462,23 @@ const CHEATS = [
       if (currentVal !== 7) return "Lucky 7 can only be used on a 7.";
       state.lucky7Armed = true;
       return "Lucky 7 armed — your next guess will count as correct.";
+    },
+  },
+  {
+    id: "five_alive",
+    name: "Five Alive",
+    rarity: "rare",
+    weight: 1,
+    included: true,
+    unlockAt: 9,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      if (currentVal !== 5) return "Five Alive can only be used on a 5.";
+      state.fiveAliveArmed = true;
+      return "Five Alive armed — a wrong next guess will still continue the run.";
     },
   },
   {
@@ -590,19 +591,18 @@ function pickCheatFromChoice(index) {
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
 
-if (canAddCheatToHand(cheat)) {
-  const wasNew = !hasCheatBeenDiscovered(cheat.id);
+  if (canAddCheatToHand(cheat)) {
+    const wasNew = !hasCheatBeenDiscovered(cheat.id);
 
-  if (wasNew) {
-    markCheatDiscovered(cheat, "random");
+    if (wasNew) {
+      markCheatDiscovered(cheat, "random");
+    }
+
+    state.cheats.push({ ...cheat });
+    state.message = wasNew ? `Picked NEW cheat: ${cheat.name}` : `Picked: ${cheat.name}`;
+  } else {
+    state.message = `${cheat.name} already in hand.`;
   }
-
-  state.cheats.push({ ...cheat });
-
-  state.message = wasNew
-    ? `Picked NEW cheat: ${cheat.name}`
-    : `Picked: ${cheat.name}`;
-}
 
   state.pendingCheatOptions = [];
   render();
