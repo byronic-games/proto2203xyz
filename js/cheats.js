@@ -73,6 +73,35 @@ function markMetaUnlockedCheats() {
   return newlyUnlocked;
 }
 
+const CHEAT_DESCRIPTIONS = {
+  "Above 9?": "Is the next face down card above 9?",
+  "Below 5?": "Is the next face down card below 5?",
+  "Between 5 and 9?": "Is the value of the next face down card a 5, 6, 7, 8 or 9?",
+  "Total of Next Two": "Reveals the total of the next two face down cards.",
+  "Total of Next Three": "Reveals the total of the next three face down cards.",
+  "Top Half / Bottom Half": "Is the next card below 7 or is it 7 and above?",
+  "Within ±3?": "Is the next card within three above or below the current face card?",
+  "One of Next 2 Higher?": "Reveals if at least one of the next two cards is higher than the current card.",
+  "One of Next 2 Lower?": "Reveals if at least one of the next two cards is lower than the current card.",
+  "Higher of Next Two": "Reveals the highest value of the next two face down cards.",
+  "Lower of Next Two": "Reveals the lowest value of the next two face down cards.",
+  "Difference Between Next 2 Cards": "Reveals the spread between the next two cards by subtracting the lower from the higher.",
+  "Next Card Parity": "Reveals if the next card is odd, even or a picture card.",
+  "Chance Higher": "Calculates the probability that one of the remaining cards is higher than the current card.",
+  "Chance Lower": "Calculates the probability that one of the remaining cards is lower than the current card.",
+  "Nudge +1": "Increases the value of the current face card by one for the next guess.",
+  "Nudge -1": "Decreases the value of the current face card by one for the next guess.",
+  "Nudge +2": "Increases the value of the current face card by two, stopping at King.",
+  "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
+  "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
+  "Double Trouble": "Treat the current card as double its value for the next guess, up to King.",
+  "Odd One Out": "Can only be used on an odd numbered card. If your next guess is correct, you lose.",
+  "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
+  "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
+  "Swap": "Replace the current face card with the card at the bottom of the deck.",
+  "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
+};
+
 const CHEATS = [
   {
     id: "above_9",
