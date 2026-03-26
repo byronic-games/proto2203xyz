@@ -313,6 +313,16 @@ function renderSeenGrid() {
       grid.appendChild(cell);
     }
   }
+
+  let note = document.getElementById("seen-grid-note");
+  if (!note) {
+    note = document.createElement("div");
+    note.id = "seen-grid-note";
+    grid.insertAdjacentElement("afterend", note);
+  }
+
+  note.className = "seen-grid-note";
+  note.innerText = "J = 11   •   Q = 12   •   K = 13";
 }
 
 function renderMessage() {
