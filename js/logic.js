@@ -245,20 +245,59 @@ function makeGuess(type) {
   state.fiveAliveArmed = false;
   state.oddOneOutArmed = false;
 
-  if (next.value === currentComparisonValue) {
-    if (oddOneOutWasArmed) {
+  const nextIsOddForOddOneOut =
+    next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
+
+  if (oddOneOutWasArmed) {
+    if (nextIsOddForOddOneOut) {
       recordCurrentCardGuess(state.current, false);
       recordFaceDownOutcome(next, true);
       advanceToCard(next);
       state.currentValueModifier = 0;
       state.streak = 0;
-      state.message = `💀 Odd One Out! Match counted against you — it was ${describeCard(next)}.`;
+      state.message = `💀 Odd One Out! ${describeCard(next)} is odd, so the run ends.`;
       state.gameOver = true;
       updateBestScoreIfNeeded();
       render();
       return;
     }
 
+    recordCurrentCardGuess(state.current, true);
+    recordFaceDownOutcome(next, false);
+    advanceToCard(next);
+    state.correctAnswers += 1;
+    state.currentValueModifier = 0;
+    state.streak += 1;
+    addMetaProgression(1);
+    updateBestScoreIfNeeded();
+
+    if (state.index >= state.deck.length - 1) {
+      state.message = " YOU CLEARED THE DECK!";
+      state.gameOver = true;
+      render();
+      return;
+    }
+
+    const powerAwards = awardOnCorrectGuessPowers(type);
+
+    if (state.streak >= 3) {
+      state.streak = 0;
+      offerCheatChoice();
+      return;
+    }
+
+    if (powerAwards.length > 0) {
+      state.message = `✅ Odd One Out! Safe card — power gained: ${powerAwards.join(", ")}.`;
+      render();
+      return;
+    }
+
+    state.message = `✅ Odd One Out! Safe card — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (next.value === currentComparisonValue) {
     recordFaceDownOutcome(next, false);
     advanceToCard(next);
     state.currentValueModifier = 0;
@@ -296,6 +335,89 @@ function makeGuess(type) {
     render();
     return;
   }
+
+  const normallyCorrect =
+    (type === "higher" && next.value > currentComparisonValue) ||
+    (type === "lower" && next.value < currentComparisonValue);
+
+  const rescuedByLucky7 = !normallyCorrect && lucky7WasArmed;
+  const rescuedByFiveAlive = !normallyCorrect && fiveAliveWasArmed;
+  const finalCorrect = normallyCorrect || rescuedByLucky7 || rescuedByFiveAlive;
+
+  if (!finalCorrect) {
+    recordCurrentCardGuess(state.current, false);
+    recordFaceDownOutcome(next, true);
+    advanceToCard(next);
+    state.currentValueModifier = 0;
+    state.streak = 0;
+    state.message = `❌ Wrong! It was ${describeCard(next)}.`;
+    state.gameOver = true;
+    updateBestScoreIfNeeded();
+    render();
+    return;
+  }
+
+  recordCurrentCardGuess(state.current, true);
+  recordFaceDownOutcome(next, false);
+  advanceToCard(next);
+  state.correctAnswers += 1;
+  state.currentValueModifier = 0;
+  state.streak += 1;
+  addMetaProgression(1);
+  updateBestScoreIfNeeded();
+
+  if (state.index >= state.deck.length - 1) {
+    state.message = " YOU CLEARED THE DECK!";
+    state.gameOver = true;
+    render();
+    return;
+  }
+
+  const powerAwards = awardOnCorrectGuessPowers(type);
+
+  if (state.streak >= 3) {
+    state.streak = 0;
+    offerCheatChoice();
+    return;
+  }
+
+  if (rescuedByLucky7) {
+    state.message = `🍀 Lucky 7! Counted as correct — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (rescuedByFiveAlive) {
+    state.message = `🖐️ Five Alive! Wrong guess survived — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (powerAwards.length > 0) {
+    state.message = `✅ Correct! Power gained: ${powerAwards.join(", ")}.`;
+    render();
+    return;
+  }
+
+  if (normallyCorrect && lucky7WasArmed) {
+    state.message = "✅ Correct! Lucky 7 was spent.";
+    render();
+    return;
+  }
+
+  if (normallyCorrect && fiveAliveWasArmed) {
+    state.message = "✅ Correct! Five Alive was spent.";
+    render();
+    return;
+  }
+
+  state.message =
+    runHasPower("stats_display") && runHasPower("nudge_engine")
+      ? "✅ Correct! Stats was active, so no Nudge was awarded."
+      : "✅ Correct!";
+
+  render();
+}
 
   const normallyCorrect =
     (type === "higher" && next.value > currentComparisonValue) ||
