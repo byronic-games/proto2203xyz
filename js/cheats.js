@@ -633,13 +633,6 @@ function pickCheatFromChoice(index) {
   }
 
   state.pendingCheatOptions = [];
-
-  // ✅ THIS IS THE FIX
   state.justUnlockedCheatIds = [];
-
-  render();
-}
-
-  state.pendingCheatOptions = [];
   render();
 }
