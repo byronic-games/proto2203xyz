@@ -181,10 +181,15 @@ function addMissingCheatsForDebug() {
 
   const added = [];
   for (const cheat of CHEATS) {
-    if (canAddCheatToHand(cheat)) {
-      state.cheats.push({ ...cheat });
-      added.push(cheat.name);
-    }
+    const alreadyHeld =
+      cheat.stacking !== "stackable" &&
+      cheat.stacking !== "repeatable" &&
+      state.cheats.some((c) => c.id === cheat.id);
+
+    if (!cheat.included || alreadyHeld) continue;
+
+    state.cheats.push({ ...cheat });
+    added.push(cheat.name);
   }
 
   state.message =
@@ -223,3 +228,198 @@ function fullResetAllStateForDebug() {
   render();
 }
 
+function makeGuess(type) {
+  state.restartConfirmArmed = false;
+
+  if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0) {
+    return;
+  }
+
+  const next = peekNext();
+  if (!next) return;
+
+  const currentComparisonValue = getCurrentEffectiveValue();
+  const el = document.getElementById("next-info");
+  if (el) el.innerText = "";
+
+  const lucky7WasArmed = !!state.lucky7Armed;
+  const fiveAliveWasArmed = !!state.fiveAliveArmed;
+  const oddOneOutWasArmed = !!state.oddOneOutArmed;
+
+  state.lucky7Armed = false;
+  state.fiveAliveArmed = false;
+  state.oddOneOutArmed = false;
+
+  const nextIsOddForOddOneOut =
+    next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
+
+  if (oddOneOutWasArmed) {
+    if (nextIsOddForOddOneOut) {
+      recordCurrentCardGuess(state.current, false);
+      recordFaceDownOutcome(next, true);
+      advanceToCard(next);
+      state.currentValueModifier = 0;
+      state.streak = 0;
+      state.message = `💀 Odd One Out! ${describeCard(next)} is odd, so the run ends.`;
+      state.gameOver = true;
+      updateBestScoreIfNeeded();
+      render();
+      return;
+    }
+
+    recordCurrentCardGuess(state.current, true);
+    recordFaceDownOutcome(next, false);
+    advanceToCard(next);
+    state.correctAnswers += 1;
+    state.currentValueModifier = 0;
+    state.streak += 1;
+    addMetaProgression(1);
+    updateBestScoreIfNeeded();
+
+    if (state.index >= state.deck.length - 1) {
+      state.message = " YOU CLEARED THE DECK!";
+      state.gameOver = true;
+      render();
+      return;
+    }
+
+    const powerAwards = awardOnCorrectGuessPowers(type);
+
+    if (state.streak >= 3) {
+      state.streak = 0;
+      offerCheatChoice();
+      return;
+    }
+
+    if (powerAwards.length > 0) {
+      state.message = `✅ Odd One Out! Safe card — power gained: ${powerAwards.join(", ")}.`;
+      render();
+      return;
+    }
+
+    state.message = `✅ Odd One Out! Safe card — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (next.value === currentComparisonValue) {
+    recordFaceDownOutcome(next, false);
+    advanceToCard(next);
+    state.currentValueModifier = 0;
+    state.streak += 1;
+    addMetaProgression(1);
+
+    if (state.index >= state.deck.length - 1) {
+      state.correctAnswers += 1;
+      updateBestScoreIfNeeded();
+      state.message = " YOU CLEARED THE DECK!";
+      state.gameOver = true;
+      render();
+      return;
+    }
+
+    if (state.streak >= 3) {
+      state.streak = 0;
+      offerCheatChoice();
+      return;
+    }
+
+    if (lucky7WasArmed) {
+      state.message = "✅ Match! Lucky 7 was spent.";
+      render();
+      return;
+    }
+
+    if (fiveAliveWasArmed) {
+      state.message = "✅ Match! Five Alive was spent.";
+      render();
+      return;
+    }
+
+    state.message = "✅ Match!";
+    render();
+    return;
+  }
+
+  const normallyCorrect =
+    (type === "higher" && next.value > currentComparisonValue) ||
+    (type === "lower" && next.value < currentComparisonValue);
+
+  const rescuedByLucky7 = !normallyCorrect && lucky7WasArmed;
+  const rescuedByFiveAlive = !normallyCorrect && fiveAliveWasArmed;
+  const finalCorrect = normallyCorrect || rescuedByLucky7 || rescuedByFiveAlive;
+
+  if (!finalCorrect) {
+    recordCurrentCardGuess(state.current, false);
+    recordFaceDownOutcome(next, true);
+    advanceToCard(next);
+    state.currentValueModifier = 0;
+    state.streak = 0;
+    state.message = `❌ Wrong! It was ${describeCard(next)}.`;
+    state.gameOver = true;
+    updateBestScoreIfNeeded();
+    render();
+    return;
+  }
+
+  recordCurrentCardGuess(state.current, true);
+  recordFaceDownOutcome(next, false);
+  advanceToCard(next);
+  state.correctAnswers += 1;
+  state.currentValueModifier = 0;
+  state.streak += 1;
+  addMetaProgression(1);
+  updateBestScoreIfNeeded();
+
+  if (state.index >= state.deck.length - 1) {
+    state.message = " YOU CLEARED THE DECK!";
+    state.gameOver = true;
+    render();
+    return;
+  }
+
+  const powerAwards = awardOnCorrectGuessPowers(type);
+
+  if (state.streak >= 3) {
+    state.streak = 0;
+    offerCheatChoice();
+    return;
+  }
+
+  if (rescuedByLucky7) {
+    state.message = `🍀 Lucky 7! Counted as correct — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (rescuedByFiveAlive) {
+    state.message = `🖐️ Five Alive! Wrong guess survived — it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+
+  if (powerAwards.length > 0) {
+    state.message = `✅ Correct! Power gained: ${powerAwards.join(", ")}.`;
+    render();
+    return;
+  }
+
+  if (normallyCorrect && lucky7WasArmed) {
+    state.message = "✅ Correct! Lucky 7 was spent.";
+    render();
+    return;
+  }
+
+  if (normallyCorrect && fiveAliveWasArmed) {
+    state.message = "✅ Correct! Five Alive was spent.";
+    render();
+    return;
+  }
+
+  state.message =
+    runHasPower("stats_display") && runHasPower("nudge_engine")
+      ? "✅ Correct! Stats was active, so no Nudge was awarded."
+      : "✅ Correct!";
+
+  render();
+}
