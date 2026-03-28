@@ -3,118 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Higher / Lower Prototype</title>
+  <title>52! — Higher / Lower</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="game">
-    <h1>52 Highs & Lows</h1>
+  <div id="game-shell">
+    <div class="bg-orb bg-orb-a"></div>
+    <div class="bg-orb bg-orb-b"></div>
 
-    <div id="top-bar">
-      <div class="score-box">
-        <div class="score-label">Run Seed</div>
-        <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
-        <div style="margin-top:6px; display:flex; gap:6px; justify-content:center;">
-          <button id="random-seed-btn" type="button">Restart</button>
-          <button id="copy-seed-btn" type="button">Copy</button>
-        </div>
-        <div id="current-seed"></div>
-      </div>
-      <div class="score-box">
-        <div class="score-label">Start Run Power</div>
-        <select id="start-power-select"></select>
-      </div>
-      <div class="score-box">
-        <div class="score-label">Correct This Run</div>
-        <div id="score">0</div>
-      </div>
-      <div class="score-box">
-        <div class="score-label">Best Score</div>
-        <div id="best-score">0</div>
-      </div>
-      <div class="score-box">
-        <div class="score-label">Meta Progression</div>
-        <div id="meta-progression">0</div>
-      </div>
-    </div>
-
-    <<div id="main-layout">
-
-  <div id="instructions-panel">
-    <div id="instructions-box">
-      <h3>How To Play</h3>
-      <div id="instructions-text">
-        Guess whether the next card will be HIGHER or LOWER.<br><br>
-        Cards of equal value continue streak. Aces are low.<br><br>
-        Every 3 in a row lets you choose a Cheat.<br><br>
-        Cheats can bend the rules — use them wisely.<br><br>
-        Try to beat the 52 card deck.
-      </div>
-    </div>
-
-    <div id="cheat-guide-box">
-      <h3>Cheat Info</h3>
-      <div id="cheat-guide-list"></div>
-    </div>
-  </div>
-
-  <div id="left-panel">
-
-    <div id="card-area">
-
-      <div id="card-row">
-        <div class="card-column">
-          <div id="current-card" class="card-face">?</div>
-          <div id="current-effective-value"></div>
+    <div id="game">
+      <header id="app-header" class="panel neon-panel">
+        <div class="title-lockup">
+          <div class="eyebrow">Higher / Lower Roguelike</div>
+          <h1>52!</h1>
+          <div class="subhead">Push your streak. Bend the deck. Learn what the cards remember.</div>
         </div>
 
-        <div class="card-column">
-          <div id="face-down-deck" class="card-back"></div>
-          <div id="face-down-count"></div>
+        <div id="top-bar">
+          <div class="score-box metric-card seed-card">
+            <div class="score-label">Run Seed</div>
+            <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
+            <div class="seed-actions">
+              <button id="random-seed-btn" type="button">Restart</button>
+              <button id="copy-seed-btn" type="button">Copy</button>
+            </div>
+            <div id="current-seed"></div>
+          </div>
+
+          <div class="score-box metric-card">
+            <div class="score-label">Start Run Power</div>
+            <select id="start-power-select"></select>
+          </div>
+
+          <div class="score-box metric-card stat-glow stat-glow-cyan">
+            <div class="score-label">Correct This Run</div>
+            <div id="score">0</div>
+          </div>
+
+          <div class="score-box metric-card stat-glow stat-glow-pink">
+            <div class="score-label">Best Score</div>
+            <div id="best-score">0</div>
+          </div>
+
+          <div class="score-box metric-card stat-glow stat-glow-gold">
+            <div class="score-label">Meta Progression</div>
+            <div id="meta-progression">0</div>
+          </div>
         </div>
+      </header>
+
+      <div id="main-layout">
+        <aside id="instructions-panel" class="rail-stack">
+          <section id="instructions-box" class="panel side-panel">
+            <div class="panel-heading-row">
+              <div>
+                <div class="panel-kicker">Run Rules</div>
+                <h3>How To Play</h3>
+              </div>
+            </div>
+            <div id="instructions-text">
+              Guess whether the next card will be <strong>HIGHER</strong> or <strong>LOWER</strong>.<br><br>
+              Equal values keep the run alive. Aces are low.<br><br>
+              Every 3 correct in a row lets you choose a Cheat.<br><br>
+              Cheats bend the rules, but only if you use them at the right moment.<br><br>
+              Beat the full 52-card deck.
+            </div>
+          </section>
+
+          <section id="cheat-guide-box" class="panel side-panel">
+            <div class="panel-heading-row">
+              <div>
+                <div class="panel-kicker">Live Reference</div>
+                <h3>Cheat Info</h3>
+              </div>
+            </div>
+            <div id="cheat-guide-list"></div>
+          </section>
+        </aside>
+
+        <main id="left-panel" class="play-stack">
+          <section id="card-area" class="panel stage-panel">
+            <div class="panel-heading-row stage-heading">
+              <div>
+                <div class="panel-kicker">Table</div>
+                <h3>Current Play</h3>
+              </div>
+              <div id="next-info" class="support-copy"></div>
+            </div>
+
+            <div id="card-row">
+              <div class="card-column hero-card-column">
+                <div class="pile-label">Current Card</div>
+                <div id="current-card" class="card-face">?</div>
+                <div id="current-effective-value"></div>
+              </div>
+
+              <div class="card-column hero-card-column">
+                <div class="pile-label">Next Card</div>
+                <div id="face-down-deck" class="card-back"></div>
+                <div id="face-down-count"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="controls-panel" class="panel action-panel">
+            <div class="panel-heading-row compact-heading">
+              <div>
+                <div class="panel-kicker">Decision</div>
+                <h3>Make Your Call</h3>
+              </div>
+            </div>
+
+            <div id="controls">
+              <button id="higher-btn">HIGHER</button>
+              <button id="lower-btn">LOWER</button>
+            </div>
+          </section>
+
+          <section id="cheats" class="panel cheats-panel">
+            <div class="panel-heading-row compact-heading">
+              <div>
+                <div class="panel-kicker">Toolkit</div>
+                <h3>Cheats In Hand</h3>
+              </div>
+            </div>
+            <div id="cheat-list"></div>
+
+            <div id="cheat-choice-container">
+              <div class="panel-heading-row compact-heading choice-heading">
+                <div>
+                  <div class="panel-kicker">Reward</div>
+                  <h3>Choose 1 Cheat</h3>
+                </div>
+              </div>
+              <div id="cheat-choice-list"></div>
+            </div>
+          </section>
+
+          <section id="message-panel" class="panel message-panel">
+            <div class="panel-kicker">Run Feed</div>
+            <div id="message"></div>
+          </section>
+
+          <button id="restart-btn">Start Run</button>
+        </main>
+
+        <aside id="right-panel" class="rail-stack">
+          <section class="panel side-panel">
+            <div class="panel-heading-row">
+              <div>
+                <div class="panel-kicker">Memory Grid</div>
+                <h3>Cards Seen This Run</h3>
+              </div>
+            </div>
+            <div id="seen-grid"></div>
+          </section>
+
+          <section id="powers-area" class="panel side-panel">
+            <div class="panel-heading-row">
+              <div>
+                <div class="panel-kicker">Run Modifiers</div>
+                <h3>Active Powers</h3>
+              </div>
+            </div>
+            <div id="active-powers">No active Powers.</div>
+          </section>
+
+          <section id="swap-area" class="panel side-panel">
+            <div class="panel-heading-row">
+              <div>
+                <div class="panel-kicker">Reserve</div>
+                <h3>Card In Hand</h3>
+              </div>
+            </div>
+            <div id="swap-card">Empty</div>
+          </section>
+        </aside>
       </div>
-
-      <div id="next-info"></div>
-
-    </div>
-
-    <div id="controls">
-      <button id="higher-btn">HIGHER</button>
-      <button id="lower-btn">LOWER</button>
-    </div>
-
-    <div id="cheats">
-      <h3>Cheats In Hand</h3>
-      <div id="cheat-list"></div>
-
-      <div id="cheat-choice-container">
-        <h3>Choose 1 Cheat</h3>
-        <div id="cheat-choice-list"></div>
-      </div>
-    </div>
-
-    <div id="message"></div>
-
-    <button id="restart-btn">Start Run</button>
-
-  </div>
-
-  <div id="right-panel">
-    <h3>Cards Seen This Run</h3>
-    <div id="seen-grid"></div>
-
-    <div id="powers-area" style="margin-top: 12px;">
-      <h3>Active Powers</h3>
-      <div id="active-powers">No active Powers.</div>
-    </div>
-
-    <div id="swap-area">
-      <h3>Card In Hand</h3>
-      <div id="swap-card">Empty</div>
     </div>
   </div>
-
-</div>
 
   <script src="js/constants.js"></script>
   <script src="js/storage.js"></script>
@@ -125,6 +192,5 @@
   <script src="js/render.js"></script>
   <script src="js/input.js"></script>
   <script src="js/main.js"></script>
-
 </body>
 </html>
