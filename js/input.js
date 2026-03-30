@@ -41,12 +41,53 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
+function closeDeckStatsTooltip() {
+  if (!state.deckStatsTooltipOpen) return;
+  state.deckStatsTooltipOpen = false;
+  renderFaceDownDeck();
+}
+
+let ignoreNextDeckClick = false;
+
+document.getElementById("face-down-deck")?.addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "touch") return;
+  if (!runHasPower("stats_display")) return;
+  if (!peekNext()) return;
+
+  state.deckStatsTooltipOpen = true;
+  renderFaceDownDeck();
+  ignoreNextDeckClick = true;
+});
+
 document.getElementById("face-down-deck")?.addEventListener("click", () => {
+  if (ignoreNextDeckClick) {
+    ignoreNextDeckClick = false;
+    return;
+  }
+
   if (!runHasPower("stats_display")) return;
   if (!peekNext()) return;
 
   state.deckStatsTooltipOpen = !state.deckStatsTooltipOpen;
   renderFaceDownDeck();
+});
+
+window.addEventListener("pointerup", (e) => {
+  if (e.pointerType !== "touch") return;
+  closeDeckStatsTooltip();
+});
+
+window.addEventListener("pointercancel", (e) => {
+  if (e.pointerType !== "touch") return;
+  closeDeckStatsTooltip();
+});
+
+window.addEventListener("touchend", () => {
+  closeDeckStatsTooltip();
+});
+
+window.addEventListener("touchcancel", () => {
+  closeDeckStatsTooltip();
 });
 
 window.addEventListener(
@@ -61,8 +102,7 @@ window.addEventListener(
     if (!(target instanceof Element)) return;
     if (tooltip?.contains(target) || deckEl?.contains(target)) return;
 
-    state.deckStatsTooltipOpen = false;
-    renderFaceDownDeck();
+    closeDeckStatsTooltip();
   },
   true
 );
