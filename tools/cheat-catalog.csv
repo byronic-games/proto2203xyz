@@ -1,13 +1,13 @@
 id,name,rarity,unlockAt,included,stacking,weight,poolExcludedIfPowerOwned,conditions,description
-above_9,Above 9?,uncommon,10,TRUE,unique,1,,Available from run start,Is the next face down card above 9?
-below_5,Below 5?,uncommon,15,TRUE,unique,1,,Available from run start,Is the next face down card below 5?
-mid_range,Between 5 and 9?,uncommon,15,TRUE,unique,1,,Available from run start,"Is the value of the next face down card a 5, 6, 7, 8 or 9?"
+above_9,Above 9?,uncommon,5,TRUE,unique,1,,Available from run start,Is the next face down card above 9?
+below_5,Below 5?,uncommon,10,TRUE,unique,1,,Available from run start,Is the next face down card below 5?
+mid_range,Between 5 and 9?,uncommon,0,TRUE,unique,1,,Available from run start,"Is the value of the next face down card a 5, 6, 7, 8 or 9?"
 is_it_an_ace,Is it an Ace?,uncommon,25,TRUE,unique,1,,Available from run start,Reveals whether the next face down card is an Ace.
 is_it_a_king,Is it a King?,uncommon,25,TRUE,unique,1,,Available from run start,Reveals whether the next face down card is a King.
 ace_ahead,Ace ahead?,uncommon,30,TRUE,unique,1,,Meta progression >= 2,Reveals whether at least one Ace appears in the next three face down cards.
 king_ahead,King ahead?,uncommon,30,TRUE,unique,1,,Meta progression >= 2,Reveals whether at least one King appears in the next three face down cards.
 number_remaining,Number Remaining?,rare,35,TRUE,unique,1,,Meta progression >= 3,"Reveals how many copies of the next face down card's rank are still left in the deck, including that next card."
-next_two_total,Total of Next Two,uncommon,35,TRUE,unique,1,,Available from run start,Reveals the total of the next two face down cards.
+next_two_total,Total of Next Two,uncommon,5,TRUE,unique,1,,Available from run start,Reveals the total of the next two face down cards.
 next_three_total,Total of Next Three,rare,40,TRUE,unique,1,,Meta progression >= 6,Reveals the total of the next three face down cards.
 top_half_bottom_half,Top Half / Bottom Half,common,40,TRUE,unique,1,,Available from run start,Is the next card below 7 or is it 7 and above?
 within_range,Within ±3?,uncommon,20,TRUE,unique,1,,Available from run start,Is the next card within 3 above or below the current face card?
@@ -16,7 +16,7 @@ one_of_next_two_lower,One of Next 2 Lower?,uncommon,30,TRUE,unique,1,,Available 
 higher_of_next_two,Higher of Next Two,uncommon,45,TRUE,unique,1,,Available from run start,Reveals the highest value of the next two face down cards.
 lower_of_next_two,Lower of Next Two,uncommon,45,TRUE,unique,1,,Available from run start,Reveals the lowest value of the next two face down cards.
 difference_of_next_two,Difference Between Next 2 Cards,uncommon,25,TRUE,unique,1,,Meta progression >= 4,Reveals the spread between the next two cards by subtracting the lower from the higher.
-next_card_parity,Next Card Parity,common,10,TRUE,unique,1,,Available from run start,"Reveals if the next card is odd, even or a picture card."
+next_card_parity,Next Card Parity,common,0,TRUE,unique,1,,Available from run start,"Reveals if the next card is odd, even or a picture card."
 chance_higher,Chance Higher,rare,50,TRUE,unique,1,,Available from run start,Calculates the probability that one of the remaining cards is higher than the current card.
 chance_lower,Chance Lower,rare,50,TRUE,unique,1,,Available from run start,Calculates the probability that one of the remaining cards is lower than the current card.
 nudge_up,Nudge +1,common,0,TRUE,stackable,1,nudge_engine,Available from run start | Excluded when power 'nudge_engine' is active,Increases the value of the current face card by one for the next guess.
@@ -28,5 +28,5 @@ double_trouble,Double Trouble,rare,55,TRUE,unique,1,,Meta progression >= 7,"Trea
 odd_one_out,Odd One Out,rare,30,TRUE,unique,1,,Meta progression >= 6,"For the next card only: if it is odd, you lose. Otherwise you survive."
 lucky_7,Lucky 7,rare,10,TRUE,unique,1,,Meta progression >= 8 | Can only be used on a 7.,Can only be used on a 7. Your next wrong guess still counts as correct.
 five_alive,Five Alive,rare,10,TRUE,unique,1,,Meta progression >= 9 | Can only be used on a 5.,"Can only be used on a 5. If your next guess is wrong, the run still continues."
-tear_corner,Tear Corner,common,0,TRUE,unique,1,,Available from run start,Tear off the top left corner of the current face card so it can be recognised in future runs.
+tear_corner,Tear Corner,common,45,TRUE,unique,1,,Available from run start,Tear off the top left corner of the current face card so it can be recognised in future runs.
 swap,Swap,uncommon,0,TRUE,repeatable,1,,Available from run start,Replace the current face card with the card at the bottom of the deck.
