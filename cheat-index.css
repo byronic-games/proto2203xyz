@@ -1,0 +1,152 @@
+:root {
+  --bg: #080c18;
+  --panel: #111a2f;
+  --line: rgba(130, 156, 210, 0.35);
+  --text: #eaf1ff;
+  --muted: #9db0d9;
+  --chip: #1b2746;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", "Segoe UI", Tahoma, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 15% 10%, rgba(99, 221, 255, 0.12), transparent 26%), var(--bg);
+}
+
+.catalog-shell {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.catalog-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+}
+
+.catalog-header p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.header-actions a {
+  display: inline-block;
+  text-decoration: none;
+  color: #07121f;
+  background: linear-gradient(180deg, #9defff 0%, #61dcff 100%);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 700;
+}
+
+.panel {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), var(--panel);
+  padding: 14px;
+}
+
+.panel-top {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.panel-top label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+#cheat-search {
+  width: min(560px, 100%);
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0b1327;
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+#download-csv-btn {
+  width: fit-content;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #07121f;
+  font-weight: 700;
+  background: linear-gradient(180deg, #ffd57f 0%, #ffb646 100%);
+}
+
+.summary {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9rem;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: #131e39;
+  z-index: 1;
+}
+
+.rarity-chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--chip);
+}
+
+.rarity-common { background: #314267; }
+.rarity-uncommon { background: #28535c; }
+.rarity-rare { background: #5a3f89; }
+.rarity-legendary { background: #7a3954; }
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 740px) {
+  .catalog-shell {
+    padding: 10px;
+  }
+}

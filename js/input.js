@@ -49,6 +49,41 @@ document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
   useNudgeCharge("down");
 });
 
+const scoreEl = document.getElementById("score");
+let debugScoreTapCount = 0;
+let debugScoreTapWindowTimer = null;
+
+function resetDebugScoreTapSequence() {
+  debugScoreTapCount = 0;
+  if (debugScoreTapWindowTimer) {
+    clearTimeout(debugScoreTapWindowTimer);
+    debugScoreTapWindowTimer = null;
+  }
+}
+
+scoreEl?.addEventListener("click", () => {
+  if (!window.testModeEnabled) return;
+
+  debugScoreTapCount += 1;
+
+  if (debugScoreTapWindowTimer) {
+    clearTimeout(debugScoreTapWindowTimer);
+  }
+
+  debugScoreTapWindowTimer = setTimeout(() => {
+    resetDebugScoreTapSequence();
+  }, 2200);
+
+  if (debugScoreTapCount >= 10) {
+    resetDebugScoreTapSequence();
+    fullResetAllStateForDebug();
+    return;
+  }
+
+  state.message = ` Debug: tap score ${debugScoreTapCount}/10 for FULL RESET.`;
+  renderMessage();
+});
+
 function closeVictoryModal() {
   const modal = document.getElementById("victory-modal");
   if (!modal) return;

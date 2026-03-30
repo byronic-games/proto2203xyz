@@ -334,3 +334,35 @@ This project provides:
 * Clean separation of logic, state, and UI
 
 The foundation is solid — next phase is **depth, balance, and feel**.
+
+---
+
+## Cheat Catalog (Balancing)
+
+Use cheat-index.html to get a live catalog of cheats from js/cheats.js.
+
+It shows:
+
+* rarity
+* unlock level (unlockAt)
+* inclusion/exclusion rules
+* stacking behavior
+* descriptions
+
+You can also click **Download CSV** on that page for spreadsheet balancing.
+
+
+## CSV Import (Cheat Balancing)
+
+You can re-import cheat balancing changes from CSV without editing `js/cheats.js` directly.
+
+1. Open `cheat-index.html` and click **Download CSV**.
+2. Edit the CSV values (`name`, `rarity`, `unlockAt`, `included`, `stacking`, `weight`, `poolExcludedIfPowerOwned`, `description`).
+3. Save the CSV to the repo root (for example `cheat-catalog.csv`).
+4. Run:
+
+```powershell
+.\tools\import-cheats.ps1 -CsvPath .\cheat-catalog.csv -OutputPath .\js\cheat-balance-overrides.js
+```
+
+The game and cheat index both load `js/cheat-balance-overrides.js` automatically.
