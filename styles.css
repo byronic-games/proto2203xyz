@@ -526,33 +526,55 @@ h1 {
 }
 
 .nudge-arrow {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 46px;
   border: 0;
+  border-radius: 12px;
+  position: relative;
   display: grid;
   place-items: center;
   color: #f5fbff;
   font-weight: 900;
   font-size: 0.86rem;
+  background: transparent;
+  box-shadow: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nudge-arrow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
   background: linear-gradient(180deg, #7f4cff 0%, #5630cf 100%);
   box-shadow: 0 8px 14px rgba(0,0,0,0.35), 0 0 14px rgba(154,88,255,0.3);
 }
 
-.nudge-arrow.nudge-up {
+.nudge-arrow.nudge-up::before {
   clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
-.nudge-arrow.nudge-down {
+.nudge-arrow.nudge-down::before {
   clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
 }
 
 .nudge-arrow:disabled {
+  color: rgba(245, 251, 255, 0.56);
+}
+
+.nudge-arrow:disabled::before {
   opacity: 0.42;
   filter: saturate(0.7);
   box-shadow: 0 6px 10px rgba(0,0,0,0.26);
 }
 
 .nudge-arrow span {
+  position: relative;
+  z-index: 1;
   transform: translateY(3px);
 }
 
@@ -1305,7 +1327,7 @@ h1 {
 
   .current-card-wrap {
     display: grid;
-    grid-template-columns: 44px var(--card-size);
+    grid-template-columns: 56px var(--card-size);
     align-items: center;
     column-gap: 10px;
     justify-content: center;
@@ -1320,9 +1342,14 @@ h1 {
   }
 
   .nudge-arrow {
-    width: 38px;
-    height: 38px;
+    width: 50px;
+    height: 44px;
     font-size: 0.82rem;
+  }
+
+  .nudge-arrow::before {
+    width: 36px;
+    height: 36px;
   }
 
   #controls button {
@@ -1411,10 +1438,20 @@ h1 {
     padding-inline: 8px;
   }
 
+  .current-card-wrap {
+    grid-template-columns: 52px var(--card-size);
+    column-gap: 8px;
+  }
+
   .nudge-arrow {
-    width: 36px;
-    height: 36px;
+    width: 46px;
+    height: 42px;
     font-size: 0.78rem;
+  }
+
+  .nudge-arrow::before {
+    width: 34px;
+    height: 34px;
   }
 
   .nudge-stack {

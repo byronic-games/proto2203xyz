@@ -26,6 +26,7 @@
 
       <div class="intro-actions">
         <a class="play-button" href="game.html">Click To Play</a>
+        <button class="howto-button" id="howto-open-btn" type="button">How To Play</button>
         <a class="heroes-button" href="heroes.html">52! Heroes!</a>
       </div>
     </section>
@@ -35,6 +36,74 @@
       <div class="fancy-card card-2">Q?</div>
       <div class="fancy-card card-3">7?</div>
     </aside>
+
+    <section id="howto-modal" class="howto-modal hidden" aria-hidden="true">
+      <div class="howto-backdrop" id="howto-close-backdrop"></div>
+      <article class="howto-dialog" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+        <h2 id="howto-title">How To Play</h2>
+
+        <div class="howto-block">
+          <h3>Brief Intro</h3>
+          <p>
+            Every run starts from a seeded 52-card deck. Your goal is simple and brutal:
+            predict whether each next card is higher or lower than the current one, all the way to the end.
+          </p>
+        </div>
+
+        <div class="howto-block">
+          <h3>Guide</h3>
+          <ol>
+            <li>Press <strong>Click To Play</strong> and start a run.</li>
+            <li>You will see a current face-up card and the next card face-down.</li>
+            <li>Choose <strong>HIGHER</strong> or <strong>LOWER</strong> for the next card.</li>
+            <li>Equal value cards count as safe and your run continues.</li>
+            <li>Build streaks to earn cheats; use them at the right moment.</li>
+            <li>If you clear all 52 cards, your seed can be recorded on the heroes board.</li>
+          </ol>
+        </div>
+
+        <div class="howto-block">
+          <h3>Nudges & Cheats</h3>
+          <ul>
+            <li><strong>Nudges:</strong> Use the up/down arrows beside the current card to temporarily shift its judged value before your next guess.</li>
+            <li><strong>Temporary values:</strong> If a card is modified, it is marked as temporary and the run log uses the judged value for that comparison.</li>
+            <li><strong>Cheats in Hand:</strong> Tap a cheat card to activate it. Some stack, some are one-shot, and timing is everything.</li>
+            <li><strong>On mobile:</strong> Swipe the cheat row to view more cheats, then tap to use.</li>
+          </ul>
+        </div>
+
+        <button id="howto-close-btn" class="howto-close-btn" type="button">Close</button>
+      </article>
+    </section>
   </main>
+
+  <script>
+    (function () {
+      const modal = document.getElementById("howto-modal");
+      const openBtn = document.getElementById("howto-open-btn");
+      const closeBtn = document.getElementById("howto-close-btn");
+      const closeBackdrop = document.getElementById("howto-close-backdrop");
+
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop) return;
+
+      function openModal() {
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+      }
+
+      openBtn.addEventListener("click", openModal);
+      closeBtn.addEventListener("click", closeModal);
+      closeBackdrop.addEventListener("click", closeModal);
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeModal();
+      });
+    })();
+  </script>
 </body>
 </html>
