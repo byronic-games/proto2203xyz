@@ -1306,13 +1306,18 @@ h1 {
   }
 
   .nudge-arrow {
-    width: 34px;
-    height: 34px;
-    font-size: 0.76rem;
+    width: 42px;
+    height: 42px;
+    font-size: 0.9rem;
   }
 
   .nudge-stack {
-    right: calc(100% + 6px);
+    right: calc(100% - 2px);
+    gap: 10px;
+  }
+
+  .nudge-label {
+    font-size: 0.64rem;
   }
 
   #controls {
