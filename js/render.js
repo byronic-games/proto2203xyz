@@ -1,0 +1,553 @@
+function renderScores() {
+  document.getElementById("score").innerText = state.correctAnswers;
+  document.getElementById("best-score").innerText = state.bestScore;
+
+  const metaEl = document.getElementById("meta-progression");
+  if (metaEl) {
+    metaEl.innerText = state.metaProgression ?? 0;
+  }
+}
+
+function renderSeedControls() {
+  const seedInput = document.getElementById("run-seed-input");
+  const seedDisplay = document.getElementById("current-seed");
+
+  if (seedDisplay) {
+    seedDisplay.innerText = state.runSeed
+      ? `${GAME_VERSION}-${state.runSeed}`
+      : `${GAME_VERSION}-`;
+  }
+
+  if (seedInput && !seedInput.dataset.initialized) {
+    seedInput.value = state.runSeed || loadLastRunSeed() || randomSeedString();
+    seedInput.dataset.initialized = "true";
+  }
+}
+
+function getCheatDescription(cheat) {
+  return CHEAT_DESCRIPTIONS?.[cheat.name] || "No description yet.";
+}
+
+function getCheatIcon(name) {
+  name = name.toLowerCase();
+
+  if (name.includes("peek")) return "👁️";
+  if (name.includes("skip")) return "⏭️";
+  if (name.includes("hint")) return "💡";
+  if (name.includes("swap")) return "🃏";
+  if (name.includes("tear")) return "✂️";
+  if (name.includes("nudge")) return "↕️";
+  if (name.includes("chance")) return "🎲";
+  if (name.includes("lucky")) return "7️⃣";
+
+  return "✨";
+}
+
+function renderRestartButton() {
+  const btn = document.getElementById("restart-btn");
+  if (!btn) return;
+
+  const runIsActive = !state.gameOver && !!state.current;
+  btn.innerText =
+    runIsActive && state.restartConfirmArmed ? "Confirm Restart" : "Start Run";
+}
+
+function renderStartPowerSelector() {
+  const selectEl = document.getElementById("start-power-select");
+  if (!selectEl) return;
+
+  selectEl.innerHTML = "";
+
+  const noneOption = document.createElement("option");
+  noneOption.value = "none";
+  noneOption.innerText = "No Power";
+  selectEl.appendChild(noneOption);
+
+  POWERS.forEach((power) => {
+    const option = document.createElement("option");
+    option.value = power.id;
+    option.innerText = power.name;
+    selectEl.appendChild(option);
+  });
+
+  const validPowerIds = POWERS.map((power) => power.id);
+
+  let selected = state.selectedStartPowerId;
+
+  if (!selected || selected === "none" || !validPowerIds.includes(selected)) {
+    const nudgePower = POWERS.find((power) => power.name === "Nudge");
+    selected = nudgePower ? nudgePower.id : (POWERS[0]?.id || "none");
+    state.selectedStartPowerId = selected;
+  }
+
+  selectEl.value = selected;
+
+  selectEl.onchange = () => {
+    state.selectedStartPowerId = selectEl.value;
+  };
+}
+
+function renderCheatGuide() {
+  const listEl = document.getElementById("cheat-guide-list");
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+
+  const cheatsToShow = [];
+  const seenIds = new Set();
+
+  state.cheats.forEach((cheat) => {
+    if (!seenIds.has(cheat.id)) {
+      cheatsToShow.push(cheat);
+      seenIds.add(cheat.id);
+    }
+  });
+
+  state.pendingCheatOptions.forEach((cheat) => {
+    if (!seenIds.has(cheat.id)) {
+      cheatsToShow.push(cheat);
+      seenIds.add(cheat.id);
+    }
+  });
+
+  if (!cheatsToShow.length) {
+    const empty = document.createElement("div");
+    empty.className = "cheat-guide-desc";
+    empty.innerText =
+      "Cheat descriptions will appear here for cheats in hand and current cheat choices.";
+    listEl.appendChild(empty);
+    return;
+  }
+
+  cheatsToShow.forEach((cheat) => {
+    const item = document.createElement("div");
+    item.className = "cheat-guide-item";
+
+    const name = document.createElement("div");
+    name.className = "cheat-guide-name";
+    name.innerText = cheat.name;
+
+    const desc = document.createElement("div");
+    desc.className = "cheat-guide-desc";
+    desc.innerText = CHEAT_DESCRIPTIONS[cheat.name] || "No description yet.";
+
+    item.appendChild(name);
+    item.appendChild(desc);
+    listEl.appendChild(item);
+  });
+}
+
+function renderActivePowers() {
+  const activePowersEl = document.getElementById("active-powers");
+  if (!activePowersEl) return;
+
+  if (!state.current || state.gameOver) {
+    activePowersEl.innerText = state.powers.length
+      ? state.powers.map(getPowerName).join(", ")
+      : "No active Powers.";
+    return;
+  }
+
+  activePowersEl.innerHTML = "";
+  const row = document.createElement("div");
+  row.className = "power-button-row";
+
+  if (state.selectedStartPowerId === "none") {
+    const text = document.createElement("div");
+    text.innerText = "No active Powers.";
+    activePowersEl.appendChild(text);
+    return;
+  }
+
+  const ownedPower = getPowerById(state.selectedStartPowerId);
+  if (!ownedPower) {
+    activePowersEl.innerText = "No active Powers.";
+    return;
+  }
+
+  const btn = document.createElement("button");
+  const isActive = runHasPower(ownedPower.id);
+  btn.className = `power-chip ${isActive ? "active" : "inactive"}`;
+  btn.innerText = `${ownedPower.name}: ${isActive ? "ON" : "OFF"}`;
+  btn.onclick = () => togglePower(ownedPower.id);
+  row.appendChild(btn);
+  activePowersEl.appendChild(row);
+}
+
+function renderCurrentCard() {
+  const currentCardEl = document.getElementById("current-card");
+  const currentValueEl = document.getElementById("current-effective-value");
+
+  if (!currentCardEl || !currentValueEl) return;
+
+  if (!state.current) {
+    currentCardEl.innerText = "?";
+    currentCardEl.className = "card-face";
+    currentCardEl.innerHTML = "?";
+    currentValueEl.innerText = "";
+    return;
+  }
+
+  const backStatus = getCardBackStatus(state.current.id);
+
+  currentCardEl.className = `card-face ${isRed(state.current) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""}`.trim();
+  currentCardEl.innerHTML = `
+    <span class="card-face-label">${describeCard(state.current)}</span>
+    ${backStatus.tornCorner ? '<span class="tear-mark-face"></span>' : ""}
+  `;
+
+  const effectiveValue = getCurrentEffectiveValue();
+  currentValueEl.innerText =
+    effectiveValue !== state.current.value
+      ? `Treated as: ${valueToRank(effectiveValue)}`
+      : "";
+}
+
+function renderFaceDownDeck() {
+  const deckEl = document.getElementById("face-down-deck");
+  const countEl = document.getElementById("face-down-count");
+
+  if (!deckEl || !countEl) return;
+
+  if (!state.current) {
+    deckEl.innerHTML = "";
+    deckEl.className = "card-back card-back-blue";
+    deckEl.removeAttribute("data-back-color");
+    countEl.innerText = "";
+    return;
+  }
+
+  const next = peekNext();
+  const backStatus = next
+    ? getCardBackStatus(next.id)
+    : { tornCorner: false, backColor: "blue" };
+
+  const backColor = backStatus.backColor || "blue";
+
+  deckEl.className = `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
+  deckEl.setAttribute("data-back-color", backColor);
+  deckEl.innerHTML = "";
+
+  const symbol = document.createElement("div");
+  symbol.className = "card-back-symbol";
+  symbol.innerText = "🂠";
+  deckEl.appendChild(symbol);
+
+  if (backStatus.tornCorner) {
+    const tear = document.createElement("div");
+    tear.className = "tear-mark";
+    deckEl.appendChild(tear);
+  }
+
+  const shouldShowDeckStatsTooltip =
+    !!next && runHasPower("stats_display") && !!state.deckStatsTooltipOpen;
+
+  if (shouldShowDeckStatsTooltip) {
+    const entry = getCardStatsEntry(next.id);
+    const guessedCount = (entry.endedRun || 0) + (entry.survivedRun || 0);
+
+    const statsBox = document.createElement("div");
+    statsBox.className = "card-back-stats";
+    statsBox.setAttribute("role", "tooltip");
+    statsBox.setAttribute("data-deck-stats-tooltip", "true");
+    statsBox.innerHTML = `
+      <div>Guessed: ${guessedCount}</div>
+      <div>Ended run: ${entry.endedRun || 0}</div>
+      <div>Didn’t end: ${entry.survivedRun || 0}</div>
+    `;
+    deckEl.appendChild(statsBox);
+  }
+
+  countEl.innerText = `${getFaceDownCount()} card(s) remain`;
+}
+
+function renderButtons() {
+  const higherBtn = document.getElementById("higher-btn");
+  const lowerBtn = document.getElementById("lower-btn");
+  if (!higherBtn || !lowerBtn) return;
+
+  // Block input if pausing before cheat selection
+  const isPause = !!state.pauseForCheat;
+  const disableGuessing =
+    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || isPause;
+
+  higherBtn.disabled = disableGuessing;
+  lowerBtn.disabled = disableGuessing;
+}
+
+function renderHandCard() {
+  const handEl = document.getElementById("swap-card");
+  if (!handEl) return;
+
+  if (!state.handCard) {
+    handEl.innerText = "Empty";
+    handEl.className = "";
+    return;
+  }
+
+  handEl.innerText = describeCard(state.handCard);
+  handEl.className = isRed(state.handCard) ? "red" : "black";
+}
+
+function renderCheats() {
+  const cheatList = document.getElementById("cheat-list");
+  if (!cheatList) return;
+
+  // If we're in a pause state before cheat selection, don't render cheat selection UI
+  if (state.pauseForCheat) {
+    cheatList.innerHTML = "";
+    return;
+  }
+
+  cheatList.innerHTML = "";
+
+  if (!state.cheats.length) {
+    cheatList.innerHTML = `<div class=\"cheat-button common\" style=\"opacity:0.5;\">No Cheats</div>`;
+    return;
+  }
+
+  state.cheats.forEach((cheat, index) => {
+    const btn = document.createElement("button");
+    btn.className = `cheat-button ${cheat.rarity || "common"}`;
+
+    btn.innerHTML = `
+      <div class=\"cheat-icon\">${getCheatIcon(cheat.name)}</div>
+      <div class=\"cheat-name\">${cheat.name}</div>
+    `;
+
+    let holdTimer = null;
+    let held = false;
+
+    btn.onpointerdown = () => {
+      held = false;
+      holdTimer = setTimeout(() => {
+        held = true;
+        showCheatTooltip(cheat, btn);
+      }, 300);
+    };
+
+    btn.onpointerup = () => {
+      clearTimeout(holdTimer);
+      setTimeout(hideCheatTooltip, 50);
+    };
+
+    btn.onclick = () => {
+      if (held) return;
+      if (state.gameOver || state.pendingCheatOptions.length) return;
+      const result = cheat.use();
+      state.message = result;
+      if (cheat.consumeOnUse) {
+        removeCheatAt(index);
+      }
+      render();
+    };
+
+    cheatList.appendChild(btn);
+  });
+}
+
+function showCheatTooltip(cheat, el) {
+  const tooltip = document.getElementById("cheat-tooltip");
+  const title = document.getElementById("cheat-tooltip-title");
+  const body = document.getElementById("cheat-tooltip-body");
+
+  title.innerText = cheat.name;
+  body.innerText = getCheatDescription(cheat);
+
+  tooltip.classList.remove("hidden");
+
+  const rect = el.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const edgePadding = 10;
+  const halfTooltipWidth = tooltipRect.width / 2;
+  const targetCenterX = rect.left + rect.width / 2;
+  const minCenterX = edgePadding + halfTooltipWidth;
+  const maxCenterX = viewportWidth - edgePadding - halfTooltipWidth;
+  const safeCenterX = Math.min(Math.max(targetCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
+
+  tooltip.style.left = safeCenterX + "px";
+  tooltip.style.top = rect.top - 10 + "px";
+}
+
+function hideCheatTooltip() {
+  document.getElementById("cheat-tooltip").classList.add("hidden");
+}
+
+function renderCheatChoice() {
+  const container = document.getElementById("cheat-choice-container");
+  const list = document.getElementById("cheat-choice-list");
+
+  if (!container || !list) return;
+
+  list.innerHTML = "";
+
+  if (!state.pendingCheatOptions.length) {
+    container.classList.add("hidden");
+    container.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  container.classList.remove("hidden");
+  container.setAttribute("aria-hidden", "false");
+
+  state.pendingCheatOptions.forEach((cheat, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `choice-card ${cheat.rarity || "common"}`;
+
+    const top = document.createElement("div");
+    top.className = "choice-top";
+
+    const icon = document.createElement("div");
+    icon.className = "choice-icon";
+    icon.innerText = getCheatIcon(cheat.name);
+
+    const name = document.createElement("div");
+    name.className = "choice-name";
+    name.innerText = cheat.name;
+
+    const rarity = document.createElement("div");
+    rarity.className = "choice-rarity";
+    rarity.innerText = (cheat.rarity || "common").replace(/^\w/, (c) => c.toUpperCase());
+
+    top.appendChild(icon);
+    top.appendChild(name);
+    top.appendChild(rarity);
+
+    const desc = document.createElement("div");
+    desc.className = "choice-desc";
+    desc.innerText = getCheatDescription(cheat);
+
+    const tag = document.createElement("div");
+    tag.className = "choice-tag";
+    tag.innerText = "Tap to select";
+
+    btn.appendChild(top);
+    btn.appendChild(desc);
+    btn.appendChild(tag);
+
+    let holdTimer = null;
+    let held = false;
+
+    btn.onpointerdown = () => {
+      held = false;
+      holdTimer = setTimeout(() => {
+        held = true;
+        showCheatTooltip(cheat, btn);
+      }, 300);
+    };
+
+    btn.onpointerup = () => {
+      clearTimeout(holdTimer);
+      setTimeout(hideCheatTooltip, 50);
+    };
+
+    btn.onpointercancel = () => {
+      clearTimeout(holdTimer);
+      hideCheatTooltip();
+    };
+
+    btn.onpointerleave = () => {
+      clearTimeout(holdTimer);
+    };
+
+    btn.onclick = () => {
+      if (held) return;
+      pickCheatFromChoice(i);
+    };
+
+    list.appendChild(btn);
+  });
+}
+function renderSeenGrid() {
+  const grid = document.getElementById("seen-grid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const topLeft = document.createElement("div");
+  topLeft.className = "grid-header";
+  grid.appendChild(topLeft);
+
+  for (const rank of RANKS) {
+    const cell = document.createElement("div");
+    cell.className = "grid-header";
+    cell.innerText = rank.r;
+    grid.appendChild(cell);
+  }
+
+  for (const suit of SUITS) {
+    const suitCell = document.createElement("div");
+    suitCell.className = `grid-suit ${isRed({ suit }) ? "red" : "black"}`;
+    suitCell.innerText = suit;
+    grid.appendChild(suitCell);
+
+    for (const rank of RANKS) {
+      const cardId = getCardId(suit, rank.r);
+      const seen = state.seenCardIds.has(cardId);
+      const cell = document.createElement("div");
+      cell.className = `grid-cell ${seen ? "seen" : ""} ${isRed({ suit }) ? "red" : "black"}`;
+      cell.innerText = seen ? "✓" : "";
+      grid.appendChild(cell);
+    }
+  }
+
+  let note = document.getElementById("seen-grid-note");
+  if (!note) {
+    note = document.createElement("div");
+    note.id = "seen-grid-note";
+    grid.insertAdjacentElement("afterend", note);
+  }
+
+  note.className = "seen-grid-note";
+  note.innerText = "J = 11   •   Q = 12   •   K = 13";
+}
+
+function renderMessage() {
+  const el = document.getElementById("message-bar");
+  if (!el) return;
+
+  if (!state.message) {
+    el.style.display = "none";
+    return;
+  }
+
+  el.style.display = "block";
+  el.innerText = state.message;
+}
+
+function renderNextInfo() {
+  const el = document.getElementById("next-info");
+  if (!el) return;
+
+  if (!state.current) {
+    el.innerText = "";
+  }
+}
+
+function render() {
+  renderScores();
+  renderSeedControls();
+  renderStartPowerSelector();
+  renderCheatGuide();
+  renderActivePowers();
+  renderCurrentCard();
+  renderFaceDownDeck();
+  renderButtons();
+  renderHandCard();
+  renderCheats();
+  renderCheatChoice();
+  renderSeenGrid();
+  renderRestartButton();
+  renderMessage();
+    renderActivePowers();
+    renderCurrentCard();
+    renderFaceDownDeck();
+    renderButtons();
+    renderHandCard();
+    renderCheats();
+    renderCheatChoice();
+    renderSeenGrid();
+  return "✨";
+}
