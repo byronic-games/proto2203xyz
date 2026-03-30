@@ -206,6 +206,7 @@
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 12px;
+  --card-size: 150px;
 }
 
 * {
@@ -501,6 +502,64 @@ h1 {
   min-width: 0;
 }
 
+.current-card-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.nudge-stack {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.nudge-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.nudge-arrow {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: #f5fbff;
+  font-weight: 900;
+  font-size: 0.86rem;
+  background: linear-gradient(180deg, #7f4cff 0%, #5630cf 100%);
+  box-shadow: 0 8px 14px rgba(0,0,0,0.35), 0 0 14px rgba(154,88,255,0.3);
+}
+
+.nudge-arrow.nudge-up {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.nudge-arrow.nudge-down {
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+}
+
+.nudge-arrow:disabled {
+  opacity: 0.42;
+  filter: saturate(0.7);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.26);
+}
+
+.nudge-arrow span {
+  transform: translateY(3px);
+}
+
+.nudge-arrow.nudge-down span {
+  transform: translateY(-3px);
+}
+
 .section-title {
   margin-bottom: 4px;
   color: var(--cyan);
@@ -509,11 +568,23 @@ h1 {
 
 .card-face,
 .card-back {
-  width: min(100%, 150px);
-  aspect-ratio: 5 / 7;
+  width: var(--card-size);
+  height: calc(var(--card-size) * 1.4);
+  aspect-ratio: auto;
   border-radius: 18px;
   position: relative;
   overflow: hidden;
+  flex: 0 0 var(--card-size);
+}
+
+#current-card,
+#face-down-deck {
+  width: var(--card-size) !important;
+  height: calc(var(--card-size) * 1.4) !important;
+  min-width: var(--card-size) !important;
+  max-width: var(--card-size) !important;
+  min-height: calc(var(--card-size) * 1.4) !important;
+  max-height: calc(var(--card-size) * 1.4) !important;
 }
 
 .card-face {
@@ -1115,17 +1186,20 @@ h1 {
 }
 
 @media (max-width: 860px) {
-  #top-bar {
-    grid-template-columns: 1.2fr 1fr 0.8fr 0.8fr 0.8fr;
+  :root {
+    --card-size: 138px;
   }
 
-  .card-face,
-  .card-back {
-    width: min(100%, 138px);
+  #top-bar {
+    grid-template-columns: 1.2fr 1fr 0.8fr 0.8fr 0.8fr;
   }
 }
 
 @media (max-width: 640px) {
+  :root {
+    --card-size: 118px;
+  }
+
   #game-shell {
     padding: 8px;
   }
@@ -1165,11 +1239,6 @@ h1 {
     gap: 10px;
   }
 
-  .card-face,
-  .card-back {
-    width: min(100%, 118px);
-  }
-
   #controls button {
     min-height: 56px;
     font-size: 0.9rem;
@@ -1191,6 +1260,10 @@ h1 {
 }
 
 @media (max-width: 420px) {
+  :root {
+    --card-size: 102px;
+  }
+
   .eyebrow,
   .score-label,
   .section-title,
@@ -1232,9 +1305,14 @@ h1 {
     gap: 8px;
   }
 
-  .card-face,
-  .card-back {
-    width: min(100%, 102px);
+  .nudge-arrow {
+    width: 34px;
+    height: 34px;
+    font-size: 0.76rem;
+  }
+
+  .nudge-stack {
+    right: calc(100% + 6px);
   }
 
   #controls {

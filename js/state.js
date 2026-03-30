@@ -59,6 +59,8 @@ function createEmptyState() {
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
+    nudgeUpCharges: 0,
+    nudgeDownCharges: 0,
   };
 }
 

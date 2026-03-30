@@ -181,9 +181,8 @@ function renderCurrentCard() {
   if (!currentCardEl || !currentValueEl) return;
 
   if (!state.current) {
-    currentCardEl.innerText = "?";
-    currentCardEl.className = "card-face";
-    currentCardEl.innerHTML = "?";
+    currentCardEl.className = "card-back card-back-blue";
+    currentCardEl.innerHTML = `<div class="card-back-symbol">🂠</div>`;
     currentValueEl.innerText = "";
     return;
   }
@@ -201,6 +200,27 @@ function renderCurrentCard() {
     effectiveValue !== state.current.value
       ? `Treated as: ${valueToRank(effectiveValue)}`
       : "";
+}
+
+function renderNudgeControls() {
+  const upBtn = document.getElementById("nudge-up-btn");
+  const downBtn = document.getElementById("nudge-down-btn");
+  const upCountEl = document.getElementById("nudge-up-count");
+  const downCountEl = document.getElementById("nudge-down-count");
+
+  if (!upBtn || !downBtn || !upCountEl || !downCountEl) return;
+
+  const upCount = state.nudgeUpCharges || 0;
+  const downCount = state.nudgeDownCharges || 0;
+
+  upCountEl.innerText = String(upCount);
+  downCountEl.innerText = String(downCount);
+
+  const isBlocked =
+    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
+
+  upBtn.disabled = isBlocked || upCount <= 0;
+  downBtn.disabled = isBlocked || downCount <= 0;
 }
 
 function renderFaceDownDeck() {
@@ -301,12 +321,16 @@ function renderCheats() {
 
   cheatList.innerHTML = "";
 
-  if (!state.cheats.length) {
+  const visibleCheats = state.cheats.filter(
+    (cheat) => cheat.id !== "nudge_up" && cheat.id !== "nudge_down"
+  );
+
+  if (!visibleCheats.length) {
     cheatList.innerHTML = `<div class=\"cheat-button common\" style=\"opacity:0.5;\">No Cheats</div>`;
     return;
   }
 
-  state.cheats.forEach((cheat, index) => {
+  visibleCheats.forEach((cheat) => {
     const btn = document.createElement("button");
     btn.className = `cheat-button ${cheat.rarity || "common"}`;
 
@@ -357,7 +381,8 @@ function renderCheats() {
       const result = cheat.use();
       state.message = result;
       if (cheat.consumeOnUse) {
-        removeCheatAt(index);
+        const originalIndex = state.cheats.findIndex((c) => c === cheat);
+        if (originalIndex >= 0) removeCheatAt(originalIndex);
       }
       render();
     };
@@ -533,6 +558,7 @@ function render() {
   renderCheatGuide();
   renderActivePowers();
   renderCurrentCard();
+  renderNudgeControls();
   renderFaceDownDeck();
   renderButtons();
   renderHandCard();

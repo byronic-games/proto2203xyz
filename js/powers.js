@@ -2,7 +2,7 @@ const POWERS = [
       {
         id: "nudge_engine",
         name: "Nudge",
-        description: "Every correct Higher/Lower guess adds a directional Nudge cheat to your hand while active.",
+        description: "Every correct Higher/Lower guess adds a directional Nudge charge while active.",
         startsActive: true,
         canToggleDuringRun: true,
       },
@@ -51,12 +51,14 @@ function togglePower(powerId) {
 function awardOnCorrectGuessPowers(guessType) {
       const awardedNames = [];
       if (runHasPower("nudge_engine") && !runHasPower("stats_display")) {
-        let nudgeCheat = null;
-        if (guessType === "higher") nudgeCheat = CHEATS.find((c) => c.id === "nudge_up");
-        if (guessType === "lower") nudgeCheat = CHEATS.find((c) => c.id === "nudge_down");
-        if (nudgeCheat) {
-          state.cheats.push({ ...nudgeCheat });
-          awardedNames.push(nudgeCheat.name);
+        if (guessType === "higher") {
+          state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
+          awardedNames.push("Nudge +1");
+        }
+
+        if (guessType === "lower") {
+          state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 1;
+          awardedNames.push("Nudge -1");
         }
       }
       return awardedNames;

@@ -62,6 +62,8 @@ function startRun(forceRandom = false) {
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
+    nudgeUpCharges: 0,
+    nudgeDownCharges: 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
     oddOneOutArmed: false,
@@ -134,6 +136,35 @@ function countUnseenCardsOfRank(rank) {
     if (state.deck[i].rank === rank) count += 1;
   }
   return count;
+}
+
+function canUseNudge(direction) {
+  const isBlocked =
+    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
+  if (isBlocked) return false;
+
+  if (direction === "up") return (state.nudgeUpCharges || 0) > 0;
+  if (direction === "down") return (state.nudgeDownCharges || 0) > 0;
+  return false;
+}
+
+function useNudgeCharge(direction) {
+  if (!canUseNudge(direction)) return;
+
+  if (direction === "up") {
+    state.nudgeUpCharges = Math.max(0, (state.nudgeUpCharges || 0) - 1);
+    state.currentValueModifier += 1;
+  } else if (direction === "down") {
+    state.nudgeDownCharges = Math.max(0, (state.nudgeDownCharges || 0) - 1);
+    state.currentValueModifier -= 1;
+  } else {
+    return;
+  }
+
+  const effective = getCurrentEffectiveValue();
+  const label = direction === "up" ? "Nudge +1" : "Nudge -1";
+  state.message = `${label} used. Current card treated as ${valueToRank(effective)}.`;
+  render();
 }
 
 function getCardStatsEntry(cardId) {

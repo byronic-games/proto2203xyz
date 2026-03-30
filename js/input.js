@@ -41,6 +41,14 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
+document.getElementById("nudge-up-btn")?.addEventListener("click", () => {
+  useNudgeCharge("up");
+});
+
+document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
+  useNudgeCharge("down");
+});
+
 function closeVictoryModal() {
   const modal = document.getElementById("victory-modal");
   if (!modal) return;

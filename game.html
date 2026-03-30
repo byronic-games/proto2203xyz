@@ -36,7 +36,18 @@
           <div id="card-row">
             <div class="card-column">
               <div class="pile-label">Current Card</div>
-              <div id="current-card" class="card-face">?</div>
+              <div class="current-card-wrap">
+                <div class="nudge-stack" aria-label="Nudge controls">
+                  <div class="nudge-label">Nudges</div>
+                  <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
+                    <span id="nudge-up-count">0</span>
+                  </button>
+                  <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
+                    <span id="nudge-down-count">0</span>
+                  </button>
+                </div>
+                <div id="current-card" class="card-face">?</div>
+              </div>
               <div id="current-effective-value"></div>
             </div>
 
