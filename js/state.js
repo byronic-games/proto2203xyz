@@ -58,6 +58,7 @@ function createEmptyState() {
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
+    victoryPromptShown: false,
   };
 }
 

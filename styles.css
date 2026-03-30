@@ -6,6 +6,82 @@
   padding: 0.5em 0 0.2em 0;
 }
 
+/* === Victory modal === */
+#victory-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+#victory-modal.hidden {
+  display: none;
+}
+
+.victory-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 9, 22, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.victory-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(96vw, 460px);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)), rgba(16, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+
+#victory-title {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+}
+
+#victory-copy,
+#victory-seed,
+#victory-status {
+  margin: 0 0 10px;
+  color: #d8e5ff;
+}
+
+#victory-form {
+  display: grid;
+  gap: 10px;
+}
+
+#victory-name-input {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(10, 15, 30, 0.9);
+  color: #f4f9ff;
+  padding: 10px 12px;
+}
+
+.victory-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#victory-skip-btn {
+  background: linear-gradient(180deg, #d4deef 0%, #9aabc8 100%);
+}
+
+@media (max-width: 560px) {
+  .victory-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .title-lockup h1 {
   font-size: 2.1em;
   font-weight: 800;

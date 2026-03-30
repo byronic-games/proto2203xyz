@@ -96,12 +96,36 @@
   </div>
 </div>
 
+      <div id="victory-modal" class="hidden" aria-hidden="true">
+        <div class="victory-backdrop"></div>
+        <div class="victory-dialog" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+          <h2 id="victory-title">Deck Cleared!</h2>
+          <p id="victory-copy">Add your name to the 52! Heroes board.</p>
+          <p id="victory-seed"></p>
+          <form id="victory-form">
+            <input
+              id="victory-name-input"
+              type="text"
+              maxlength="24"
+              autocomplete="name"
+              placeholder="Your name"
+              required
+            >
+            <div class="victory-actions">
+              <button type="submit" id="victory-submit-btn">Save Hero Run</button>
+              <button type="button" id="victory-skip-btn">Skip</button>
+            </div>
+          </form>
+          <div id="victory-status"></div>
+        </div>
+      </div>
+
       <div id="cheat-choice-container" class="hidden" aria-hidden="true">
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
           <div class="choice-title">CHOOSE YOUR CHEAT</div>
           <div id="cheat-choice-list"></div>
-          <div class="choice-footer">Tap to select. Hold for info.</div>
+          <div class="choice-footer">Tap to select.</div>
         </div>
       </div>
 
@@ -135,6 +159,7 @@
   <script src="js/state.js"></script>
   <script src="js/powers.js"></script>
   <script src="js/cheats.js"></script>
+  <script src="js/leaderboard.js"></script>
   <script src="js/logic.js"></script>
   <script src="js/render.js"></script>
   <script src="js/input.js"></script>

@@ -228,7 +228,7 @@ const CHEATS = [
       const next = peekNext();
       if (!next) return "No next card.";
       const remaining = countUnseenCardsOfRank(next.rank);
-      return `${remaining} ${remaining === 1 ? "copy" : "copies"} of the next card's rank remain in the deck.`;
+      return `${remaining} matching ${remaining === 1 ? "card remains" : "cards remain"} in the deck.`;
     },
   },
   {

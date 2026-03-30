@@ -318,8 +318,10 @@ function renderCheats() {
     let holdTimer = null;
     let held = false;
 
-    btn.onpointerdown = () => {
+    btn.onpointerdown = (e) => {
       held = false;
+      if (e.pointerType === "mouse") return;
+
       holdTimer = setTimeout(() => {
         held = true;
         showCheatTooltip(cheat, btn);
@@ -329,6 +331,24 @@ function renderCheats() {
     btn.onpointerup = () => {
       clearTimeout(holdTimer);
       setTimeout(hideCheatTooltip, 50);
+    };
+
+    btn.onpointercancel = () => {
+      clearTimeout(holdTimer);
+      hideCheatTooltip();
+    };
+
+    btn.onpointerleave = () => {
+      clearTimeout(holdTimer);
+      hideCheatTooltip();
+    };
+
+    btn.onmouseenter = () => {
+      showCheatTooltip(cheat, btn);
+    };
+
+    btn.onmouseleave = () => {
+      hideCheatTooltip();
     };
 
     btn.onclick = () => {
@@ -351,6 +371,8 @@ function showCheatTooltip(cheat, el) {
   const title = document.getElementById("cheat-tooltip-title");
   const body = document.getElementById("cheat-tooltip-body");
 
+  if (!tooltip || !title || !body || !el) return;
+
   title.innerText = cheat.name;
   body.innerText = getCheatDescription(cheat);
 
@@ -371,8 +393,12 @@ function showCheatTooltip(cheat, el) {
 }
 
 function hideCheatTooltip() {
-  document.getElementById("cheat-tooltip").classList.add("hidden");
+  const tooltip = document.getElementById("cheat-tooltip");
+  if (!tooltip) return;
+  tooltip.classList.add("hidden");
 }
+
+window.hideCheatTooltip = hideCheatTooltip;
 
 function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
@@ -427,33 +453,7 @@ function renderCheatChoice() {
     btn.appendChild(desc);
     btn.appendChild(tag);
 
-    let holdTimer = null;
-    let held = false;
-
-    btn.onpointerdown = () => {
-      held = false;
-      holdTimer = setTimeout(() => {
-        held = true;
-        showCheatTooltip(cheat, btn);
-      }, 300);
-    };
-
-    btn.onpointerup = () => {
-      clearTimeout(holdTimer);
-      setTimeout(hideCheatTooltip, 50);
-    };
-
-    btn.onpointercancel = () => {
-      clearTimeout(holdTimer);
-      hideCheatTooltip();
-    };
-
-    btn.onpointerleave = () => {
-      clearTimeout(holdTimer);
-    };
-
     btn.onclick = () => {
-      if (held) return;
       pickCheatFromChoice(i);
     };
 

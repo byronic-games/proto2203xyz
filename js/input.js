@@ -41,10 +41,76 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
+function closeVictoryModal() {
+  const modal = document.getElementById("victory-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+async function openVictoryModal() {
+  const modal = document.getElementById("victory-modal");
+  const seedEl = document.getElementById("victory-seed");
+  const statusEl = document.getElementById("victory-status");
+  const inputEl = document.getElementById("victory-name-input");
+
+  if (!modal || !seedEl || !statusEl || !inputEl) return;
+
+  seedEl.innerText = `Seed: ${GAME_VERSION}-${state.runSeed || ""}`;
+  statusEl.innerText = "";
+  inputEl.value = loadPreferredHeroName();
+
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+
+  setTimeout(() => inputEl.focus(), 0);
+}
+
+window.promptHeroNameForVictory = openVictoryModal;
+
+document.getElementById("victory-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const inputEl = document.getElementById("victory-name-input");
+  const statusEl = document.getElementById("victory-status");
+  const submitBtn = document.getElementById("victory-submit-btn");
+
+  if (!inputEl || !statusEl || !submitBtn) return;
+
+  submitBtn.disabled = true;
+  const result = await submitHeroWin(inputEl.value, `${GAME_VERSION}-${state.runSeed || ""}`);
+  statusEl.innerText = result.message;
+
+  if (result.ok) {
+    state.message = `🏆 ${result.message}`;
+    renderMessage();
+    setTimeout(() => closeVictoryModal(), 700);
+  }
+
+  submitBtn.disabled = false;
+});
+
+document.getElementById("victory-skip-btn")?.addEventListener("click", () => {
+  closeVictoryModal();
+});
+
+document.getElementById("victory-modal")?.addEventListener("click", (e) => {
+  if (e.target && e.target.classList && e.target.classList.contains("victory-backdrop")) {
+    closeVictoryModal();
+  }
+});
+
 function closeDeckStatsTooltip() {
   if (!state.deckStatsTooltipOpen) return;
   state.deckStatsTooltipOpen = false;
   renderFaceDownDeck();
+}
+
+function closeAllTransientTooltips() {
+  closeDeckStatsTooltip();
+  if (typeof window.hideCheatTooltip === "function") {
+    window.hideCheatTooltip();
+  }
 }
 
 let ignoreNextDeckClick = false;
@@ -74,21 +140,33 @@ document.getElementById("face-down-deck")?.addEventListener("click", () => {
 
 window.addEventListener("pointerup", (e) => {
   if (e.pointerType !== "touch") return;
-  closeDeckStatsTooltip();
+  closeAllTransientTooltips();
 });
 
 window.addEventListener("pointercancel", (e) => {
   if (e.pointerType !== "touch") return;
-  closeDeckStatsTooltip();
+  closeAllTransientTooltips();
 });
 
 window.addEventListener("touchend", () => {
-  closeDeckStatsTooltip();
+  closeAllTransientTooltips();
 });
 
 window.addEventListener("touchcancel", () => {
-  closeDeckStatsTooltip();
+  closeAllTransientTooltips();
 });
+
+window.addEventListener("touchmove", () => {
+  closeAllTransientTooltips();
+}, { passive: true });
+
+window.addEventListener("scroll", () => {
+  closeAllTransientTooltips();
+}, true);
+
+window.addEventListener("wheel", () => {
+  closeAllTransientTooltips();
+}, { passive: true });
 
 window.addEventListener(
   "pointerdown",
@@ -108,24 +186,27 @@ window.addEventListener(
 );
 
 window.addEventListener("keydown", (e) => {
-  if (e.key === "c" || e.key === "C") {
-    clearCheatsForDebug();
-    return;
-  }
+  const debugEnabled = !!window.testModeEnabled;
+  if (debugEnabled) {
+    if (e.key === "c" || e.key === "C") {
+      clearCheatsForDebug();
+      return;
+    }
 
-  if ((e.key === "f" || e.key === "F") && !e.shiftKey) {
-    resetAllStatsForDebug();
-    return;
-  }
+    if ((e.key === "f" || e.key === "F") && !e.shiftKey) {
+      resetAllStatsForDebug();
+      return;
+    }
 
-  if ((e.key === "f" || e.key === "F") && e.shiftKey) {
-    fullResetAllStateForDebug();
-    return;
-  }
+    if ((e.key === "f" || e.key === "F") && e.shiftKey) {
+      fullResetAllStateForDebug();
+      return;
+    }
 
-  if (e.key === "d" || e.key === "D") {
-    addMissingCheatsForDebug();
-    return;
+    if (e.key === "d" || e.key === "D") {
+      addMissingCheatsForDebug();
+      return;
+    }
   }
 
   if (state.gameOver || state.pendingCheatOptions.length > 0) return;

@@ -1,0 +1,121 @@
+:root {
+  --bg-0: #060910;
+  --bg-1: #0d1530;
+  --ink: #edf4ff;
+  --soft: #b8c9ea;
+  --cyan: #56e9ff;
+  --gold: #ffc95a;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Space Grotesk", "Segoe UI", Tahoma, sans-serif;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(86, 233, 255, 0.15), transparent 30%),
+    radial-gradient(circle at 85% 10%, rgba(255, 201, 90, 0.18), transparent 32%),
+    linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 100%);
+}
+
+.heroes-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.heroes-card {
+  width: min(960px, 100%);
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 30px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)), rgba(13, 20, 40, 0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--cyan);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 8px 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.lead {
+  margin: 0 0 14px;
+  color: var(--soft);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+th {
+  color: #d8f4ff;
+  background: rgba(86, 233, 255, 0.08);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  min-height: 48px;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  color: #140f07;
+  background: linear-gradient(180deg, #ffd889 0%, #ffbe3f 100%);
+}
+
+.btn-secondary {
+  color: #091421;
+  background: linear-gradient(180deg, #9cf4ff 0%, #5fdefa 100%);
+}
+
+#heroes-note {
+  margin-top: 10px;
+  color: var(--soft);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  table { min-width: 440px; }
+}

@@ -61,6 +61,7 @@ function startRun(forceRandom = false) {
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
+    victoryPromptShown: false,
     lucky7Armed: false,
     fiveAliveArmed: false,
     oddOneOutArmed: false,
@@ -404,6 +405,10 @@ function makeGuess(type) {
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
+    if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+      state.victoryPromptShown = true;
+      window.promptHeroNameForVictory();
+    }
     return;
   }
 

@@ -17,5 +17,48 @@ function runSelfTests() {
       console.assert(normalizedStats.survivedRun === 0, "Legacy stat entries should gain survivedRun field.");
     }
 
-    runSelfTests();
-    render();
+function getTestModeFlags() {
+  const params = new URLSearchParams(window.location.search);
+  const has = (key) => params.has(key);
+
+  return {
+    enabled: has("test") || has("debug"),
+    addCheats: has("addcheats"),
+    clearCheats: has("clearcheats"),
+    resetStats: has("resetstats"),
+    fullReset: has("fullreset"),
+  };
+}
+
+function applyDebugActionsFromUrl() {
+  const flags = getTestModeFlags();
+  window.testModeEnabled = flags.enabled;
+
+  if (!flags.enabled) return;
+
+  // Precedence: destructive reset first, then narrower actions.
+  if (flags.fullReset) {
+    fullResetAllStateForDebug();
+    return;
+  }
+
+  if (flags.resetStats) {
+    resetAllStatsForDebug();
+  }
+
+  if (flags.clearCheats) {
+    clearCheatsForDebug();
+  }
+
+  if (flags.addCheats) {
+    addMissingCheatsForDebug();
+  }
+
+  if (!flags.resetStats && !flags.clearCheats && !flags.addCheats) {
+    state.message = "Test mode enabled.";
+  }
+}
+
+runSelfTests();
+applyDebugActionsFromUrl();
+render();
