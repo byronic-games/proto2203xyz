@@ -602,12 +602,36 @@ h1 {
     0 0 22px rgba(255,255,255,0.08);
 }
 
+.card-face.temporary-value {
+  border-color: rgba(255, 209, 126, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 14px 28px rgba(0,0,0,0.34),
+    0 0 20px rgba(255, 185, 84, 0.42);
+}
+
 .card-face.red { color: #c22f56; }
 .card-face.black { color: #131b2a; }
 
 .card-face-label {
   position: relative;
   z-index: 2;
+}
+
+.card-temp-chip {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 4;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #2b1700;
+  background: linear-gradient(180deg, #ffd98e 0%, #f5b24d 100%);
+  border: 1px solid rgba(157, 91, 12, 0.35);
+  border-radius: 999px;
+  padding: 3px 7px;
+  line-height: 1;
 }
 
 .card-face.torn-corner-face {

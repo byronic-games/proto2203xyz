@@ -188,17 +188,21 @@ function renderCurrentCard() {
   }
 
   const backStatus = getCardBackStatus(state.current.id);
+  const effectiveValue = getCurrentEffectiveValue();
+  const isTemporarilyModified = effectiveValue !== state.current.value;
+  const shownRank = isTemporarilyModified ? valueToRank(effectiveValue) : state.current.rank;
+  const shownLabel = `${shownRank}${state.current.suit}`;
 
-  currentCardEl.className = `card-face ${isRed(state.current) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""}`.trim();
+  currentCardEl.className = `card-face ${isRed(state.current) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""}`.trim();
   currentCardEl.innerHTML = `
-    <span class="card-face-label">${describeCard(state.current)}</span>
+    <span class="card-face-label">${shownLabel}</span>
+    ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
     ${backStatus.tornCorner ? '<span class="tear-mark-face"></span>' : ""}
   `;
 
-  const effectiveValue = getCurrentEffectiveValue();
   currentValueEl.innerText =
-    effectiveValue !== state.current.value
-      ? `Treated as: ${valueToRank(effectiveValue)}`
+    isTemporarilyModified
+      ? `Treated as: ${shownLabel} (from ${describeCard(state.current)})`
       : "";
 }
 

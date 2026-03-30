@@ -118,6 +118,26 @@ function describeCard(card) {
   return `${card.rank}${card.suit}`;
 }
 
+function formatCurrentJudgedValueForMessage(card, effectiveValue) {
+  const judgedRank = valueToRank(effectiveValue);
+  if (!card) return `'${judgedRank}'`;
+  return effectiveValue !== card.value ? `'${judgedRank}'` : `${judgedRank}`;
+}
+
+function formatNextValueForMessage(card) {
+  if (!card) return "?";
+  return `${valueToRank(card.value)}`;
+}
+
+function buildComparisonSnippet(currentCard, effectiveValue, nextCard) {
+  if (!currentCard || !nextCard) return "";
+  if (nextCard.value === effectiveValue) {
+    return `${formatCurrentJudgedValueForMessage(currentCard, effectiveValue)} = ${formatNextValueForMessage(nextCard)}`;
+  }
+  const symbol = effectiveValue < nextCard.value ? "<" : ">";
+  return `${formatCurrentJudgedValueForMessage(currentCard, effectiveValue)} ${symbol} ${formatNextValueForMessage(nextCard)}`;
+}
+
 function getCurrentEffectiveValue() {
   if (!state.current) return null;
   return clamp(state.current.value + state.currentValueModifier, 1, 13);
@@ -451,10 +471,9 @@ function makeGuess(type) {
     // Show detailed result before pause
     let pauseMsg = "✅ Correct!";
     if (match) {
-      pauseMsg = `✅ Correct! Cards match! (${describeCard(next)} = ${describeCard(prevCard)})`;
+      pauseMsg = `✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next)})`;
     } else {
-      const symbol = next.value > currentComparisonValue ? '>' : '<';
-      pauseMsg = `✅ Correct! ${describeCard(next)} ${symbol} ${describeCard(prevCard)}!`;
+      pauseMsg = `✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next)}!`;
     }
     state.message = pauseMsg;
     state.pauseForCheat = true;
@@ -479,23 +498,22 @@ function makeGuess(type) {
     return;
   }
   if (match) {
-    state.message = `✅ Correct! Cards match! (${describeCard(next)} = ${describeCard(prevCard)})`;
+    state.message = `✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next)})`;
     render();
     return;
   }
   if (lucky7WasArmed) {
-    state.message = `✅ Correct! Lucky 7 was spent. (${describeCard(next)} vs ${describeCard(prevCard)})`;
+    state.message = `✅ Correct! Lucky 7 was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next)})`;
     render();
     return;
   }
   if (fiveAliveWasArmed) {
-    state.message = `✅ Correct! Five Alive was spent. (${describeCard(next)} vs ${describeCard(prevCard)})`;
+    state.message = `✅ Correct! Five Alive was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next)})`;
     render();
     return;
   }
   // Default correct guess message with card comparison
-  const symbol = next.value > currentComparisonValue ? '>' : '<';
-  state.message = `✅ Correct! ${describeCard(next)} ${symbol} ${describeCard(prevCard)}!`;
+  state.message = `✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next)}!`;
   render();
   return;
 
