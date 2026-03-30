@@ -3,144 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>52! — Higher / Lower</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>52! - The Impossible Deck</title>
+  <link rel="stylesheet" href="intro.css">
 </head>
 <body>
-  <div id="game-shell">
-    <div class="bg-orb bg-orb-a"></div>
-    <div class="bg-orb bg-orb-b"></div>
+  <main class="intro-shell">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <div class="glow glow-c"></div>
 
-    <div id="game">
-      <header id="app-header" class="neon-panel">
-        <div class="header-flex">
-          <div class="title-lockup">
-            <h1>52! <span class="subtitle">Play Your Cards Roguelite!</span></h1>
-          </div>
-          <div id="top-bar" class="score-top-bar">
-            <div class="score-box stat-box stat-score pretty-score">
-              <div class="score-label">Score</div>
-              <div id="score">0</div>
-            </div>
-            <div class="score-box stat-box stat-best pretty-score">
-              <div class="score-label">Best</div>
-              <div id="best-score">0</div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <section class="intro-card">
+      <p class="eyebrow">A Game Of Impossible Odds</p>
+      <h1>52!</h1>
 
-      <main id="main-layout">
-        <section id="play-area" class="neon-panel">
-          <div id="message-bar"></div>
-          <div id="card-row">
-            <div class="card-column">
-              <div class="pile-label">Current Card</div>
-              <div id="current-card" class="card-face">?</div>
-              <div id="current-effective-value"></div>
-            </div>
+      <p class="premise">
+        The number of ways to thoroughly shuffle a pack of playing cards is so large it is almost certain the resulting deck has never existed before.
+      </p>
+      <p class="premise emphasis">
+        52 cards sit before you. No-one in human history has ever correctly predicted whether each is higher or lower than the one before it.
+      </p>
+      <p class="question">Can you?</p>
 
-            <div class="card-column">
-              <div class="pile-label">Next Card</div>
-              <div id="face-down-deck" class="card-back"></div>
-              <div id="face-down-count"></div>
-            </div>
-          </div>
+      <a class="play-button" href="game.html">Click To Play</a>
+    </section>
 
-          <div id="next-info"></div>
-
-          <div id="controls">
-            <button id="higher-btn">HIGHER</button>
-            <button id="lower-btn">LOWER</button>
-          </div>
-        </section>
-
-        <section id="cheats-panel" class="neon-panel">
-          <div class="section-title">Cheats In Hand</div>
-          <div class="scroll-hint">Swipe to view more →</div>
-          <div id="cheat-list"></div>
-        </section>
-
-        <section id="memory-panel" class="neon-panel">
-          <div class="section-title">Card Memory</div>
-          <div id="seen-grid-wrap">
-            <div id="seen-grid"></div>
-          </div>
-        </section>
-
-        <section id="utility-row">
-          <div id="powers-area" class="neon-panel utility-panel">
-            <div class="section-title">Active Powers</div>
-            <div id="active-powers">No active Powers.</div>
-          </div>
-
-          <div id="swap-area" class="neon-panel utility-panel">
-            <div class="section-title">Card In Hand</div>
-            <div id="swap-card">Empty</div>
-          </div>
-        </section>
-      </main>
-
-
-
-<div id="bottom-bar">
-  <button id="restart-btn">Start Run</button>
-  <div id="run-seed-area" style="margin-top: 0.5em;">
-    <div class="score-label" style="font-size: 0.95em; opacity: 0.8;">Run Seed</div>
-    <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed" style="width: 80%; max-width: 220px; margin: 0.25em 0;">
-    <div class="seed-actions" style="margin-bottom: 0.25em;">
-      <button id="random-seed-btn" type="button">Restart</button>
-      <button id="copy-seed-btn" type="button">Copy</button>
-    </div>
-    <div id="current-seed"></div>
-  </div>
-</div>
-
-      <div id="cheat-choice-container" class="hidden" aria-hidden="true">
-        <div class="choice-backdrop"></div>
-        <div class="choice-modal">
-          <div class="choice-title">CHOOSE YOUR CHEAT</div>
-          <div id="cheat-choice-list"></div>
-          <div class="choice-footer">Tap to select. Hold for info.</div>
-        </div>
-      </div>
-
-      <div id="cheat-tooltip" class="hidden" aria-hidden="true">
-        <div id="cheat-tooltip-title"></div>
-        <div id="cheat-tooltip-body"></div>
-      </div>
-
-      <section id="instructions-panel" class="dev-hidden">
-        <div id="instructions-box">
-          <h3>How To Play</h3>
-          <div id="instructions-text">
-            Guess whether the next card will be HIGHER or LOWER.<br><br>
-            Cards of equal value continue streak. Aces are low.<br><br>
-            Every 3 in a row lets you choose a Cheat.<br><br>
-            Cheats can bend the rules — use them wisely.<br><br>
-            Try to beat the 52 card deck.
-          </div>
-        </div>
-
-        <div id="cheat-guide-box">
-          <h3>Cheat Info</h3>
-          <div id="cheat-guide-list"></div>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <script src="js/constants.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/powers.js"></script>
-  <script src="js/cheats.js"></script>
-  <script src="js/logic.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/input.js"></script>
-  <script src="js/main.js"></script>
-
-
-
+    <aside class="card-fan" aria-hidden="true">
+      <div class="fancy-card card-1">A?</div>
+      <div class="fancy-card card-2">Q?</div>
+      <div class="fancy-card card-3">7?</div>
+    </aside>
+  </main>
 </body>
 </html>
