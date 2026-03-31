@@ -18,12 +18,15 @@ async function renderHeroesBoard() {
     const tr = document.createElement("tr");
 
     const nameTd = document.createElement("td");
+    nameTd.dataset.label = "Name";
     nameTd.innerText = hero.playerName || "Unknown";
 
     const seedTd = document.createElement("td");
+    seedTd.dataset.label = "Seed";
     seedTd.innerText = hero.seed || "-";
 
     const dateTd = document.createElement("td");
+    dateTd.dataset.label = "Date";
     dateTd.innerText = formatHeroDate(hero.createdAt);
 
     tr.appendChild(nameTd);
