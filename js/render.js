@@ -206,6 +206,52 @@ function renderCurrentCard() {
       : "";
 }
 
+function getGuessPreferenceSummary(bucket, prefix) {
+  const total = (bucket?.higher || 0) + (bucket?.lower || 0);
+  if (!total) return null;
+
+  const higherCount = bucket.higher || 0;
+  const lowerCount = bucket.lower || 0;
+  const favoredGuess = higherCount >= lowerCount ? "higher" : "lower";
+  const favoredCount = Math.max(higherCount, lowerCount);
+  const favoredPercent = Math.round((favoredCount / total) * 100);
+
+  if (prefix === "Picked") {
+    return `${prefix} ${favoredGuess} ${favoredPercent}%`;
+  }
+
+  return `${prefix}: ${favoredGuess} ${favoredPercent}%`;
+}
+
+function getCardStatsTooltipLines(entry) {
+  const lines = [];
+
+  const baseLine = getGuessPreferenceSummary(entry.guessStats?.base, "Picked");
+  if (baseLine) lines.push(baseLine);
+
+  const nudgedDownLine = getGuessPreferenceSummary(
+    entry.guessStats?.nudgedDown,
+    "Nudged down"
+  );
+  if (nudgedDownLine) lines.push(nudgedDownLine);
+
+  const nudgedUpLine = getGuessPreferenceSummary(
+    entry.guessStats?.nudgedUp,
+    "Nudged up"
+  );
+  if (nudgedUpLine) lines.push(nudgedUpLine);
+
+  if ((entry.endedRunFaceUpBase || 0) > 0) {
+    lines.push(`Ended run: ${entry.endedRunFaceUpBase}`);
+  }
+
+  if (!lines.length) {
+    lines.push("No card stats yet.");
+  }
+
+  return lines;
+}
+
 function renderNudgeControls() {
   const upBtn = document.getElementById("nudge-up-btn");
   const downBtn = document.getElementById("nudge-down-btn");
@@ -223,8 +269,8 @@ function renderNudgeControls() {
   const isBlocked =
     state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
 
-  upBtn.disabled = isBlocked || upCount <= 0;
-  downBtn.disabled = isBlocked || downCount <= 0;
+  upBtn.disabled = isBlocked || !canUseNudge("up");
+  downBtn.disabled = isBlocked || !canUseNudge("down");
 }
 
 function renderFaceDownDeck() {
@@ -268,17 +314,13 @@ function renderFaceDownDeck() {
 
   if (shouldShowDeckStatsTooltip) {
     const entry = getCardStatsEntry(next.id);
-    const guessedCount = (entry.endedRun || 0) + (entry.survivedRun || 0);
+    const statLines = getCardStatsTooltipLines(entry);
 
     const statsBox = document.createElement("div");
     statsBox.className = "card-back-stats";
     statsBox.setAttribute("role", "tooltip");
     statsBox.setAttribute("data-deck-stats-tooltip", "true");
-    statsBox.innerHTML = `
-      <div>Guessed: ${guessedCount}</div>
-      <div>Ended run: ${entry.endedRun || 0}</div>
-      <div>Didn’t end: ${entry.survivedRun || 0}</div>
-    `;
+    statsBox.innerHTML = statLines.map((line) => `<div>${line}</div>`).join("");
     deckEl.appendChild(statsBox);
   }
 
@@ -571,13 +613,7 @@ function render() {
   renderSeenGrid();
   renderRestartButton();
   renderMessage();
-    renderActivePowers();
-    renderCurrentCard();
-    renderFaceDownDeck();
-    renderButtons();
-    renderHandCard();
-    renderCheats();
-    renderCheatChoice();
-    renderSeenGrid();
-  return "✨";
+  renderNextInfo();
 }
+
+

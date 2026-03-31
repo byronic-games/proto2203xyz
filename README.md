@@ -1,368 +1,193 @@
-# 🃏 52 Highs & Lows – Prototype (proto2203xyz)
+# 52! Higher / Lower Roguelike UI Prototype
 
-A fast, modular higher/lower card roguelike with seeded runs, persistent knowledge, and expandable cheat + power systems.
+Browser-based higher/lower card roguelike prototype for mobile and desktop play. This branch is the active `USETHIS` working copy and includes the current game UI, progression systems, cheat tools, nudge controls, and tester/debug helpers.
 
----
+## Game Overview
 
-## 🎯 Overview
+- Standard 52-card deck
+- Aces are low
+- Matching the current value still survives
+- A wrong guess ends the run
+- Clearing the full deck wins the run
 
-This is a browser-based prototype built with a clean separation of:
+The game combines a simple higher/lower loop with roguelike ideas:
 
-* **State** → single source of truth
-* **Logic** → game rules & mutations
-* **Render** → UI output
+- seeded runs
+- persistent meta progression
+- unlockable cheats
+- starting powers
+- persistent card knowledge
+- optional leaderboard submission for completed runs
 
-Everything in the game flows through this model.
+## Current Functionality
 
----
+### Core Run Flow
 
-## 🕹 Core Gameplay
+- Start a run from a seed or generate one randomly
+- Default run power currently starts from `Nudge`
+- Guess with Higher / Lower controls
+- Earn streak rewards and choose cheats
+- Track best score, run score, and meta progression
+- Restart safely with confirmation during active runs
 
-* Standard 52-card deck (A = 1, J/Q/K = 11/12/13)
-* First card is revealed
-* Player guesses: **HIGHER** or **LOWER**
-* Equal value = success
-* Wrong guess = run ends
-* Clear the full deck = win
+### Nudge System
 
-### Progression Loop
+This branch uses dedicated nudge charges rather than showing basic nudges in the normal cheat hand.
 
-Each correct guess:
+- `Nudge +1` and `Nudge -1` are tracked as separate charge pools
+- Charge buttons are rendered in the game UI
+- Nudges change the effective current card value for the next guess
+- Nudges no longer consume at the edges:
+  - you cannot spend an upward nudge on a King
+  - you cannot spend a downward nudge on an Ace
 
-* +1 score
-* +1 meta progression
-* +1 streak
+### Cheats
 
-Every **3 correct in a row**:
-→ Choose **1 of 3 Cheats**
+Cheats are offered after streak milestones and cover:
 
----
+- range checks
+- rank checks like Ace / King detection
+- next-card and multi-card info
+- probabilities and parity
+- value-modifying cheats
+- survival cheats like `Lucky 7`, `Five Alive`, and `Odd One Out`
+- deck manipulation like `Swap`
+- card marking like `Tear Corner`
 
-## 🧠 Key Systems
+### Stats Power
 
-### 1. State System
+When the `Stats` power is active, the face-down deck tooltip can show persistent per-card history.
 
-Centralised in `state.js`
+Tracked card stats now include:
 
-Key fields:
+- overall attempts and correct guesses
+- whether a face-down card ended or survived a run
+- base guess preference: `Picked higher/lower X%`
+- nudged-up guess preference: `Nudged up: higher/lower X%`
+- nudged-down guess preference: `Nudged down: higher/lower X%`
+- `Ended run` count only when the revealed losing card was judged against an unnuged base card
 
-* `deck`, `index`, `current`
-* `cheats`, `pendingCheatOptions`
-* `powers`, `selectedStartPowerId`
-* `correctAnswers`, `streak`, `bestScore`
-* `metaProgression`
-* `cardStats`, `cardBackStatuses`
-* `seenCardIds`
-* `restartConfirmArmed`
+This structure is intended to stay expandable for future stat ideas.
 
-State is created via:
+### Meta Progression And Persistence
 
-```js
-createEmptyState()
+Saved in `localStorage`:
+
+- best score
+- last run seed
+- meta progression
+- card stats
+- card back status changes
+- cheat unlock discovery
+- preferred victory / leaderboard name where applicable
+
+### Leaderboard
+
+This branch includes leaderboard-related code in `js/leaderboard.js` and a victory flow that can prompt for a submitted hero name after a successful run.
+
+## Debug And Test Tools
+
+Most keyboard debug shortcuts in this branch are gated behind test mode.
+
+### Enable Test Mode
+
+Open the game with `?test` or `?debug` in the URL.
+
+Example:
+
+```text
+game.html?test
 ```
 
----
+### Keyboard Shortcuts
 
-### 2. Seeded Runs
+- `ArrowUp`: guess Higher
+- `ArrowDown`: guess Lower
+- `D`: add all currently eligible cheats to hand in test mode
+- `N`: add 10 `Nudge +1` and 10 `Nudge -1` charges in test mode
+- `C`: clear cheats in test mode
+- `F`: reset progression stats in test mode
+- `Shift + F`: full reset in test mode
 
-* Deterministic deck generation
-* Same seed = same run
+### URL Debug Actions
 
-```js
-seededShuffle(deck, seedString)
+Available test-mode query flags:
+
+- `?test`
+- `?debug`
+- `?addcheats`
+- `?clearcheats`
+- `?resetstats`
+- `?fullreset`
+
+### Built-In Self Tests
+
+`js/main.js` runs small console assertions on load, covering:
+
+- seeded shuffle determinism
+- seed normalization
+- clamp behavior
+- default state shape
+- cheat option generation
+- legacy card stat normalization into the expanded stat schema
+
+## Workflow Scripts
+
+### `checkin.ps1`
+
+- fetches the remote branch
+- checks out the working branch
+- optionally auto-stashes
+- rebases from remote
+- restores stash if needed
+
+### `checkout.ps1`
+
+- stages changes
+- commits if there are changes
+- pulls with rebase
+- pushes to remote
+
+## Cheat Catalog Tools
+
+This branch also includes balancing helpers:
+
+- `cheat-index.html`
+- `tools/import-cheats.ps1`
+- `tools/cheat-catalog.csv`
+- `js/cheat-balance-overrides.js`
+
+These support exporting, editing, and re-importing cheat balance data.
+
+## Project Structure
+
+```text
+game.html
+index.html
+styles.css
+README.md
+checkin.ps1
+checkout.ps1
+
+js/
+  constants.js
+  storage.js
+  state.js
+  powers.js
+  cheats.js
+  logic.js
+  render.js
+  input.js
+  leaderboard.js
+  heroes.js
+  main.js
+
+tools/
+  import-cheats.ps1
+  cheat-catalog.csv
 ```
 
-UI shows:
+## Notes
 
-```
-v0.1-XXXXXX
-```
-
----
-
-### 3. Cheats System
-
-Defined in `cheats.js`
-
-Each cheat:
-
-```js
-{
-  id,
-  name,
-  rarity,
-  included,
-  unlockAt,
-  stacking,
-  consumeOnUse,
-  use: () => {}
-}
-```
-
-#### Behaviour:
-
-* Earned every 3 streak
-* Choose 1 of 3
-* Stored in `state.cheats`
-* Used via buttons
-* Removed if `consumeOnUse = true`
-
-#### Filtering:
-
-* `included`
-* `unlockAt` vs meta progression
-* duplicate rules
-* power exclusions
-
----
-
-### 4. Cheat Info Panel (NEW)
-
-Displays **only relevant cheats**:
-
-* Cheats currently in hand
-* Cheats currently being offered
-
-Not the full cheat list.
-
-Driven by:
-
-```js
-state.cheats
-state.pendingCheatOptions
-```
-
----
-
-### 5. Powers System
-
-Defined in `powers.js`
-
-Current powers:
-
-#### Nudge
-
-* Grants +1 / -1 cheats on correct guesses
-
-#### Stats
-
-* Shows per-card history on deck back
-* Suppresses Nudge rewards
-
----
-
-### 6. Meta Progression
-
-Persistent across runs via `localStorage`
-
-* +1 per correct guess
-* Used for future unlock gating
-
-```js
-addMetaProgression(1)
-```
-
----
-
-### 7. Persistent Card Knowledge
-
-Stored per card:
-
-```js
-{
-  attempts,
-  correct,
-  endedRun,
-  survivedRun
-}
-```
-
-Used for:
-
-* Deck-back stats
-* Future decision systems
-
----
-
-## 🧩 UI Layout
-
-Three-column layout:
-
-### Left Panel
-
-* How To Play
-* Cheat Info
-
-### Centre Panel
-
-* Cards
-* Higher / Lower buttons
-* Cheats in hand
-* Messages
-* Start Run
-
-### Right Panel
-
-* Seen cards grid
-* Active powers
-* Card in hand
-
----
-
-## 🔁 Restart Safety (NEW)
-
-Prevents accidental restart mid-run:
-
-* First click → "Confirm Restart"
-* Second click → restart
-
-Controlled via:
-
-```js
-state.restartConfirmArmed
-```
-
----
-
-## 🎮 Controls
-
-### Mouse / Touch
-
-* HIGHER / LOWER buttons
-* Start Run / Restart
-* Cheat selection
-
-### Keyboard
-
-* ↑ → Higher
-* ↓ → Lower
-* D → Add all cheats (debug)
-* C → Clear cheats (debug)
-* F → Reset stats
-* Shift + F → Full reset
-
----
-
-## 🗂 File Structure
-
-```
-index.html        → layout + script loading
-styles.css        → styling
-
-/js/
-  constants.js    → cards, RNG, seeds
-  storage.js      → localStorage helpers
-  state.js        → state creation
-  logic.js        → gameplay rules
-  render.js       → UI rendering
-  input.js        → controls + debug
-  cheats.js       → cheat definitions
-  powers.js       → power logic
-  main.js         → boot + tests
-```
-
----
-
-## ⚙️ Current Features
-
-### Gameplay
-
-* Deterministic seeded runs
-* Higher/lower core loop
-* Streak-based rewards
-
-### Cheats (examples)
-
-* Above 9?
-* Below 5?
-* Between 5–9
-* Total of next 2 / 3 cards
-* Chance higher / lower
-* Nudge ±1
-* Swap
-* Tear Corner
-
-### Systems
-
-* Meta progression
-* Persistent card memory
-* Deck-back stats
-* Power toggling mid-run
-* Restart confirmation
-
----
-
-## ⚠️ Known Issues / Gaps
-
-* Cheat rarity not yet used for weighting
-* Meta progression has no milestones/unlocks yet
-* Only one starting power selectable
-* No animation / juice layer yet
-* Minor HTML typo (`<<div id="main-layout">`)
-
----
-
-## 🔮 Suggested Next Steps
-
-### High Impact
-
-* Weighted cheat selection (use rarity)
-* Meta progression unlock system
-* Expand power system
-
-### Medium
-
-* Cheat synergies
-* Deck marking expansion
-* Difficulty scaling
-
-### Low Effort Wins
-
-* Animations / feedback
-* Sound effects
-* UI polish
-
----
-
-## 🧠 Summary
-
-This project provides:
-
-* A modular roguelike card engine
-* Persistent progression + learning systems
-* Expandable cheat + power architecture
-* Clean separation of logic, state, and UI
-
-The foundation is solid — next phase is **depth, balance, and feel**.
-
----
-
-## Cheat Catalog (Balancing)
-
-Use cheat-index.html to get a live catalog of cheats from js/cheats.js.
-
-It shows:
-
-* rarity
-* unlock level (unlockAt)
-* inclusion/exclusion rules
-* stacking behavior
-* descriptions
-
-You can also click **Download CSV** on that page for spreadsheet balancing.
-
-
-## CSV Import (Cheat Balancing)
-
-You can re-import cheat balancing changes from CSV without editing `js/cheats.js` directly.
-
-1. Open `cheat-index.html` and click **Download CSV**.
-2. Edit the CSV values (`name`, `rarity`, `unlockAt`, `included`, `stacking`, `weight`, `poolExcludedIfPowerOwned`, `description`).
-3. Save the CSV to the repo root (for example `cheat-catalog.csv`).
-4. Run:
-
-```powershell
-.\tools\import-cheats.ps1 -CsvPath .\cheat-catalog.csv -OutputPath .\js\cheat-balance-overrides.js
-```
-
-The game and cheat index both load `js/cheat-balance-overrides.js` automatically.
+- This `USETHIS` folder is the branch/worktree you are actively checking in and out against GitHub.
+- The nudge guardrails, expanded stats tooltip model, and `N` bulk-nudge debug shortcut are now implemented here.

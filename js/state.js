@@ -55,6 +55,8 @@ function createEmptyState() {
     cheatUnlocks: loadCheatUnlocks(),
     justUnlockedCheatIds: [],
     lucky7Armed: false,
+    fiveAliveArmed: false,
+    oddOneOutArmed: false,
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,

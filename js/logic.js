@@ -163,13 +163,40 @@ function canUseNudge(direction) {
     state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
   if (isBlocked) return false;
 
-  if (direction === "up") return (state.nudgeUpCharges || 0) > 0;
-  if (direction === "down") return (state.nudgeDownCharges || 0) > 0;
+  const effectiveValue = getCurrentEffectiveValue();
+  if (direction === "up") {
+    return (state.nudgeUpCharges || 0) > 0 && effectiveValue < 13;
+  }
+  if (direction === "down") {
+    return (state.nudgeDownCharges || 0) > 0 && effectiveValue > 1;
+  }
   return false;
 }
 
 function useNudgeCharge(direction) {
-  if (!canUseNudge(direction)) return;
+  if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat) {
+    return;
+  }
+
+  const effectiveValue = getCurrentEffectiveValue();
+
+  if (direction === "up") {
+    if ((state.nudgeUpCharges || 0) <= 0) return;
+    if (effectiveValue >= 13) {
+      state.message = "Cannot use Nudge +1 on a King.";
+      render();
+      return;
+    }
+  }
+
+  if (direction === "down") {
+    if ((state.nudgeDownCharges || 0) <= 0) return;
+    if (effectiveValue <= 1) {
+      state.message = "Cannot use Nudge -1 on an Ace.";
+      render();
+      return;
+    }
+  }
 
   if (direction === "up") {
     state.nudgeUpCharges = Math.max(0, (state.nudgeUpCharges || 0) - 1);
@@ -196,11 +223,21 @@ function getCardStatsEntry(cardId) {
   return state.cardStats[cardId];
 }
 
-function recordCurrentCardGuess(card, wasCorrectGuess) {
+function getGuessContextKey() {
+  if (state.currentValueModifier > 0) return "nudgedUp";
+  if (state.currentValueModifier < 0) return "nudgedDown";
+  return "base";
+}
+
+function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
   if (!card) return;
   const entry = getCardStatsEntry(card.id);
+  const guessBucket = entry.guessStats[getGuessContextKey()];
   entry.attempts += 1;
   if (wasCorrectGuess) entry.correct += 1;
+  if (guessType === "higher" || guessType === "lower") {
+    guessBucket[guessType] += 1;
+  }
   saveCardStats(state.cardStats);
 }
 
@@ -209,11 +246,14 @@ function addMetaProgression(amount = 1) {
   saveMetaProgression(state.metaProgression);
 }
 
-function recordFaceDownOutcome(card, endedRun) {
+function recordFaceDownOutcome(card, endedRun, currentWasBase = true) {
   if (!card) return;
   const entry = getCardStatsEntry(card.id);
   if (endedRun) {
     entry.endedRun += 1;
+    if (currentWasBase) {
+      entry.endedRunFaceUpBase += 1;
+    }
   } else {
     entry.survivedRun += 1;
   }
@@ -264,6 +304,19 @@ function addMissingCheatsForDebug() {
     added.length > 0
       ? ` Debug: added ${added.join(", ")}.`
       : " Debug: no missing Cheats to add.";
+  render();
+}
+
+function addBulkNudgesForDebug(count = 10) {
+  if (!state.current || state.gameOver) {
+    state.message = " Debug: start a run before adding bulk nudges.";
+    render();
+    return;
+  }
+
+  state.nudgeUpCharges = (state.nudgeUpCharges || 0) + count;
+  state.nudgeDownCharges = (state.nudgeDownCharges || 0) + count;
+  state.message = ` Debug: added ${count} Nudge +1 and ${count} Nudge -1 charges.`;
   render();
 }
 
@@ -375,6 +428,7 @@ function makeGuess(type) {
   if (!next) return;
 
   const currentComparisonValue = getCurrentEffectiveValue();
+  const currentWasBase = state.currentValueModifier === 0;
   const el = document.getElementById("next-info");
   if (el) el.innerText = "";
 
@@ -395,8 +449,8 @@ function makeGuess(type) {
   const nextIsOddForOddOneOut = next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
   if (oddOneOutWasArmed) {
     if (nextIsOddForOddOneOut) {
-      recordCurrentCardGuess(state.current, false);
-      recordFaceDownOutcome(next, true);
+      recordCurrentCardGuess(state.current, type, false);
+      recordFaceDownOutcome(next, true, currentWasBase);
       advanceToCard(next);
       state.currentValueModifier = 0;
       state.streak = 0;
@@ -428,8 +482,8 @@ function makeGuess(type) {
   }
 
   if (!correct) {
-    recordCurrentCardGuess(state.current, false);
-    recordFaceDownOutcome(next, true);
+    recordCurrentCardGuess(state.current, type, false);
+    recordFaceDownOutcome(next, true, currentWasBase);
     advanceToCard(next);
     state.currentValueModifier = 0;
     state.streak = 0;
@@ -443,8 +497,8 @@ function makeGuess(type) {
   // --- All correct guess logic below ---
   // Save the current card before advancing for correct log display
   const prevCard = state.current;
-  recordCurrentCardGuess(state.current, true);
-  recordFaceDownOutcome(next, false);
+  recordCurrentCardGuess(state.current, type, true);
+  recordFaceDownOutcome(next, false, currentWasBase);
   advanceToCard(next);
   state.correctAnswers += 1;
   state.currentValueModifier = 0;

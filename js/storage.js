@@ -8,12 +8,27 @@ function saveBestScore(score) {
       localStorage.setItem(BEST_SCORE_KEY, String(score));
     }
 
+function normalizeGuessBucket(bucket = {}) {
+  return {
+    higher: Number.isFinite(bucket.higher) ? bucket.higher : 0,
+    lower: Number.isFinite(bucket.lower) ? bucket.lower : 0,
+  };
+}
+
 function normalizeCardStatsEntry(entry = {}) {
   return {
     correct: Number.isFinite(entry.correct) ? entry.correct : 0,
     attempts: Number.isFinite(entry.attempts) ? entry.attempts : 0,
     endedRun: Number.isFinite(entry.endedRun) ? entry.endedRun : 0,
     survivedRun: Number.isFinite(entry.survivedRun) ? entry.survivedRun : 0,
+    guessStats: {
+      base: normalizeGuessBucket(entry.guessStats?.base),
+      nudgedUp: normalizeGuessBucket(entry.guessStats?.nudgedUp),
+      nudgedDown: normalizeGuessBucket(entry.guessStats?.nudgedDown),
+    },
+    endedRunFaceUpBase: Number.isFinite(entry.endedRunFaceUpBase)
+      ? entry.endedRunFaceUpBase
+      : 0,
   };
 }
 

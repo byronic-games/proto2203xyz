@@ -15,6 +15,10 @@ function runSelfTests() {
       const normalizedStats = normalizeCardStatsEntry({ correct: 2, attempts: 5 });
       console.assert(normalizedStats.endedRun === 0, "Legacy stat entries should gain endedRun field.");
       console.assert(normalizedStats.survivedRun === 0, "Legacy stat entries should gain survivedRun field.");
+      console.assert(normalizedStats.guessStats.base.higher === 0, "Legacy stat entries should gain base guess stats.");
+      console.assert(normalizedStats.guessStats.nudgedUp.lower === 0, "Legacy stat entries should gain nudged-up guess stats.");
+      console.assert(normalizedStats.guessStats.nudgedDown.higher === 0, "Legacy stat entries should gain nudged-down guess stats.");
+      console.assert(normalizedStats.endedRunFaceUpBase === 0, "Legacy stat entries should gain endedRunFaceUpBase field.");
     }
 
 function getTestModeFlags() {

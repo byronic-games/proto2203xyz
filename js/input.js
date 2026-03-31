@@ -230,24 +230,30 @@ window.addEventListener(
 
 window.addEventListener("keydown", (e) => {
   const debugEnabled = !!window.testModeEnabled;
+  const matchesKey = (key, code) => e.key === key || e.key === key.toUpperCase() || e.code === code;
   if (debugEnabled) {
-    if (e.key === "c" || e.key === "C") {
+    if (matchesKey("c", "KeyC")) {
       clearCheatsForDebug();
       return;
     }
 
-    if ((e.key === "f" || e.key === "F") && !e.shiftKey) {
+    if (matchesKey("f", "KeyF") && !e.shiftKey) {
       resetAllStatsForDebug();
       return;
     }
 
-    if ((e.key === "f" || e.key === "F") && e.shiftKey) {
+    if (matchesKey("f", "KeyF") && e.shiftKey) {
       fullResetAllStateForDebug();
       return;
     }
 
-    if (e.key === "d" || e.key === "D") {
+    if (matchesKey("d", "KeyD")) {
       addMissingCheatsForDebug();
+      return;
+    }
+
+    if (matchesKey("n", "KeyN")) {
+      addBulkNudgesForDebug();
       return;
     }
   }
