@@ -54,6 +54,7 @@ function createEmptyState() {
     cardBackStatuses: loadCardBackStatuses(),
     cheatUnlocks: loadCheatUnlocks(),
     justUnlockedCheatIds: [],
+    cheatChoiceLockedUntil: 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
     oddOneOutArmed: false,

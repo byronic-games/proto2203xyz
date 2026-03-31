@@ -58,6 +58,7 @@ function startRun(forceRandom = false) {
     cardBackStatuses: loadCardBackStatuses(),
     cheatUnlocks: loadCheatUnlocks(),
     justUnlockedCheatIds: [],
+    cheatChoiceLockedUntil: 0,
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
@@ -323,6 +324,7 @@ function addBulkNudgesForDebug(count = 10) {
 function clearCheatsForDebug() {
   state.cheats = [];
   state.pendingCheatOptions = [];
+  state.cheatChoiceLockedUntil = 0;
   state.message = " Debug: cleared all cheats.";
   render();
 }

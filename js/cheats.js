@@ -1,4 +1,5 @@
 const RANGE_CHEAT_DELTA = 3;
+const CHEAT_CHOICE_LOCK_MS = 500;
 
 function getNextCardAt(offset = 1) {
   return state.deck[state.index + offset] || null;
@@ -688,6 +689,7 @@ function offerCheatChoice() {
   const newlyMetaUnlocked = markMetaUnlockedCheats();
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
   state.pendingCheatOptions = getRandomCheatOptions(3);
+  state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
 
   if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
@@ -699,6 +701,8 @@ function offerCheatChoice() {
 }
 
 function pickCheatFromChoice(index) {
+  if (Date.now() < (state.cheatChoiceLockedUntil || 0)) return;
+
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
 
@@ -720,5 +724,6 @@ function pickCheatFromChoice(index) {
 
   state.pendingCheatOptions = [];
   state.justUnlockedCheatIds = [];
+  state.cheatChoiceLockedUntil = 0;
   render();
 }

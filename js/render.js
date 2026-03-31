@@ -488,10 +488,13 @@ function renderCheatChoice() {
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
 
+  const choiceLocked = Date.now() < (state.cheatChoiceLockedUntil || 0);
+
   state.pendingCheatOptions.forEach((cheat, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `choice-card ${cheat.rarity || "common"}`;
+    btn.disabled = choiceLocked;
 
     const top = document.createElement("div");
     top.className = "choice-top";
@@ -530,6 +533,10 @@ function renderCheatChoice() {
 
     list.appendChild(btn);
   });
+
+  if (choiceLocked) {
+    window.setTimeout(render, Math.max(0, (state.cheatChoiceLockedUntil || 0) - Date.now()));
+  }
 }
 function renderSeenGrid() {
   const grid = document.getElementById("seen-grid");
