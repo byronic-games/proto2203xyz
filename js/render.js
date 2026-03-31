@@ -5,7 +5,7 @@ function renderScores() {
 
   if (scoreEl) scoreEl.innerText = String(state.correctAnswers);
   if (bestScoreEl) bestScoreEl.innerText = String(state.bestScore);
-  if (streakEl) streakEl.innerText = `+${state.streak || 0} Streak`;
+  if (streakEl) streakEl.innerText = "";
 
   const metaEl = document.getElementById("meta-progression");
   if (metaEl) {
@@ -317,7 +317,7 @@ function renderFaceDownDeck() {
   }
 
   const remainingCount = getFaceDownCount();
-  countEl.innerText = `${remainingCount} cards remain`;
+  countEl.innerText = "";
   if (remainingValueEl) {
     remainingValueEl.innerText = String(remainingCount).padStart(2, "0");
   }
