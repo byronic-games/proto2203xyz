@@ -126,6 +126,19 @@ function getCheatRewardThreshold() {
 }
 
 function awardOnCorrectGuessPowers(guessType) {
-  void guessType;
-  return [];
+  const awardedNames = [];
+
+  if (runHasPower("nudge_engine")) {
+    if (guessType === "higher") {
+      state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
+      awardedNames.push("Nudge +1");
+    }
+
+    if (guessType === "lower") {
+      state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 1;
+      awardedNames.push("Nudge -1");
+    }
+  }
+
+  return awardedNames;
 }

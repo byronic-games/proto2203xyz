@@ -88,7 +88,9 @@ function startRunWithPower(powerId) {
     ? [...state.pendingRunDeck]
     : buildRunFromControls(false).deck;
   const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
-  const activePowers = selectedPowerId ? [selectedPowerId] : [];
+  const activePowers = selectedPowerId
+    ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
+    : ["nudge_engine"];
 
   state = {
     deck,

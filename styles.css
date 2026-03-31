@@ -1162,6 +1162,14 @@ h1 {
   justify-content: center;
 }
 
+@media (max-width: 820px) {
+  #power-choice-list,
+  #power-choice-list[data-count="2"] {
+    grid-template-columns: 1fr;
+    max-width: 340px;
+  }
+}
+
 .choice-card {
   min-height: 190px;
   border-radius: 20px;
