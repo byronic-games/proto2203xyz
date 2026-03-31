@@ -1,6 +1,11 @@
 function renderScores() {
-  document.getElementById("score").innerText = state.correctAnswers;
-  document.getElementById("best-score").innerText = state.bestScore;
+  const scoreEl = document.getElementById("score");
+  const bestScoreEl = document.getElementById("best-score");
+  const streakEl = document.getElementById("current-streak");
+
+  if (scoreEl) scoreEl.innerText = String(state.correctAnswers);
+  if (bestScoreEl) bestScoreEl.innerText = String(state.bestScore);
+  if (streakEl) streakEl.innerText = `+${state.streak || 0} Streak`;
 
   const metaEl = document.getElementById("meta-progression");
   if (metaEl) {
@@ -262,6 +267,7 @@ function renderNudgeControls() {
 function renderFaceDownDeck() {
   const deckEl = document.getElementById("face-down-deck");
   const countEl = document.getElementById("face-down-count");
+  const remainingValueEl = document.getElementById("cards-remaining-value");
 
   if (!deckEl || !countEl) return;
 
@@ -270,6 +276,7 @@ function renderFaceDownDeck() {
     deckEl.className = "card-back card-back-blue";
     deckEl.removeAttribute("data-back-color");
     countEl.innerText = "";
+    if (remainingValueEl) remainingValueEl.innerText = "00";
     return;
   }
 
@@ -309,7 +316,11 @@ function renderFaceDownDeck() {
     deckEl.appendChild(statsBox);
   }
 
-  countEl.innerText = `${getFaceDownCount()} card(s) remain`;
+  const remainingCount = getFaceDownCount();
+  countEl.innerText = `${remainingCount} cards remain`;
+  if (remainingValueEl) {
+    remainingValueEl.innerText = String(remainingCount).padStart(2, "0");
+  }
 }
 
 function renderButtons() {
@@ -635,6 +646,11 @@ function renderSeenGrid() {
   }
 
   note.className = "seen-grid-note";
+
+  const seenCountBadge = document.getElementById("seen-count-badge");
+  if (seenCountBadge) {
+    seenCountBadge.innerText = `${state.seenCardIds.size} / 52 Tracked`;
+  }
   note.innerText = "J = 11   •   Q = 12   •   K = 13";
 }
 

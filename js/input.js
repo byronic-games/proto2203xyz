@@ -41,6 +41,29 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
+function closeHowToModal() {
+  const modal = document.getElementById("game-howto-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function openHowToModal() {
+  const modal = document.getElementById("game-howto-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+document.getElementById("howto-open-btn")?.addEventListener("click", openHowToModal);
+document.getElementById("howto-close-btn")?.addEventListener("click", closeHowToModal);
+document.getElementById("howto-close-backdrop")?.addEventListener("click", closeHowToModal);
+
+document.getElementById("settings-btn")?.addEventListener("click", () => {
+  state.message = "Settings will come later.";
+  renderMessage();
+});
+
 document.getElementById("nudge-up-btn")?.addEventListener("click", () => {
   useNudgeCharge("up");
 });
@@ -254,6 +277,10 @@ window.addEventListener("keydown", (e) => {
       addBulkNudgesForDebug();
       return;
     }
+  }
+
+  if (e.key === "Escape") {
+    closeHowToModal();
   }
 
   if (state.gameOver || state.pendingCheatOptions.length > 0 || state.pendingPowerOptions.length > 0) return;

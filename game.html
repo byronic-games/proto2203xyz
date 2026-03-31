@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>52! — Higher / Lower</title>
+  <title>52! - Higher / Lower</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,100 +15,181 @@
     <div class="bg-orb bg-orb-b"></div>
 
     <div id="game">
-      <header id="app-header" class="neon-panel">
-        <div class="header-flex">
-          <div class="title-lockup">
-            <h1>52! <span class="subtitle">Play Your Cards Roguelite!</span></h1>
+      <header id="app-header">
+        <div class="brand-lockup">
+          <h1>52!</h1>
+        </div>
+
+        <div class="header-meta">
+          <div class="header-seed">
+            <div class="hud-label">Seed</div>
+            <div id="current-seed">V-</div>
           </div>
-          <div id="top-bar" class="score-top-bar">
-            <div class="score-box stat-box stat-score pretty-score">
-              <div class="score-label">Score</div>
-              <div id="score">0</div>
-            </div>
-            <div class="score-box stat-box stat-best pretty-score">
-              <div class="score-label">Best</div>
-              <div id="best-score">0</div>
-            </div>
+
+          <div class="header-best">
+            <div class="hud-label">Highest Run</div>
+            <div id="best-score">0</div>
           </div>
+
+          <button id="settings-btn" class="icon-button" type="button" aria-label="Settings">
+            <span class="gear-icon" aria-hidden="true">⚙</span>
+          </button>
         </div>
       </header>
 
+      <section id="seed-console">
+        <label class="seed-console-label" for="run-seed-input">Run Seed</label>
+        <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
+        <div class="seed-actions">
+          <button id="random-seed-btn" type="button">Random</button>
+          <button id="copy-seed-btn" type="button">Copy</button>
+        </div>
+      </section>
+
       <main id="main-layout">
-        <section id="play-area" class="neon-panel">
-          <div id="message-bar"></div>
+        <div id="message-bar"></div>
+
+        <section id="hud-row">
+          <article class="hud-card hud-card-score">
+            <div class="hud-label">Cards Cleared</div>
+            <div class="hud-value-wrap">
+              <div id="score">0</div>
+              <div id="current-streak" class="hud-chip">+0 Streak</div>
+            </div>
+          </article>
+
+          <article class="hud-card hud-card-remaining">
+            <div class="hud-label">Cards Remaining</div>
+            <div class="hud-value-wrap">
+              <div id="cards-remaining-value">52</div>
+              <div id="face-down-count">52 cards remain</div>
+            </div>
+          </article>
+        </section>
+
+        <section id="play-area">
           <div id="card-row">
-            <div class="card-column">
-              <div class="pile-label">Current Card</div>
-              <div class="current-card-wrap">
-                <div class="nudge-stack" aria-label="Nudge controls">
-                  <div class="nudge-label">Nudges</div>
-                  <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
-                    <span id="nudge-up-count">0</span>
-                  </button>
-                  <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
-                    <span id="nudge-down-count">0</span>
-                  </button>
+            <div class="play-stack play-stack-current">
+              <div class="card-column">
+                <div class="pile-label">Current Card</div>
+                <div class="current-card-wrap">
+                  <div id="current-card" class="card-face">?</div>
+                  <div class="nudge-stack" aria-label="Nudge controls">
+                    <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
+                      <span class="nudge-symbol">▲</span>
+                      <span id="nudge-up-count" class="nudge-count">0</span>
+                    </button>
+                    <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
+                      <span class="nudge-symbol">▼</span>
+                      <span id="nudge-down-count" class="nudge-count">0</span>
+                    </button>
+                  </div>
                 </div>
-                <div id="current-card" class="card-face">?</div>
+                <div id="current-effective-value"></div>
               </div>
-              <div id="current-effective-value"></div>
             </div>
 
-            <div class="card-column">
-              <div class="pile-label">Next Card</div>
-              <div id="face-down-deck" class="card-back"></div>
-              <div id="face-down-count"></div>
+            <div class="play-stack play-stack-next">
+              <div class="card-column">
+                <div class="pile-label">Next Card</div>
+                <div id="face-down-deck" class="card-back"></div>
+              </div>
             </div>
           </div>
 
           <div id="next-info"></div>
 
           <div id="controls">
-            <button id="higher-btn">HIGHER</button>
-            <button id="lower-btn">LOWER</button>
+            <button id="higher-btn" type="button">Higher</button>
+            <button id="lower-btn" type="button">Lower</button>
           </div>
         </section>
 
-        <section id="cheats-panel" class="neon-panel">
-          <div class="section-title">Cheats In Hand</div>
-          <div class="scroll-hint">Swipe to view more →</div>
+        <section id="cheats-panel">
+          <div class="section-bar">
+            <div class="section-title">Run Tools</div>
+          </div>
           <div id="cheat-list"></div>
         </section>
 
-        <section id="memory-panel" class="neon-panel">
-          <div class="section-title">Card Memory</div>
+        <section id="utility-row">
+          <article id="powers-area" class="utility-panel">
+            <div class="section-title">Active Power</div>
+            <div id="active-powers">Power chosen when the run starts.</div>
+          </article>
+
+          <article id="swap-area" class="utility-panel">
+            <div class="section-title">Card In Hand</div>
+            <div id="swap-card">Empty</div>
+          </article>
+        </section>
+
+        <section id="memory-panel">
+          <div class="section-bar">
+            <div class="section-title">Cards Seen This Run</div>
+            <div id="seen-count-badge" class="section-chip">0 / 52 Tracked</div>
+          </div>
           <div id="seen-grid-wrap">
             <div id="seen-grid"></div>
           </div>
         </section>
-
-        <section id="utility-row">
-          <div id="powers-area" class="neon-panel utility-panel">
-            <div class="section-title">Active Powers</div>
-            <div id="active-powers">No active Powers.</div>
-          </div>
-
-          <div id="swap-area" class="neon-panel utility-panel">
-            <div class="section-title">Card In Hand</div>
-            <div id="swap-card">Empty</div>
-          </div>
-        </section>
       </main>
 
+      <nav id="bottom-bar" aria-label="Game navigation">
+        <button id="restart-btn" class="nav-action nav-action-primary" type="button">
+          <span class="nav-icon">▶</span>
+          <span class="nav-label">Start Run</span>
+        </button>
 
+        <button id="howto-open-btn" class="nav-action" type="button">
+          <span class="nav-icon">?</span>
+          <span class="nav-label">How To Play</span>
+        </button>
 
-<div id="bottom-bar">
-  <button id="restart-btn">Start Run</button>
-  <div id="run-seed-area" style="margin-top: 0.5em;">
-    <div class="score-label" style="font-size: 0.95em; opacity: 0.8;">Run Seed</div>
-    <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed" style="width: 80%; max-width: 220px; margin: 0.25em 0;">
-    <div class="seed-actions" style="margin-bottom: 0.25em;">
-      <button id="random-seed-btn" type="button">Restart</button>
-      <button id="copy-seed-btn" type="button">Copy</button>
-    </div>
-    <div id="current-seed"></div>
-  </div>
-</div>
+        <a class="nav-action" href="heroes.html">
+          <span class="nav-icon">▥</span>
+          <span class="nav-label">High Scores</span>
+        </a>
+
+        <a class="nav-action" href="index.html">
+          <span class="nav-icon">↩</span>
+          <span class="nav-label">Exit</span>
+        </a>
+      </nav>
+
+      <div id="game-howto-modal" class="hidden" aria-hidden="true">
+        <div class="help-backdrop" id="howto-close-backdrop"></div>
+        <article class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+          <h2 id="howto-title">How To Play</h2>
+
+          <div class="help-block">
+            <h3>The Goal</h3>
+            <p>Clear the full 52-card deck by guessing whether the next card is higher or lower than the current one.</p>
+          </div>
+
+          <div class="help-block">
+            <h3>The Basics</h3>
+            <ul>
+              <li>Equal value cards are safe and your run continues.</li>
+              <li>Every correct guess grows your streak and can earn Cheats.</li>
+              <li>Nudges let you temporarily shift the judged value of the current card before you guess.</li>
+              <li>Some runs also start with a Power that changes the rules or your opening tools.</li>
+            </ul>
+          </div>
+
+          <div class="help-block">
+            <h3>Screen Guide</h3>
+            <ul>
+              <li>The top HUD shows your seed, best run, cards cleared, and cards remaining.</li>
+              <li>The card buttons beside the current card show your available up and down nudge counts.</li>
+              <li>The Run Tools row shows Cheats in hand. Tap to use, hold on touch to read the description.</li>
+              <li>The tracked grid records which cards you have already seen this run.</li>
+            </ul>
+          </div>
+
+          <button id="howto-close-btn" class="help-close-btn" type="button">Close</button>
+        </article>
+      </div>
 
       <div id="victory-modal" class="hidden" aria-hidden="true">
         <div class="victory-backdrop"></div>
@@ -134,7 +218,7 @@
       <div id="cheat-choice-container" class="hidden" aria-hidden="true">
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
-          <div class="choice-title">CHOOSE YOUR CHEAT</div>
+          <div class="choice-title">Choose Your Cheat</div>
           <div id="cheat-choice-list"></div>
           <div class="choice-footer">Tap to select.</div>
         </div>
@@ -143,7 +227,7 @@
       <div id="power-choice-container" class="hidden" aria-hidden="true">
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
-          <div class="choice-title">CHOOSE YOUR POWER</div>
+          <div class="choice-title">Choose Your Power</div>
           <div id="power-choice-list"></div>
           <div class="choice-footer">Pick 1 before the run begins.</div>
         </div>
@@ -157,13 +241,7 @@
       <section id="instructions-panel" class="dev-hidden">
         <div id="instructions-box">
           <h3>How To Play</h3>
-          <div id="instructions-text">
-            Guess whether the next card will be HIGHER or LOWER.<br><br>
-            Cards of equal value continue streak. Aces are low.<br><br>
-            Every 3 in a row lets you choose a Cheat.<br><br>
-            Cheats can bend the rules — use them wisely.<br><br>
-            Try to beat the 52 card deck.
-          </div>
+          <div id="instructions-text"></div>
         </div>
 
         <div id="cheat-guide-box">
@@ -186,8 +264,5 @@
   <script src="js/render.js"></script>
   <script src="js/input.js"></script>
   <script src="js/main.js"></script>
-
-
-
 </body>
 </html>
