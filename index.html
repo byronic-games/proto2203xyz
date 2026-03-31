@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#120b1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="52!">
   <title>52! - The Impossible Deck</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="intro.css">
 </head>
 <body>
@@ -43,32 +51,40 @@
         <h2 id="howto-title">How To Play</h2>
 
         <div class="howto-block">
-          <h3>Brief Intro</h3>
+          <h3>The Goal</h3>
           <p>
-            Every run starts from a seeded 52-card deck. Your goal is simple and brutal:
-            predict whether each next card is higher or lower than the current one, all the way to the end.
+            Every run starts from a seeded 52-card deck. Your job is simple and brutal:
+            decide whether the next card is higher or lower than the current one, and survive all the way to the end.
           </p>
         </div>
 
         <div class="howto-block">
-          <h3>Guide</h3>
-          <ol>
-            <li>Press <strong>Click To Play</strong> and start a run.</li>
-            <li>You will see a current face-up card and the next card face-down.</li>
-            <li>Choose <strong>HIGHER</strong> or <strong>LOWER</strong> for the next card.</li>
-            <li>Equal value cards count as safe and your run continues.</li>
-            <li>Build streaks to earn cheats; use them at the right moment.</li>
-            <li>If you clear all 52 cards, your seed can be recorded on the heroes board.</li>
-          </ol>
+          <h3>The Rules</h3>
+          <ul>
+            <li>Pick <strong>Higher</strong> or <strong>Lower</strong> for the next face-down card.</li>
+            <li>Equal values are safe, so your run continues on a match.</li>
+            <li>A wrong guess ends the run immediately.</li>
+            <li>Clear the full deck to record a winning run on the heroes board.</li>
+          </ul>
         </div>
 
         <div class="howto-block">
-          <h3>Nudges & Cheats</h3>
+          <h3>Powers, Nudges, And Cheats</h3>
           <ul>
-            <li><strong>Nudges:</strong> Use the up/down arrows beside the current card to temporarily shift its judged value before your next guess.</li>
-            <li><strong>Temporary values:</strong> If a card is modified, it is marked as temporary and the run log uses the judged value for that comparison.</li>
-            <li><strong>Cheats in Hand:</strong> Tap a cheat card to activate it. Some stack, some are one-shot, and timing is everything.</li>
-            <li><strong>On mobile:</strong> Swipe the cheat row to view more cheats, then tap to use.</li>
+            <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
+            <li><strong>Blue Deck Nudges:</strong> In the current test build, every correct <strong>Higher</strong> guess adds an up nudge, and every correct <strong>Lower</strong> guess adds a down nudge.</li>
+            <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
+            <li><strong>Cheats:</strong> Build streaks to earn Cheats. Tap to use them, and on mobile hold a cheat to read its tooltip.</li>
+            <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
+          </ul>
+        </div>
+
+        <div class="howto-block">
+          <h3>What You See</h3>
+          <ul>
+            <li>The top HUD shows your seed, best run, cards cleared, and cards remaining.</li>
+            <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
+            <li>The tracked grid records which cards you have already seen this run.</li>
           </ul>
         </div>
 

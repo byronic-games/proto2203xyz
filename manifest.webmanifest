@@ -1,0 +1,19 @@
+{
+  "name": "52! Higher / Lower",
+  "short_name": "52!",
+  "description": "Higher/lower roguelike card game for mobile and desktop.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#120b1a",
+  "theme_color": "#120b1a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

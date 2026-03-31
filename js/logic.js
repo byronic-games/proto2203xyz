@@ -152,7 +152,7 @@ function pickPowerFromChoice(index) {
   if (!power) return;
 
   startRunWithPower(power.id);
-  state.message = `Run started with seed ${state.runSeed} and power: ${power.name}.`;
+  state.message = `Power picked: ${power.name}.`;
   render();
 }
 

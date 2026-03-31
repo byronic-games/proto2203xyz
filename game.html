@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#120b1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="52!">
   <title>52! - Higher / Lower</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
@@ -99,7 +107,7 @@
 
         <section id="cheats-panel">
           <div class="section-bar">
-            <div class="section-title">Cheats</div>
+            <div class="section-title">Cheats - hold for info</div>
             <div class="section-scroll-hint">Swipe</div>
           </div>
           <div id="cheat-list"></div>
@@ -157,25 +165,38 @@
 
           <div class="help-block">
             <h3>The Goal</h3>
-            <p>Clear the full 52-card deck by guessing whether the next card is higher or lower than the current one.</p>
+            <p>
+              Every run starts from a seeded 52-card deck. Your job is simple and brutal:
+              decide whether the next card is higher or lower than the current one, and survive all the way to the end.
+            </p>
           </div>
 
           <div class="help-block">
-            <h3>The Basics</h3>
+            <h3>The Rules</h3>
             <ul>
-              <li>Equal value cards are safe and your run continues.</li>
-              <li>Every correct guess grows your streak and can earn Cheats.</li>
-              <li>Nudges let you temporarily shift the judged value of the current card before you guess.</li>
-              <li>Some runs also start with a Power that changes the rules or your opening tools.</li>
+              <li>Pick <strong>Higher</strong> or <strong>Lower</strong> for the next face-down card.</li>
+              <li>Equal values are safe, so your run continues on a match.</li>
+              <li>A wrong guess ends the run immediately.</li>
+              <li>Clear the full deck to record a winning run on the heroes board.</li>
             </ul>
           </div>
 
           <div class="help-block">
-            <h3>Screen Guide</h3>
+            <h3>Powers, Nudges, And Cheats</h3>
+            <ul>
+              <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
+              <li><strong>Blue Deck Nudges:</strong> In the current test build, every correct <strong>Higher</strong> guess adds an up nudge, and every correct <strong>Lower</strong> guess adds a down nudge.</li>
+              <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
+              <li><strong>Cheats:</strong> Build streaks to earn Cheats. Tap to use them, and on mobile hold a cheat to read its tooltip.</li>
+              <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
+            </ul>
+          </div>
+
+          <div class="help-block">
+            <h3>What You See</h3>
             <ul>
               <li>The top HUD shows your seed, best run, cards cleared, and cards remaining.</li>
-              <li>The card buttons beside the current card show your available up and down nudge counts.</li>
-              <li>The Run Tools row shows Cheats in hand. Tap to use, hold on touch to read the description.</li>
+              <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
               <li>The tracked grid records which cards you have already seen this run.</li>
             </ul>
           </div>
