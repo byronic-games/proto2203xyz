@@ -455,9 +455,13 @@ function showCheatTooltip(cheat, el) {
   const edgePadding = 10;
   const halfTooltipWidth = tooltipRect.width / 2;
   const targetCenterX = rect.left + rect.width / 2;
+  const preferredCenterX =
+    rect.left > viewportWidth * 0.58
+      ? rect.left - 12 - halfTooltipWidth
+      : targetCenterX;
   const minCenterX = edgePadding + halfTooltipWidth;
   const maxCenterX = viewportWidth - edgePadding - halfTooltipWidth;
-  const safeCenterX = Math.min(Math.max(targetCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
+  const safeCenterX = Math.min(Math.max(preferredCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
 
   tooltip.style.left = safeCenterX + "px";
   tooltip.style.top = rect.top - 10 + "px";
