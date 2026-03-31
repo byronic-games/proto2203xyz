@@ -907,6 +907,22 @@ a {
   box-shadow: var(--shadow), var(--glow-pink);
 }
 
+.help-close-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
 .help-dialog h2,
 .victory-dialog h2,
 .choice-title {

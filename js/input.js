@@ -57,6 +57,7 @@ function openHowToModal() {
 
 document.getElementById("howto-open-btn")?.addEventListener("click", openHowToModal);
 document.getElementById("howto-close-btn")?.addEventListener("click", closeHowToModal);
+document.getElementById("howto-close-icon-btn")?.addEventListener("click", closeHowToModal);
 document.getElementById("howto-close-backdrop")?.addEventListener("click", closeHowToModal);
 
 document.getElementById("settings-btn")?.addEventListener("click", () => {
