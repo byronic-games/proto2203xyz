@@ -45,7 +45,6 @@ body {
 
 body.modal-open {
   overflow: hidden;
-  touch-action: none;
 }
 
 body::before {
@@ -877,6 +876,10 @@ a {
   position: fixed;
   inset: 0;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
 #game-howto-modal.hidden,
@@ -903,9 +906,7 @@ a {
   position: relative;
   z-index: 1;
   width: min(92vw, 520px);
-  margin: 0 auto;
-  top: 50%;
-  transform: translateY(-50%);
+  max-height: calc(100dvh - 32px);
   border-radius: 18px;
   padding: 18px;
   background: linear-gradient(180deg, rgba(47,31,61,0.98), rgba(25,17,34,0.98));
@@ -920,9 +921,9 @@ a {
 }
 
 .help-close-icon {
-  position: absolute;
+  position: sticky;
   top: 10px;
-  right: 10px;
+  margin-left: auto;
   width: 36px;
   height: 36px;
   border: 0;
@@ -933,6 +934,7 @@ a {
   line-height: 1;
   display: grid;
   place-items: center;
+  z-index: 2;
 }
 
 .help-dialog h2,
