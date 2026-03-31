@@ -1,4 +1,6 @@
-function startRun(forceRandom = false) {
+const POWER_CHOICE_LOCK_MS = 500;
+
+function buildRunFromControls(forceRandom = false) {
   const seedInput = document.getElementById("run-seed-input");
   let chosenSeed = "";
 
@@ -10,8 +12,7 @@ function startRun(forceRandom = false) {
     if (seedInput) seedInput.value = chosenSeed;
   }
 
-
-  let deck = createDeck(chosenSeed);
+  const deck = createDeck(chosenSeed);
 
   // Onboard new players: always start with a protected card (A,2,3,4,9,10,J,Q,K)
   const metaProgression = loadMetaProgression();
@@ -26,11 +27,68 @@ function startRun(forceRandom = false) {
       deck[foundIdx] = firstCard;
     }
   }
+  return { chosenSeed, deck };
+}
 
+function openPowerChoice(forceRandom = false) {
+  const { chosenSeed, deck } = buildRunFromControls(forceRandom);
 
-  // Always use Nudge as the default power (even if dropdown is hidden)
-  const selectedPowerId = "nudge_engine";
-  const activePowers = getPowerToggleStateForSelection(selectedPowerId);
+  state.pendingRunSeed = chosenSeed;
+  state.pendingRunDeck = deck;
+  state.pendingPowerOptions = getRandomPowerOptions(2);
+  state.pendingCheatOptions = [];
+  state.cheatChoiceLockedUntil = 0;
+  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.pauseForCheat = false;
+  state.restartConfirmArmed = false;
+  state.deckStatsTooltipOpen = false;
+  state.message = "Choose 1 power for this run.";
+  render();
+}
+
+function addCheatCopiesToHand(cheatId, count) {
+  const cheat = CHEATS.find((entry) => entry.id === cheatId);
+  if (!cheat || count <= 0) return;
+
+  for (let i = 0; i < count; i += 1) {
+    state.cheats.push({ ...cheat });
+  }
+}
+
+function applyRunPowerSetup(powerId) {
+  switch (powerId) {
+    case "balanced_nudges":
+      state.nudgeUpCharges = 5;
+      state.nudgeDownCharges = 5;
+      break;
+    case "updraft":
+      state.nudgeUpCharges = 10;
+      break;
+    case "downforce":
+      state.nudgeDownCharges = 10;
+      break;
+    case "swap_stack":
+      addCheatCopiesToHand("swap", 4);
+      break;
+    case "lucky_opening":
+      addCheatCopiesToHand("lucky_7", 2);
+      break;
+    default:
+      break;
+  }
+}
+
+function startRunWithPower(powerId) {
+  const selectedPower = getPowerById(powerId);
+  const chosenSeed =
+    state.pendingRunSeed ||
+    normalizeSeed(document.getElementById("run-seed-input")?.value) ||
+    randomSeedString();
+  const deck = state.pendingRunDeck?.length
+    ? [...state.pendingRunDeck]
+    : buildRunFromControls(false).deck;
+  const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
+  const activePowers = selectedPowerId ? [selectedPowerId] : [];
 
   state = {
     deck,
@@ -59,6 +117,11 @@ function startRun(forceRandom = false) {
     cheatUnlocks: loadCheatUnlocks(),
     justUnlockedCheatIds: [],
     cheatChoiceLockedUntil: 0,
+    powerChoiceLockedUntil: 0,
+    pauseForCheat: false,
+    pendingPowerOptions: [],
+    pendingRunSeed: "",
+    pendingRunDeck: [],
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
@@ -70,7 +133,24 @@ function startRun(forceRandom = false) {
     oddOneOutArmed: false,
   };
 
+  applyRunPowerSetup(selectedPowerId);
+
   saveLastRunSeed(chosenSeed);
+  render();
+}
+
+function startRun(forceRandom = false) {
+  openPowerChoice(forceRandom);
+}
+
+function pickPowerFromChoice(index) {
+  if (Date.now() < (state.powerChoiceLockedUntil || 0)) return;
+
+  const power = state.pendingPowerOptions[index];
+  if (!power) return;
+
+  startRunWithPower(power.id);
+  state.message = `Run started with seed ${state.runSeed} and power: ${power.name}.`;
   render();
 }
 
@@ -139,9 +219,21 @@ function buildComparisonSnippet(currentCard, effectiveValue, nextCard) {
   return `${formatCurrentJudgedValueForMessage(currentCard, effectiveValue)} ${symbol} ${formatNextValueForMessage(nextCard)}`;
 }
 
+function getEffectiveValueForModifier(card, modifier = 0) {
+  if (!card) return null;
+
+  if (runHasPower("aces_wild")) {
+    const zeroIndexed = card.value - 1;
+    const wrapped = ((zeroIndexed + modifier) % 13 + 13) % 13;
+    return wrapped + 1;
+  }
+
+  return clamp(card.value + modifier, 1, 13);
+}
+
 function getCurrentEffectiveValue() {
   if (!state.current) return null;
-  return clamp(state.current.value + state.currentValueModifier, 1, 13);
+  return getEffectiveValueForModifier(state.current, state.currentValueModifier || 0);
 }
 
 function valueToRank(value) {
@@ -161,29 +253,40 @@ function countUnseenCardsOfRank(rank) {
 
 function canUseNudge(direction) {
   const isBlocked =
-    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0 ||
+    !!state.pauseForCheat;
   if (isBlocked) return false;
 
-  const effectiveValue = getCurrentEffectiveValue();
   if (direction === "up") {
-    return (state.nudgeUpCharges || 0) > 0 && effectiveValue < 13;
+    if ((state.nudgeUpCharges || 0) <= 0) return false;
+    const nextValue = getEffectiveValueForModifier(state.current, (state.currentValueModifier || 0) + 1);
+    return nextValue !== getCurrentEffectiveValue();
   }
   if (direction === "down") {
-    return (state.nudgeDownCharges || 0) > 0 && effectiveValue > 1;
+    if ((state.nudgeDownCharges || 0) <= 0) return false;
+    const nextValue = getEffectiveValueForModifier(state.current, (state.currentValueModifier || 0) - 1);
+    return nextValue !== getCurrentEffectiveValue();
   }
   return false;
 }
 
 function useNudgeCharge(direction) {
-  if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat) {
+  if (
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0 ||
+    !!state.pauseForCheat
+  ) {
     return;
   }
 
-  const effectiveValue = getCurrentEffectiveValue();
-
   if (direction === "up") {
     if ((state.nudgeUpCharges || 0) <= 0) return;
-    if (effectiveValue >= 13) {
+    if (!canUseNudge("up")) {
       state.message = "Cannot use Nudge +1 on a King.";
       render();
       return;
@@ -192,7 +295,7 @@ function useNudgeCharge(direction) {
 
   if (direction === "down") {
     if ((state.nudgeDownCharges || 0) <= 0) return;
-    if (effectiveValue <= 1) {
+    if (!canUseNudge("down")) {
       state.message = "Cannot use Nudge -1 on an Ace.";
       render();
       return;
@@ -419,7 +522,12 @@ function makeGuess(type) {
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
 
-  if (state.gameOver || !state.current || state.pendingCheatOptions.length > 0) {
+  if (
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0
+  ) {
     return;
   }
 
@@ -473,6 +581,17 @@ function makeGuess(type) {
     correct = true;
   }
 
+  const aceAutoWin =
+    !cheatSpecial &&
+    !match &&
+    runHasPower("aces_wild") &&
+    currentComparisonValue === 1;
+
+  if (aceAutoWin) {
+    cheatSpecial = true;
+    correct = true;
+  }
+
   // Standard higher/lower logic
   if (!cheatSpecial && !match) {
     const normallyCorrect =
@@ -522,7 +641,7 @@ function makeGuess(type) {
   const powerAwards = awardOnCorrectGuessPowers(type);
 
   // --- Handle streak and cheat selection pause ---
-  if (state.streak >= 3) {
+  if (state.streak >= getCheatRewardThreshold()) {
     state.streak = 0;
     // Show detailed result before pause
     let pauseMsg = "✅ Correct!";
@@ -549,7 +668,9 @@ function makeGuess(type) {
     return;
   }
   if (cheatSpecial) {
-    state.message = `✅ Odd One Out! Safe card — it was ${describeCard(next)}.`;
+    state.message = aceAutoWin
+      ? `✅ Correct! Ace counts high and low — it was ${describeCard(next)}.`
+      : `✅ Odd One Out! Safe card — it was ${describeCard(next)}.`;
     render();
     return;
   }

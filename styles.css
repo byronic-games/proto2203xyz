@@ -1024,6 +1024,23 @@ h1 {
   font-size: 0.88rem;
 }
 
+.power-summary {
+  display: grid;
+  gap: 6px;
+}
+
+.power-summary-name {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.power-summary-desc {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--soft);
+}
+
 .power-button-row {
   display: flex;
   justify-content: center;
@@ -1076,13 +1093,15 @@ h1 {
     0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
-#cheat-choice-container {
+#cheat-choice-container,
+#power-choice-container {
   position: fixed;
   inset: 0;
   z-index: 1000;
 }
 
 #cheat-choice-container.hidden,
+#power-choice-container.hidden,
 #cheat-tooltip.hidden,
 .dev-hidden {
   display: none !important;
@@ -1130,11 +1149,17 @@ h1 {
   opacity: 0.9;
 }
 
-#cheat-choice-list {
+#cheat-choice-list,
+#power-choice-list {
   width: min(100%, 760px);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+}
+
+#power-choice-list[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(240px, 300px));
+  justify-content: center;
 }
 
 .choice-card {
@@ -1362,7 +1387,8 @@ h1 {
     gap: 10px;
   }
 
-  #cheat-choice-list {
+  #cheat-choice-list,
+  #power-choice-list {
     grid-template-columns: 1fr;
     max-width: 340px;
   }

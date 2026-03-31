@@ -160,7 +160,6 @@ let ignoreNextDeckClick = false;
 
 document.getElementById("face-down-deck")?.addEventListener("pointerdown", (e) => {
   if (e.pointerType !== "touch") return;
-  if (!runHasPower("stats_display")) return;
   if (!peekNext()) return;
 
   state.deckStatsTooltipOpen = true;
@@ -174,7 +173,6 @@ document.getElementById("face-down-deck")?.addEventListener("click", () => {
     return;
   }
 
-  if (!runHasPower("stats_display")) return;
   if (!peekNext()) return;
 
   state.deckStatsTooltipOpen = !state.deckStatsTooltipOpen;
@@ -258,7 +256,7 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  if (state.gameOver || state.pendingCheatOptions.length > 0) return;
+  if (state.gameOver || state.pendingCheatOptions.length > 0 || state.pendingPowerOptions.length > 0) return;
 
   if (e.key === "ArrowUp") makeGuess("higher");
   if (e.key === "ArrowDown") makeGuess("lower");

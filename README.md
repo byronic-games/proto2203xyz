@@ -15,7 +15,7 @@ The game combines a simple higher/lower loop with roguelike ideas:
 - seeded runs
 - persistent meta progression
 - unlockable cheats
-- starting powers
+- pre-run selectable powers
 - persistent card knowledge
 - optional leaderboard submission for completed runs
 
@@ -24,11 +24,23 @@ The game combines a simple higher/lower loop with roguelike ideas:
 ### Core Run Flow
 
 - Start a run from a seed or generate one randomly
-- Default run power currently starts from `Nudge`
+- Before each run, choose 1 Power from a random choice of 2
 - Guess with Higher / Lower controls
 - Earn streak rewards and choose cheats
 - Track best score, run score, and meta progression
 - Restart safely with confirmation during active runs
+
+### Run Powers
+
+All current Powers are set to `Common` with `unlockAt = 0`.
+
+- `Balanced Nudges`: start with 5 `Nudge +1` and 5 `Nudge -1` charges
+- `Updraft`: start with 10 `Nudge +1` charges
+- `Downforce`: start with 10 `Nudge -1` charges
+- `Quick Fingers`: choose a Cheat every 2 successful guesses instead of every 3
+- `Swap Stack`: start with 4 `Swap` cheats in hand
+- `Aces Wild`: base Aces count as both high and low, and can be nudged down to King or up to Two
+- `Lucky Opening`: start with 2 `Lucky 7` cheats in hand
 
 ### Nudge System
 
@@ -40,6 +52,7 @@ This branch uses dedicated nudge charges rather than showing basic nudges in the
 - Nudges no longer consume at the edges:
   - you cannot spend an upward nudge on a King
   - you cannot spend a downward nudge on an Ace
+- If `Aces Wild` is active, a base Ace can instead be nudged down to King or up to Two
 
 ### Cheats
 
@@ -54,9 +67,11 @@ Cheats are offered after streak milestones and cover:
 - deck manipulation like `Swap`
 - card marking like `Tear Corner`
 
-### Stats Power
+### Card Stats
 
-When the `Stats` power is active, the face-down deck tooltip can show persistent per-card history.
+Stats collection stays active in the background in this branch, even though `Stats` is not currently presented as a selectable run Power.
+
+The face-down deck tooltip can show persistent per-card history.
 
 Tracked card stats now include:
 

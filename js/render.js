@@ -141,37 +141,19 @@ function renderActivePowers() {
   const activePowersEl = document.getElementById("active-powers");
   if (!activePowersEl) return;
 
-  if (!state.current || state.gameOver) {
-    activePowersEl.innerText = state.powers.length
-      ? state.powers.map(getPowerName).join(", ")
-      : "No active Powers.";
-    return;
-  }
-
-  activePowersEl.innerHTML = "";
-  const row = document.createElement("div");
-  row.className = "power-button-row";
-
-  if (state.selectedStartPowerId === "none") {
-    const text = document.createElement("div");
-    text.innerText = "No active Powers.";
-    activePowersEl.appendChild(text);
-    return;
-  }
-
   const ownedPower = getPowerById(state.selectedStartPowerId);
+
   if (!ownedPower) {
-    activePowersEl.innerText = "No active Powers.";
+    activePowersEl.innerText = "Power chosen when the run starts.";
     return;
   }
 
-  const btn = document.createElement("button");
-  const isActive = runHasPower(ownedPower.id);
-  btn.className = `power-chip ${isActive ? "active" : "inactive"}`;
-  btn.innerText = `${ownedPower.name}: ${isActive ? "ON" : "OFF"}`;
-  btn.onclick = () => togglePower(ownedPower.id);
-  row.appendChild(btn);
-  activePowersEl.appendChild(row);
+  activePowersEl.innerHTML = `
+    <div class="power-summary">
+      <div class="power-summary-name">${ownedPower.name}</div>
+      <div class="power-summary-desc">${ownedPower.description}</div>
+    </div>
+  `;
 }
 
 function renderCurrentCard() {
@@ -267,7 +249,11 @@ function renderNudgeControls() {
   downCountEl.innerText = String(downCount);
 
   const isBlocked =
-    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || !!state.pauseForCheat;
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0 ||
+    !!state.pauseForCheat;
 
   upBtn.disabled = isBlocked || !canUseNudge("up");
   downBtn.disabled = isBlocked || !canUseNudge("down");
@@ -309,8 +295,7 @@ function renderFaceDownDeck() {
     deckEl.appendChild(tear);
   }
 
-  const shouldShowDeckStatsTooltip =
-    !!next && runHasPower("stats_display") && !!state.deckStatsTooltipOpen;
+  const shouldShowDeckStatsTooltip = !!next && !!state.deckStatsTooltipOpen;
 
   if (shouldShowDeckStatsTooltip) {
     const entry = getCardStatsEntry(next.id);
@@ -335,7 +320,11 @@ function renderButtons() {
   // Block input if pausing before cheat selection
   const isPause = !!state.pauseForCheat;
   const disableGuessing =
-    state.gameOver || !state.current || state.pendingCheatOptions.length > 0 || isPause;
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0 ||
+    isPause;
 
   higherBtn.disabled = disableGuessing;
   lowerBtn.disabled = disableGuessing;
@@ -423,7 +412,7 @@ function renderCheats() {
 
     btn.onclick = () => {
       if (held) return;
-      if (state.gameOver || state.pendingCheatOptions.length) return;
+      if (state.gameOver || state.pendingCheatOptions.length || state.pendingPowerOptions.length) return;
       const result = cheat.use();
       state.message = result;
       if (cheat.consumeOnUse) {
@@ -538,6 +527,73 @@ function renderCheatChoice() {
     window.setTimeout(render, Math.max(0, (state.cheatChoiceLockedUntil || 0) - Date.now()));
   }
 }
+
+function renderPowerChoice() {
+  const container = document.getElementById("power-choice-container");
+  const list = document.getElementById("power-choice-list");
+
+  if (!container || !list) return;
+
+  list.innerHTML = "";
+  list.dataset.count = String(state.pendingPowerOptions.length || 0);
+
+  if (!state.pendingPowerOptions.length) {
+    container.classList.add("hidden");
+    container.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  container.classList.remove("hidden");
+  container.setAttribute("aria-hidden", "false");
+
+  const choiceLocked = Date.now() < (state.powerChoiceLockedUntil || 0);
+
+  state.pendingPowerOptions.forEach((power, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `choice-card ${power.rarity || "common"}`;
+    btn.disabled = choiceLocked;
+
+    const top = document.createElement("div");
+    top.className = "choice-top";
+
+    const icon = document.createElement("div");
+    icon.className = "choice-icon";
+    icon.innerText = getPowerIcon(power.id);
+
+    const name = document.createElement("div");
+    name.className = "choice-name";
+    name.innerText = power.name;
+
+    const rarity = document.createElement("div");
+    rarity.className = "choice-rarity";
+    rarity.innerText = getPowerRarityLabel(power);
+
+    const desc = document.createElement("div");
+    desc.className = "choice-desc";
+    desc.innerText = power.description;
+
+    const tag = document.createElement("div");
+    tag.className = "choice-tag";
+    tag.innerText = "Tap to start";
+
+    top.appendChild(icon);
+    top.appendChild(name);
+    top.appendChild(rarity);
+
+    btn.appendChild(top);
+    btn.appendChild(desc);
+    btn.appendChild(tag);
+    btn.onclick = () => pickPowerFromChoice(i);
+
+    list.appendChild(btn);
+  });
+
+  if (choiceLocked) {
+    window.setTimeout(render, Math.max(0, (state.powerChoiceLockedUntil || 0) - Date.now()));
+  }
+}
+
 function renderSeenGrid() {
   const grid = document.getElementById("seen-grid");
   if (!grid) return;
@@ -617,6 +673,7 @@ function render() {
   renderHandCard();
   renderCheats();
   renderCheatChoice();
+  renderPowerChoice();
   renderSeenGrid();
   renderRestartButton();
   renderMessage();
