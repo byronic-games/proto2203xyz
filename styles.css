@@ -337,7 +337,7 @@ a {
 
 .current-card-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
   gap: 10px;
 }
@@ -345,7 +345,8 @@ a {
 .nudge-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
 .card-face,
@@ -494,32 +495,45 @@ a {
 }
 
 .nudge-arrow {
-  width: 34px;
-  height: 42px;
+  width: 50px;
+  height: 58px;
   border: 0;
-  border-radius: 6px;
-  background: rgba(33, 25, 42, 0.96);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(36, 27, 48, 0.98), rgba(23, 17, 31, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(0,232,255,0.14),
+    0 0 14px rgba(0,232,255,0.08);
   color: var(--cyan);
   display: grid;
   place-items: center;
-  gap: 1px;
-  padding: 4px 0;
+  gap: 3px;
+  padding: 6px 0;
 }
 
 .nudge-arrow:disabled {
-  opacity: 0.4;
+  opacity: 0.42;
 }
 
 .nudge-symbol {
-  font-size: 0.72rem;
+  font-size: 1rem;
   line-height: 1;
+  font-weight: 800;
 }
 
 .nudge-count {
-  font-size: 0.68rem;
+  font-size: 0.95rem;
   font-weight: 800;
   line-height: 1;
+}
+
+.nudge-label {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
 }
 
 #controls {
@@ -709,7 +723,8 @@ a {
 #seen-grid-wrap {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(102, 123, 50, 0.16), rgba(116, 137, 58, 0.26));
   box-shadow: inset 0 0 0 1px rgba(0,232,255,0.14);
@@ -718,20 +733,21 @@ a {
 
 #seen-grid {
   display: grid;
-  grid-template-columns: 18px repeat(13, minmax(18px, 1fr));
+  grid-template-columns: 14px repeat(13, minmax(0, 1fr));
   gap: 3px;
-  min-width: 320px;
+  min-width: 0;
+  width: 100%;
 }
 
 .grid-header,
 .grid-suit,
 .grid-cell {
-  min-height: 18px;
+  min-height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  font-size: 0.52rem;
+  font-size: 0.42rem;
 }
 
 .grid-header,
@@ -1144,11 +1160,25 @@ a {
 
   .current-card-wrap {
     gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 48px;
   }
 
   #higher-btn,
   #lower-btn {
     font-size: 1.3rem;
+  }
+
+  .nudge-arrow {
+    width: 46px;
+    height: 54px;
+  }
+
+  .nudge-symbol {
+    font-size: 0.92rem;
+  }
+
+  .nudge-count {
+    font-size: 0.86rem;
   }
 
   #bottom-bar {

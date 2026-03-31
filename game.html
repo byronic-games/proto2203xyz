@@ -37,15 +37,6 @@
         </div>
       </header>
 
-      <section id="seed-console">
-        <label class="seed-console-label" for="run-seed-input">Run Seed</label>
-        <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
-        <div class="seed-actions">
-          <button id="random-seed-btn" type="button">Random</button>
-          <button id="copy-seed-btn" type="button">Copy</button>
-        </div>
-      </section>
-
       <main id="main-layout">
         <div id="message-bar"></div>
 
@@ -73,12 +64,13 @@
               <div class="card-column">
                 <div class="pile-label">Current Card</div>
                 <div class="current-card-wrap">
-                  <div id="current-card" class="card-face">?</div>
+                <div id="current-card" class="card-face">?</div>
                   <div class="nudge-stack" aria-label="Nudge controls">
                     <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
                       <span class="nudge-symbol">▲</span>
                       <span id="nudge-up-count" class="nudge-count">0</span>
                     </button>
+                    <div class="nudge-label">Nudges</div>
                     <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
                       <span class="nudge-symbol">▼</span>
                       <span id="nudge-down-count" class="nudge-count">0</span>
@@ -239,6 +231,15 @@
       </div>
 
       <section id="instructions-panel" class="dev-hidden">
+        <div id="seed-console" class="dev-hidden" aria-hidden="true">
+          <label class="seed-console-label" for="run-seed-input">Run Seed</label>
+          <input id="run-seed-input" type="text" maxlength="16" placeholder="Random seed">
+          <div class="seed-actions">
+            <button id="random-seed-btn" type="button">Random</button>
+            <button id="copy-seed-btn" type="button">Copy</button>
+          </div>
+        </div>
+
         <div id="instructions-box">
           <h3>How To Play</h3>
           <div id="instructions-text"></div>
