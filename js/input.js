@@ -46,6 +46,7 @@ function closeHowToModal() {
   if (!modal) return;
   modal.classList.add("hidden");
   modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
 }
 
 function openHowToModal() {
@@ -53,6 +54,7 @@ function openHowToModal() {
   if (!modal) return;
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
 }
 
 document.getElementById("howto-open-btn")?.addEventListener("click", openHowToModal);
@@ -113,6 +115,7 @@ function closeVictoryModal() {
   if (!modal) return;
   modal.classList.add("hidden");
   modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
 }
 
 async function openVictoryModal() {
@@ -129,6 +132,7 @@ async function openVictoryModal() {
 
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
 
   setTimeout(() => inputEl.focus(), 0);
 }

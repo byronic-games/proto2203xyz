@@ -43,6 +43,11 @@ body {
   overflow-x: hidden;
 }
 
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -905,6 +910,13 @@ a {
   padding: 18px;
   background: linear-gradient(180deg, rgba(47,31,61,0.98), rgba(25,17,34,0.98));
   box-shadow: var(--shadow), var(--glow-pink);
+}
+
+.help-dialog,
+.victory-dialog {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .help-close-icon {
