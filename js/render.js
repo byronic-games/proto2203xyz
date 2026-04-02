@@ -661,7 +661,7 @@ function renderMessage() {
     return;
   }
 
-  el.style.display = "block";
+  el.style.display = "flex";
   el.innerText = state.message;
 }
 

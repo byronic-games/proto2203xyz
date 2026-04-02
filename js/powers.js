@@ -2,7 +2,7 @@ const POWERS = [
   {
     id: "balanced_nudges",
     name: "Balanced Nudges",
-    description: "Start each run with 3 Nudge +1 charges and 3 Nudge -1 charges.",
+    description: "Start each run with 4 Nudge +1 charges and 4 Nudge -1 charges.",
     rarity: "common",
     unlockAt: 0,
     weight: 1,
@@ -11,7 +11,7 @@ const POWERS = [
   {
     id: "updraft",
     name: "Updraft",
-    description: "Start each run with 6 Nudge +1 charges.",
+    description: "Start each run with 8 Nudge +1 charges.",
     rarity: "common",
     unlockAt: 0,
     weight: 1,
@@ -20,7 +20,7 @@ const POWERS = [
   {
     id: "downforce",
     name: "Downforce",
-    description: "Start each run with 6 Nudge -1 charges.",
+    description: "Start each run with 8 Nudge -1 charges.",
     rarity: "common",
     unlockAt: 0,
     weight: 1,

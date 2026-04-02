@@ -58,14 +58,14 @@ function addCheatCopiesToHand(cheatId, count) {
 function applyRunPowerSetup(powerId) {
   switch (powerId) {
     case "balanced_nudges":
-      state.nudgeUpCharges = 3;
-      state.nudgeDownCharges = 3;
+      state.nudgeUpCharges = 4;
+      state.nudgeDownCharges = 4;
       break;
     case "updraft":
-      state.nudgeUpCharges = 6;
+      state.nudgeUpCharges = 8;
       break;
     case "downforce":
-      state.nudgeDownCharges = 6;
+      state.nudgeDownCharges = 8;
       break;
     case "swap_stack":
       addCheatCopiesToHand("swap", 4);
