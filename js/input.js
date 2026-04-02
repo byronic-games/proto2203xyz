@@ -171,41 +171,11 @@ document.getElementById("victory-modal")?.addEventListener("click", (e) => {
   }
 });
 
-function closeDeckStatsTooltip() {
-  if (!state.deckStatsTooltipOpen) return;
-  state.deckStatsTooltipOpen = false;
-  renderFaceDownDeck();
-}
-
 function closeAllTransientTooltips() {
-  closeDeckStatsTooltip();
   if (typeof window.hideCheatTooltip === "function") {
     window.hideCheatTooltip();
   }
 }
-
-let ignoreNextDeckClick = false;
-
-document.getElementById("face-down-deck")?.addEventListener("pointerdown", (e) => {
-  if (e.pointerType !== "touch") return;
-  if (!peekNext()) return;
-
-  state.deckStatsTooltipOpen = true;
-  renderFaceDownDeck();
-  ignoreNextDeckClick = true;
-});
-
-document.getElementById("face-down-deck")?.addEventListener("click", () => {
-  if (ignoreNextDeckClick) {
-    ignoreNextDeckClick = false;
-    return;
-  }
-
-  if (!peekNext()) return;
-
-  state.deckStatsTooltipOpen = !state.deckStatsTooltipOpen;
-  renderFaceDownDeck();
-});
 
 window.addEventListener("pointerup", (e) => {
   if (e.pointerType !== "touch") return;
@@ -236,23 +206,6 @@ window.addEventListener("scroll", () => {
 window.addEventListener("wheel", () => {
   closeAllTransientTooltips();
 }, { passive: true });
-
-window.addEventListener(
-  "pointerdown",
-  (e) => {
-    if (!state.deckStatsTooltipOpen) return;
-
-    const tooltip = document.querySelector("[data-deck-stats-tooltip='true']");
-    const deckEl = document.getElementById("face-down-deck");
-    const target = e.target;
-
-    if (!(target instanceof Element)) return;
-    if (tooltip?.contains(target) || deckEl?.contains(target)) return;
-
-    closeDeckStatsTooltip();
-  },
-  true
-);
 
 window.addEventListener("keydown", (e) => {
   const debugEnabled = !!window.testModeEnabled;

@@ -339,6 +339,7 @@ function useNudgeCharge(direction) {
     return;
   }
 
+  recordCurrentCardNudge(state.current, direction);
   const effective = getCurrentEffectiveValue();
   const label = direction === "up" ? "Nudge +1" : "Nudge -1";
   state.message = `${label} used. Current card treated as ${valueToRank(effective)}.`;
@@ -369,6 +370,17 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
   if (guessType === "higher" || guessType === "lower") {
     guessBucket[guessType] += 1;
   }
+  saveCardStats(state.cardStats);
+}
+
+function recordCurrentCardNudge(card, direction) {
+  if (!card) return;
+  const entry = getCardStatsEntry(card.id);
+  if (!entry.nudgeStats) {
+    entry.nudgeStats = { up: 0, down: 0 };
+  }
+  if (direction === "up") entry.nudgeStats.up += 1;
+  if (direction === "down") entry.nudgeStats.down += 1;
   saveCardStats(state.cardStats);
 }
 
@@ -691,7 +703,9 @@ function makeGuess(type) {
 
   // --- Messaging for special cases ---
   if (cheatSpecial && powerAwards.length > 0) {
-    state.message = `✅ Odd One Out! Safe card — power gained: ${powerAwards.join(", ")}.`;
+    state.message = aceAutoWin
+      ? `✅ Correct! Ace counts high and low — power gained: ${powerAwards.join(", ")}.`
+      : `✅ Odd One Out! Safe card — power gained: ${powerAwards.join(", ")}.`;
     render();
     return;
   }

@@ -128,6 +128,10 @@ function getCheatRewardThreshold() {
 function awardOnCorrectGuessPowers(guessType) {
   const awardedNames = [];
 
+  if (runHasPower("stats_display")) {
+    return awardedNames;
+  }
+
   if (runHasPower("nudge_engine")) {
     if (guessType === "higher") {
       state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;

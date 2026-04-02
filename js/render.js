@@ -196,47 +196,38 @@ function renderCurrentCard() {
       : "";
 }
 
-function getGuessPreferenceSummary(bucket, prefix) {
-  const total = (bucket?.higher || 0) + (bucket?.lower || 0);
+function getGuessPreferenceSummary(higherCount, lowerCount) {
+  const total = (higherCount || 0) + (lowerCount || 0);
   if (!total) return null;
 
-  const higherCount = bucket.higher || 0;
-  const lowerCount = bucket.lower || 0;
-  const favoredGuess = higherCount >= lowerCount ? "higher" : "lower";
-  const favoredCount = Math.max(higherCount, lowerCount);
-  const favoredPercent = Math.round((favoredCount / total) * 100);
-
-  if (prefix === "Picked") {
-    return `${prefix} ${favoredGuess} ${favoredPercent}%`;
-  }
-
-  return `${prefix}: ${favoredGuess} ${favoredPercent}%`;
+  const higherPercent = Math.round(((higherCount || 0) / total) * 100);
+  const lowerPercent = Math.round(((lowerCount || 0) / total) * 100);
+  return `Picked: H ${higherPercent}% / L ${lowerPercent}%`;
 }
 
 function getCardStatsTooltipLines(entry) {
   const lines = [];
 
-  const baseLine = getGuessPreferenceSummary(entry.guessStats?.base, "Picked");
-  if (baseLine) lines.push(baseLine);
+  const higherCount =
+    (entry.guessStats?.base?.higher || 0) +
+    (entry.guessStats?.nudgedUp?.higher || 0) +
+    (entry.guessStats?.nudgedDown?.higher || 0);
+  const lowerCount =
+    (entry.guessStats?.base?.lower || 0) +
+    (entry.guessStats?.nudgedUp?.lower || 0) +
+    (entry.guessStats?.nudgedDown?.lower || 0);
 
-  const nudgedDownLine = getGuessPreferenceSummary(
-    entry.guessStats?.nudgedDown,
-    "Nudged down"
-  );
-  if (nudgedDownLine) lines.push(nudgedDownLine);
+  const pickedLine = getGuessPreferenceSummary(higherCount, lowerCount);
+  if (pickedLine) lines.push(pickedLine);
 
-  const nudgedUpLine = getGuessPreferenceSummary(
-    entry.guessStats?.nudgedUp,
-    "Nudged up"
-  );
-  if (nudgedUpLine) lines.push(nudgedUpLine);
-
-  if ((entry.endedRunFaceUpBase || 0) > 0) {
-    lines.push(`Ended run: ${entry.endedRunFaceUpBase}`);
+  const nudgedUpCount = entry.nudgeStats?.up || 0;
+  const nudgedDownCount = entry.nudgeStats?.down || 0;
+  if (nudgedUpCount > 0 || nudgedDownCount > 0) {
+    lines.push(`Nudged: up ${nudgedUpCount} / down ${nudgedDownCount}`);
   }
 
   if (!lines.length) {
-    lines.push("No card stats yet.");
+    lines.push("No face-up stats yet.");
   }
 
   return lines;
@@ -305,16 +296,14 @@ function renderFaceDownDeck() {
     deckEl.appendChild(tear);
   }
 
-  const shouldShowDeckStatsTooltip = !!next && !!state.deckStatsTooltipOpen;
+  const shouldShowDeckStatsInline = !!next && backColor === "pink";
 
-  if (shouldShowDeckStatsTooltip) {
+  if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);
     const statLines = getCardStatsTooltipLines(entry);
 
     const statsBox = document.createElement("div");
     statsBox.className = "card-back-stats";
-    statsBox.setAttribute("role", "tooltip");
-    statsBox.setAttribute("data-deck-stats-tooltip", "true");
     statsBox.innerHTML = statLines.map((line) => `<div>${line}</div>`).join("");
     deckEl.appendChild(statsBox);
   }
