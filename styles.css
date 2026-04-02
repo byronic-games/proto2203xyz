@@ -404,6 +404,80 @@ a {
   box-shadow: inset 0 0 0 2px rgba(199,255,84,0.78), 0 0 18px rgba(199,255,84,0.2);
 }
 
+.card-face.feedback-correct,
+.card-face.feedback-wrong {
+  transform-origin: center;
+  will-change: transform, box-shadow, filter;
+}
+
+.card-face.feedback-correct {
+  animation:
+    card-neon-pulse-correct 520ms ease-out,
+    card-throb 520ms ease-out;
+}
+
+.card-face.feedback-wrong {
+  animation:
+    card-neon-pulse-wrong 520ms ease-out,
+    card-throb 520ms ease-out;
+}
+
+@keyframes card-throb {
+  0% {
+    transform: scale(1);
+  }
+  28% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes card-neon-pulse-correct {
+  0% {
+    box-shadow:
+      inset 0 0 0 2px rgba(247,125,246,0.6),
+      var(--glow-pink);
+    filter: brightness(1);
+  }
+  30% {
+    box-shadow:
+      inset 0 0 0 3px rgba(199,255,84,0.95),
+      0 0 28px rgba(199,255,84,0.35),
+      0 0 42px rgba(0,232,255,0.16);
+    filter: brightness(1.08);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 2px rgba(247,125,246,0.6),
+      var(--glow-pink);
+    filter: brightness(1);
+  }
+}
+
+@keyframes card-neon-pulse-wrong {
+  0% {
+    box-shadow:
+      inset 0 0 0 2px rgba(247,125,246,0.6),
+      var(--glow-pink);
+    filter: brightness(1);
+  }
+  30% {
+    box-shadow:
+      inset 0 0 0 3px rgba(255,92,133,0.95),
+      0 0 28px rgba(255,92,133,0.32),
+      0 0 42px rgba(255,124,245,0.15);
+    filter: brightness(1.06);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 2px rgba(247,125,246,0.6),
+      var(--glow-pink);
+    filter: brightness(1);
+  }
+}
+
 .card-face-label {
   position: relative;
   z-index: 2;

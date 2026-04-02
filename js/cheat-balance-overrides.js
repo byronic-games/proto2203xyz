@@ -277,12 +277,48 @@ window.CHEAT_BALANCE_OVERRIDES = {
                          "rarity":  "uncommon"
                      },
     "next_three_total":  {
-                             "stacking":  "unique",
-                             "description":  "Reveals the total of the next three face down cards.",
-                             "weight":  1,
-                             "unlockAt":  40,
-                             "name":  "Total of Next Three",
-                             "included":  true,
-                             "rarity":  "rare"
-                         }
+                              "stacking":  "unique",
+                              "description":  "Reveals the total of the next three face down cards.",
+                              "weight":  1,
+                              "unlockAt":  40,
+                              "name":  "Total of Next Three",
+                              "included":  true,
+                              "rarity":  "rare"
+                          },
+    "total_above_12":  {
+                           "stacking":  "unique",
+                           "description":  "Reveals whether the next two face down cards total more than 12.",
+                           "weight":  1,
+                           "unlockAt":  5,
+                           "name":  "Total Above 12?",
+                           "included":  true,
+                           "rarity":  "common"
+                       },
+    "total_above_20":  {
+                           "stacking":  "unique",
+                           "description":  "Reveals whether the next two face down cards total more than 20.",
+                           "weight":  1,
+                           "unlockAt":  20,
+                           "name":  "Total Above 20?",
+                           "included":  true,
+                           "rarity":  "uncommon"
+                       },
+    "prime_ahead":  {
+                         "stacking":  "unique",
+                         "description":  "Reveals whether at least one of the next two face down cards is prime-valued: 2, 3, 5, 7, J = 11, or K = 13.",
+                         "weight":  1,
+                         "unlockAt":  15,
+                         "name":  "Prime Ahead?",
+                         "included":  true,
+                         "rarity":  "uncommon"
+                     },
+    "product_of_next_two":  {
+                                "stacking":  "unique",
+                                "description":  "Reveals the product of the next two face down cards.",
+                                "weight":  1,
+                                "unlockAt":  35,
+                                "name":  "Product of Next Two",
+                                "included":  true,
+                                "rarity":  "rare"
+                          }
 };

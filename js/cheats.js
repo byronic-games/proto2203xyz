@@ -18,6 +18,10 @@ function clampCardValue(value) {
   return clamp(value, 1, 13);
 }
 
+function isPrimeCardValue(value) {
+  return value === 2 || value === 3 || value === 5 || value === 7 || value === 11 || value === 13;
+}
+
 function getWeightedRandomIndex(items, getWeight) {
   const totalWeight = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
   if (totalWeight <= 0) return -1;
@@ -85,6 +89,10 @@ const CHEAT_DESCRIPTIONS = {
   "Number Remaining?": "Reveals how many copies of the next face down card's rank are still left in the deck, including that next card.",
   "Total of Next Two": "Reveals the total of the next two face down cards.",
   "Total of Next Three": "Reveals the total of the next three face down cards.",
+  "Total Above 12?": "Reveals whether the next two face down cards total more than 12.",
+  "Total Above 20?": "Reveals whether the next two face down cards total more than 20.",
+  "Prime Ahead?": "Reveals whether at least one of the next two face down cards is prime-valued: 2, 3, 5, 7, J = 11, or K = 13.",
+  "Product of Next Two": "Reveals the product of the next two face down cards.",
   "Top Half / Bottom Half": "Is the next card below 7 or is it 7 and above?",
   [`Within ±${RANGE_CHEAT_DELTA}?`]: `Is the next card within ${RANGE_CHEAT_DELTA} above or below the current face card?`,
   "One of Next 2 Higher?": "Reveals if at least one of the next two cards is higher than the current card.",
@@ -263,6 +271,73 @@ const CHEATS = [
       const next3 = getNextCardAt(3);
       if (!next || !next2 || !next3) return "Not enough cards remaining.";
       return `Total = ${next.value + next2.value + next3.value}`;
+    },
+  },
+  {
+    id: "total_above_12",
+    name: "Total Above 12?",
+    rarity: "common",
+    weight: 1,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return next.value + next2.value > 12 ? "Yes — total is above 12." : "No — total is 12 or below.";
+    },
+  },
+  {
+    id: "total_above_20",
+    name: "Total Above 20?",
+    rarity: "uncommon",
+    weight: 1,
+    included: true,
+    unlockAt: 4,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return next.value + next2.value > 20 ? "Yes — total is above 20." : "No — total is 20 or below.";
+    },
+  },
+  {
+    id: "prime_ahead",
+    name: "Prime Ahead?",
+    rarity: "uncommon",
+    weight: 1,
+    included: true,
+    unlockAt: 3,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      const found = isPrimeCardValue(next.value) || isPrimeCardValue(next2.value);
+      return found
+        ? "Yes — a prime is ahead (2, 3, 5, 7, J = 11, or K = 13)."
+        : "No — neither next card is prime-valued.";
+    },
+  },
+  {
+    id: "product_of_next_two",
+    name: "Product of Next Two",
+    rarity: "rare",
+    weight: 1,
+    included: true,
+    unlockAt: 8,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return `Product = ${next.value * next2.value}`;
     },
   },
   {

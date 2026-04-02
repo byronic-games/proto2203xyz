@@ -30,6 +30,25 @@ function buildRunFromControls(forceRandom = false) {
   return { chosenSeed, deck };
 }
 
+let currentCardFeedbackTimer = null;
+
+function setCurrentCardFeedback(effect) {
+  state.currentCardFeedback = effect || "";
+
+  if (currentCardFeedbackTimer) {
+    clearTimeout(currentCardFeedbackTimer);
+    currentCardFeedbackTimer = null;
+  }
+
+  if (!effect) return;
+
+  currentCardFeedbackTimer = setTimeout(() => {
+    state.currentCardFeedback = "";
+    currentCardFeedbackTimer = null;
+    render();
+  }, 520);
+}
+
 function openPowerChoice(forceRandom = false) {
   const { chosenSeed, deck } = buildRunFromControls(forceRandom);
 
@@ -128,6 +147,7 @@ function startRunWithPower(powerId) {
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
+    currentCardFeedback: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
     lucky7Armed: false,
@@ -614,6 +634,7 @@ function makeGuess(type) {
     advanceToCard(next);
     state.currentValueModifier = 0;
     state.streak = 0;
+    setCurrentCardFeedback("wrong");
     state.message = `❌ Wrong! It was ${describeCard(next)}.`;
     state.gameOver = true;
     updateBestScoreIfNeeded();
@@ -630,6 +651,7 @@ function makeGuess(type) {
   state.correctAnswers += 1;
   state.currentValueModifier = 0;
   state.streak = (state.streak || 0) + 1;
+  setCurrentCardFeedback("correct");
   addMetaProgression(1);
   updateBestScoreIfNeeded();
 

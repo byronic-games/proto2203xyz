@@ -179,8 +179,11 @@ function renderCurrentCard() {
   const isTemporarilyModified = effectiveValue !== state.current.value;
   const shownRank = isTemporarilyModified ? valueToRank(effectiveValue) : state.current.rank;
   const shownLabel = `${shownRank}${state.current.suit}`;
+  const feedbackClass = state.currentCardFeedback
+    ? `feedback-${state.currentCardFeedback}`
+    : "";
 
-  currentCardEl.className = `card-face ${isRed(state.current) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""}`.trim();
+  currentCardEl.className = `card-face ${isRed(state.current) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass}`.trim();
   currentCardEl.innerHTML = `
     <span class="card-face-label">${shownLabel}</span>
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
@@ -189,7 +192,7 @@ function renderCurrentCard() {
 
   currentValueEl.innerText =
     isTemporarilyModified
-      ? `Treated as: ${shownLabel} (from ${describeCard(state.current)})`
+      ? `As ${shownLabel} from ${describeCard(state.current)}`
       : "";
 }
 

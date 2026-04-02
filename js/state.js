@@ -67,6 +67,7 @@ function createEmptyState() {
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
+    currentCardFeedback: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
   };
