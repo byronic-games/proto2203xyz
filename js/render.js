@@ -359,12 +359,6 @@ function renderCheats() {
   const cheatList = document.getElementById("cheat-list");
   if (!cheatList) return;
 
-  // If we're in a pause state before cheat selection, don't render cheat selection UI
-  if (state.pauseForCheat) {
-    cheatList.innerHTML = "";
-    return;
-  }
-
   cheatList.innerHTML = "";
 
   const visibleCheats = state.cheats.filter(
