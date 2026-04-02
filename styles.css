@@ -1236,11 +1236,11 @@ a {
   }
 
   #card-row {
-    gap: 14px;
+    gap: 12px;
   }
 
   .card-column {
-    gap: 5px;
+    gap: 3px;
   }
 
   .current-card-wrap {
@@ -1254,19 +1254,19 @@ a {
 
   #current-effective-value,
   #next-info {
-    min-height: 0.9em;
+    min-height: 0.75em;
     font-size: 0.72rem;
   }
 
   #higher-btn,
   #lower-btn {
-    min-height: 50px;
+    min-height: 48px;
     font-size: 1.24rem;
   }
 
   #controls {
     gap: 8px;
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .nudge-arrow {
