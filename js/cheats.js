@@ -91,6 +91,8 @@ const CHEAT_DESCRIPTIONS = {
   "Total of Next Three": "Reveals the total of the next three face down cards.",
   "Total Above 12?": "Reveals whether the next two face down cards total more than 12.",
   "Total Above 20?": "Reveals whether the next two face down cards total more than 20.",
+  "Total Under 10?": "Reveals whether the next two face down cards total less than 10.",
+  "Total Under 15?": "Reveals whether the next two face down cards total less than 15.",
   "Prime Ahead?": "Reveals whether at least one of the next two face down cards is prime-valued: 2, 3, 5, 7, J = 11, or K = 13.",
   "Product of Next Two": "Reveals the product of the next two face down cards.",
   "Top Half / Bottom Half": "Is the next card below 7 or is it 7 and above?",
@@ -99,7 +101,6 @@ const CHEAT_DESCRIPTIONS = {
   "One of Next 2 Lower?": "Reveals if at least one of the next two cards is lower than the current card.",
   "Higher of Next Two": "Reveals the highest value of the next two face down cards.",
   "Lower of Next Two": "Reveals the lowest value of the next two face down cards.",
-  "Difference Between Next 2 Cards": "Reveals the spread between the next two cards by subtracting the lower from the higher.",
   "Next Card Parity": "Reveals if the next card is odd, even or a picture card.",
   "Chance Higher": "Calculates the probability that one of the remaining cards is higher than the current card.",
   "Chance Lower": "Calculates the probability that one of the remaining cards is lower than the current card.",
@@ -306,6 +307,38 @@ const CHEATS = [
     },
   },
   {
+    id: "total_under_10",
+    name: "Total Under 10?",
+    rarity: "common",
+    weight: 1,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return next.value + next2.value < 10 ? "Yes — total is under 10." : "No — total is 10 or above.";
+    },
+  },
+  {
+    id: "total_under_15",
+    name: "Total Under 15?",
+    rarity: "common",
+    weight: 1,
+    included: true,
+    unlockAt: 2,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      if (!next || !next2) return "Not enough cards remaining.";
+      return next.value + next2.value < 15 ? "Yes — total is under 15." : "No — total is 15 or above.";
+    },
+  },
+  {
     id: "prime_ahead",
     name: "Prime Ahead?",
     rarity: "uncommon",
@@ -444,24 +477,6 @@ const CHEATS = [
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
       return `Lower = ${Math.min(next.value, next2.value)}`;
-    },
-  },
-  {
-    id: "difference_of_next_two",
-    name: "Difference Between Next 2 Cards",
-    rarity: "uncommon",
-    weight: 1,
-    included: true,
-    unlockAt: 4,
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      const next = getNextCardAt(1);
-      const next2 = getNextCardAt(2);
-      if (!next || !next2) return "Not enough cards remaining.";
-      const low = Math.min(next.value, next2.value);
-      const high = Math.max(next.value, next2.value);
-      return `Difference = ${high - low}`;
     },
   },
   {
