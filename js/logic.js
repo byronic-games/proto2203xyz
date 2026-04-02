@@ -58,14 +58,14 @@ function addCheatCopiesToHand(cheatId, count) {
 function applyRunPowerSetup(powerId) {
   switch (powerId) {
     case "balanced_nudges":
-      state.nudgeUpCharges = 5;
-      state.nudgeDownCharges = 5;
+      state.nudgeUpCharges = 3;
+      state.nudgeDownCharges = 3;
       break;
     case "updraft":
-      state.nudgeUpCharges = 10;
+      state.nudgeUpCharges = 6;
       break;
     case "downforce":
-      state.nudgeDownCharges = 10;
+      state.nudgeDownCharges = 6;
       break;
     case "swap_stack":
       addCheatCopiesToHand("swap", 4);
@@ -236,6 +236,11 @@ function getEffectiveValueForModifier(card, modifier = 0) {
 function getCurrentEffectiveValue() {
   if (!state.current) return null;
   return getEffectiveValueForModifier(state.current, state.currentValueModifier || 0);
+}
+
+function isAceWildAutoCorrect(currentComparisonValue, nextCard) {
+  if (!runHasPower("aces_wild")) return false;
+  return currentComparisonValue === 1 || nextCard?.value === 1;
 }
 
 function valueToRank(value) {
@@ -586,8 +591,7 @@ function makeGuess(type) {
   const aceAutoWin =
     !cheatSpecial &&
     !match &&
-    runHasPower("aces_wild") &&
-    currentComparisonValue === 1;
+    isAceWildAutoCorrect(currentComparisonValue, next);
 
   if (aceAutoWin) {
     cheatSpecial = true;

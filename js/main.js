@@ -19,6 +19,14 @@ function runSelfTests() {
       console.assert(normalizedStats.guessStats.nudgedUp.lower === 0, "Legacy stat entries should gain nudged-up guess stats.");
       console.assert(normalizedStats.guessStats.nudgedDown.higher === 0, "Legacy stat entries should gain nudged-down guess stats.");
       console.assert(normalizedStats.endedRunFaceUpBase === 0, "Legacy stat entries should gain endedRunFaceUpBase field.");
+      const priorState = state;
+      state = { ...(state || createEmptyState()), powers: ["aces_wild"] };
+      console.assert(getEffectiveValueForModifier({ value: 1 }, -1) === 13, "Aces Wild should let an Ace nudge down to King.");
+      console.assert(getEffectiveValueForModifier({ value: 13 }, 1) === 1, "Aces Wild should let a King nudge up to Ace.");
+      console.assert(isAceWildAutoCorrect(1, { value: 9 }) === true, "Aces Wild should auto-correct guesses from an Ace.");
+      console.assert(isAceWildAutoCorrect(7, { value: 1 }) === true, "Aces Wild should auto-correct guesses when the next card is an Ace.");
+      console.assert(isAceWildAutoCorrect(7, { value: 9 }) === false, "Aces Wild should not auto-correct non-Ace comparisons.");
+      state = priorState;
     }
 
 function getTestModeFlags() {

@@ -1188,6 +1188,10 @@ a {
 }
 
 @media (max-width: 420px) {
+  #main-layout {
+    gap: 6px;
+  }
+
   #game-shell {
     padding: 8px;
   }
@@ -1227,27 +1231,81 @@ a {
     --card-height: 132px;
   }
 
+  #play-area {
+    padding-top: 0;
+  }
+
+  #card-row {
+    gap: 14px;
+  }
+
+  .card-column {
+    gap: 5px;
+  }
+
   .current-card-wrap {
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr) 48px;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .nudge-stack {
+    gap: 6px;
+  }
+
+  #current-effective-value,
+  #next-info {
+    min-height: 0.9em;
+    font-size: 0.72rem;
   }
 
   #higher-btn,
   #lower-btn {
-    font-size: 1.3rem;
+    min-height: 50px;
+    font-size: 1.24rem;
+  }
+
+  #controls {
+    gap: 8px;
+    margin-top: 2px;
   }
 
   .nudge-arrow {
-    width: 46px;
-    height: 54px;
+    width: 42px;
+    height: 48px;
   }
 
   .nudge-symbol {
-    font-size: 0.92rem;
+    font-size: 0.86rem;
   }
 
   .nudge-count {
-    font-size: 0.86rem;
+    font-size: 0.8rem;
+  }
+
+  #cheats-panel,
+  #memory-panel,
+  .utility-panel {
+    padding: 8px 10px;
+  }
+
+  .section-bar {
+    margin-bottom: 6px;
+  }
+
+  #cheat-list {
+    gap: 6px;
+  }
+
+  .cheat-button {
+    width: 102px;
+    min-width: 102px;
+    max-width: 102px;
+    min-height: 80px;
+    padding: 8px 6px;
+  }
+
+  #utility-row {
+    gap: 8px;
   }
 
   #bottom-bar {
