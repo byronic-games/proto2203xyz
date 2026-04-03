@@ -97,6 +97,7 @@ function resetDebugScoreTapSequence() {
 
 scoreEl?.addEventListener("click", () => {
   if (!window.testModeEnabled) return;
+  if (state.runMode === "daily") return;
 
   debugScoreTapCount += 1;
 
@@ -110,11 +111,11 @@ scoreEl?.addEventListener("click", () => {
 
   if (debugScoreTapCount >= 10) {
     resetDebugScoreTapSequence();
-    fullResetAllStateForDebug();
+    addMissingCheatsForDebug();
     return;
   }
 
-  state.message = ` Debug: tap score ${debugScoreTapCount}/10 for FULL RESET.`;
+  state.message = ` Debug: tap score ${debugScoreTapCount}/10 to add all cheats.`;
   renderMessage();
 });
 
