@@ -80,6 +80,7 @@ function saveCardBackStatuses(cardBackStatuses) {
     }
 
 function saveLastRunSeed(seed) {
+      if (String(seed || "").startsWith("DAILY|")) return;
       localStorage.setItem(RUN_SEED_KEY, seed);
     }
 
@@ -108,5 +109,7 @@ function saveCheatUnlocks(unlocks) {
   localStorage.setItem(CHEAT_UNLOCKS_KEY, JSON.stringify(unlocks));
 }
 function loadLastRunSeed() {
-      return localStorage.getItem(RUN_SEED_KEY) || "";
+      const seed = localStorage.getItem(RUN_SEED_KEY) || "";
+      return seed.startsWith("DAILY|") ? "" : seed;
     }
+

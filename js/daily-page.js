@@ -64,12 +64,10 @@ async function renderDailyPage() {
   const params = new URLSearchParams(window.location.search);
   const todayKey = getCurrentDailyDateKey();
   const activeDateKey = String(params.get("date") || todayKey).trim() || todayKey;
-  const seed = getDailySeedForDate(activeDateKey);
   const currentPlayerId = getOrCreateDailyPlayerId();
   const currentAttempt = getLocalDailyAttempt(activeDateKey);
 
   const dateEl = document.getElementById("daily-date-label");
-  const seedEl = document.getElementById("daily-seed-label");
   const nameInput = document.getElementById("daily-name-input");
   const statusEl = document.getElementById("daily-status");
   const scoreEl = document.getElementById("daily-score-label");
@@ -78,7 +76,6 @@ async function renderDailyPage() {
   const closeBtn = document.getElementById("daily-close-btn");
 
   if (dateEl) dateEl.innerText = formatDailyDateLabel(activeDateKey);
-  if (seedEl) seedEl.innerText = seed;
   if (nameInput) {
     nameInput.value = loadPreferredPlayerName();
     nameInput.addEventListener("input", () => {
@@ -149,3 +146,4 @@ async function renderDailyPage() {
 }
 
 renderDailyPage();
+

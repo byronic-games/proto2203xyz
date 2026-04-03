@@ -235,7 +235,9 @@ function startRunWithPower(powerId) {
     lockDailyAttempt(dailyDateKey, chosenSeed, loadPreferredPlayerName());
   }
 
-  saveLastRunSeed(chosenSeed);
+  if (runMode !== "daily") {
+    saveLastRunSeed(chosenSeed);
+  }
   render();
 }
 
@@ -885,3 +887,4 @@ function makeGuess(type) {
 
   render();
 }
+
