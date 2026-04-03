@@ -653,8 +653,8 @@ const CHEATS = [
       const next = peekNext();
       if (!next) return "No next card.";
       state.nextCardValueModifier = 3;
-      const treatedValue = clampCardValue(next.value + 3);
-      return `Next card is now treated as ${valueToRank(treatedValue)} for the next guess.`;
+
+      return "Next card nudged up by 3 for the next guess.";
     },
   },
   {
@@ -670,8 +670,8 @@ const CHEATS = [
       const next = peekNext();
       if (!next) return "No next card.";
       state.nextCardValueModifier = -3;
-      const treatedValue = clampCardValue(next.value - 3);
-      return `Next card is now treated as ${valueToRank(treatedValue)} for the next guess.`;
+
+      return "Next card nudged down by 3 for the next guess.";
     },
   },  {
     id: "halve_it",
