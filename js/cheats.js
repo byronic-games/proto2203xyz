@@ -14,6 +14,12 @@ function getParityLabel(value) {
   return value % 2 === 0 ? "EVEN" : "ODD";
 }
 
+function getUpcomingCheatValue(offset = 1) {
+  const card = getNextCardAt(offset);
+  if (!card) return null;
+  const modifier = offset === 1 ? (state.nextCardValueModifier || 0) : 0;
+  return clampCardValue(card.value + modifier);
+}
 function clampCardValue(value) {
   return clamp(value, 1, 13);
 }
@@ -142,7 +148,8 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return next.value > 9 ? "Yes — above 9." : "No — 9 or below.";
+      const nextValue = getUpcomingCheatValue(1);
+      return nextValue > 9 ? "Yes — above 9." : "No — 9 or below.";
     },
   },
   {
@@ -157,7 +164,8 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return next.value < 5 ? "Yes — below 5." : "No — 5 or above.";
+      const nextValue = getUpcomingCheatValue(1);
+      return nextValue < 5 ? "Yes — below 5." : "No — 5 or above.";
     },
   },
   {
@@ -172,7 +180,8 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return next.value >= 5 && next.value <= 9 ? "Yes — between 5 and 9." : "No — outside 5–9.";
+      const nextValue = getUpcomingCheatValue(1);
+      return nextValue >= 5 && nextValue <= 9 ? "Yes — between 5 and 9." : "No — outside 5–9.";
     },
   },
     {
@@ -267,7 +276,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return `Total = ${next.value + next2.value}`;
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return `Total = ${nextValue + next2Value}`;
     },
   },
   {
@@ -284,7 +295,10 @@ const CHEATS = [
       const next2 = getNextCardAt(2);
       const next3 = getNextCardAt(3);
       if (!next || !next2 || !next3) return "Not enough cards remaining.";
-      return `Total = ${next.value + next2.value + next3.value}`;
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      const next3Value = getUpcomingCheatValue(3);
+      return `Total = ${nextValue + next2Value + next3Value}`;
     },
   },
   {
@@ -300,7 +314,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value + next2.value > 12 ? "Yes — total is above 12." : "No — total is 12 or below.";
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue + next2Value > 12 ? "Yes — total is above 12." : "No — total is 12 or below.";
     },
   },
   {
@@ -316,7 +332,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value + next2.value > 20 ? "Yes — total is above 20." : "No — total is 20 or below.";
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue + next2Value > 20 ? "Yes — total is above 20." : "No — total is 20 or below.";
     },
   },
   {
@@ -332,7 +350,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value + next2.value < 10 ? "Yes — total is under 10." : "No — total is 10 or above.";
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue + next2Value < 10 ? "Yes — total is under 10." : "No — total is 10 or above.";
     },
   },
   {
@@ -348,7 +368,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value + next2.value < 15 ? "Yes — total is under 15." : "No — total is 15 or above.";
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue + next2Value < 15 ? "Yes — total is under 15." : "No — total is 15 or above.";
     },
   },
     {
@@ -381,7 +403,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return `Product = ${next.value * next2.value}`;
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return `Product = ${nextValue * next2Value}`;
     },
   },
   {
@@ -396,7 +420,8 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return next.value >= 7 ? "Top half (7+)." : "Bottom half (6 or below).";
+      const nextValue = getUpcomingCheatValue(1);
+      return nextValue >= 7 ? "Top half (7+)." : "Bottom half (6 or below).";
     },
   },
   {
@@ -432,7 +457,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value > currentVal || next2.value > currentVal
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue > currentVal || next2Value > currentVal
         ? "Yes — at least one is higher."
         : "No — neither is higher.";
     },
@@ -452,7 +479,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return next.value < currentVal || next2.value < currentVal
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return nextValue < currentVal || next2Value < currentVal
         ? "Yes — at least one is lower."
         : "No — neither is lower.";
     },
@@ -470,7 +499,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return `Higher = ${Math.max(next.value, next2.value)}`;
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return `Higher = ${Math.max(nextValue, next2Value)}`;
     },
   },
   {
@@ -486,7 +517,9 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
-      return `Lower = ${Math.min(next.value, next2.value)}`;
+      const nextValue = getUpcomingCheatValue(1);
+      const next2Value = getUpcomingCheatValue(2);
+      return `Lower = ${Math.min(nextValue, next2Value)}`;
     },
   },
   {
@@ -501,7 +534,8 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return getParityLabel(next.value);
+      const nextValue = getUpcomingCheatValue(1);
+      return getParityLabel(nextValue);
     },
   },
   {
@@ -763,7 +797,7 @@ const CHEATS = [
       const currentVal = getCurrentEffectiveValue();
       const upcoming = [1, 2, 3, 4, 5].map((offset) => getNextCardAt(offset)).filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
-      const found = upcoming.some((card) => card.value === currentVal);
+      const found = upcoming.some((card, index) => getUpcomingCheatValue(index + 1) === currentVal);
       return found ? "Yes — a match to the current value is in the next five." : "No — no match to the current value in the next five.";
     },
   },
@@ -797,7 +831,7 @@ const CHEATS = [
       const next2 = getNextCardAt(2);
       const next3 = getNextCardAt(3);
       if (!next || !next2 || !next3) return "Not enough cards remaining.";
-      const total = next.value + next2.value + next3.value;
+      const total = getUpcomingCheatValue(1) + getUpcomingCheatValue(2) + getUpcomingCheatValue(3);
       return `Average = ${formatAverageValue(total, 3)}`;
     },
   },
