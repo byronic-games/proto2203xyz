@@ -113,3 +113,78 @@ function loadLastRunSeed() {
       return seed.startsWith("DAILY|") ? "" : seed;
     }
 
+function serializeGameStateSnapshot(sourceState) {
+  if (!sourceState || typeof sourceState !== "object") return null;
+
+  return {
+    ...sourceState,
+    seenCardIds: Array.from(sourceState.seenCardIds || []),
+    cheats: (sourceState.cheats || []).map((cheat) => cheat?.id).filter(Boolean),
+    pendingCheatOptions: (sourceState.pendingCheatOptions || []).map((cheat) => cheat?.id).filter(Boolean),
+    pendingPowerOptions: (sourceState.pendingPowerOptions || []).map((power) => power?.id).filter(Boolean),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function saveGameStateSnapshot(sourceState) {
+  const snapshot = serializeGameStateSnapshot(sourceState);
+  if (!snapshot) return;
+  sessionStorage.setItem(GAME_STATE_SNAPSHOT_KEY, JSON.stringify(snapshot));
+}
+
+function clearGameStateSnapshot() {
+  sessionStorage.removeItem(GAME_STATE_SNAPSHOT_KEY);
+}
+
+function loadGameStateSnapshot() {
+  const raw = sessionStorage.getItem(GAME_STATE_SNAPSHOT_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const snapshot = {
+      ...createEmptyState(),
+      ...parsed,
+      seenCardIds: new Set(Array.isArray(parsed.seenCardIds) ? parsed.seenCardIds : []),
+      cheats: (parsed.cheats || []).map((id) => CHEATS.find((cheat) => cheat.id === id)).filter(Boolean).map((cheat) => ({ ...cheat })),
+      pendingCheatOptions: (parsed.pendingCheatOptions || []).map((id) => CHEATS.find((cheat) => cheat.id === id)).filter(Boolean),
+      pendingPowerOptions: (parsed.pendingPowerOptions || []).map((id) => getPowerById(id)).filter(Boolean),
+    };
+
+    return snapshot;
+  } catch {
+    return null;
+  }
+}
+
+function saveSettingsReturnUrl(url) {
+  sessionStorage.setItem(SETTINGS_RETURN_URL_KEY, String(url || ""));
+}
+
+function loadSettingsReturnUrl() {
+  return String(sessionStorage.getItem(SETTINGS_RETURN_URL_KEY) || "");
+}
+
+function clearSettingsReturnUrl() {
+  sessionStorage.removeItem(SETTINGS_RETURN_URL_KEY);
+}
+
+function resetDeckAlterations() {
+  localStorage.removeItem(CARD_BACK_STATUS_KEY);
+
+  const raw = sessionStorage.getItem(GAME_STATE_SNAPSHOT_KEY);
+  if (raw) {
+    try {
+      const snapshot = JSON.parse(raw);
+      if (snapshot && typeof snapshot === "object") {
+        snapshot.cardBackStatuses = {};
+        sessionStorage.setItem(GAME_STATE_SNAPSHOT_KEY, JSON.stringify(snapshot));
+      }
+    } catch {
+      // Ignore malformed snapshots and leave current reset in place.
+    }
+  }
+}
+

@@ -22,6 +22,12 @@ function isPrimeCardValue(value) {
   return value === 2 || value === 3 || value === 5 || value === 7 || value === 11 || value === 13;
 }
 
+function formatAverageValue(total, count) {
+  if (!count) return "0";
+  const average = total / count;
+  if (Number.isInteger(average)) return String(average);
+  return average.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
 function getWeightedRandomIndex(items, getWeight, rng = Math.random) {
   const totalWeight = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
   if (totalWeight <= 0) return -1;
@@ -82,7 +88,7 @@ const CHEAT_DESCRIPTIONS = {
   "Above 9?": "Is the next face down card above 9?",
   "Below 5?": "Is the next face down card below 5?",
   "Between 5 and 9?": "Is the value of the next face down card a 5, 6, 7, 8 or 9?",
-  "Is it an Ace?": "Reveals whether the next face down card is an Ace.",
+  "Is it an Ace?": "Reveals whether at least one Ace appears in the next three face down cards.",
   "Is it a King?": "Reveals whether the next face down card is a King.",
   "Ace ahead?": "Reveals whether at least one Ace appears in the next three face down cards.",
   "King ahead?": "Reveals whether at least one King appears in the next three face down cards.",
@@ -109,13 +115,17 @@ const CHEAT_DESCRIPTIONS = {
   "Nudge -1": "Decreases the value of the current face card by one for the next guess.",
   "Nudge +2": "Increases the value of the current face card by two, stopping at King.",
   "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
-  "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
+  "Next Card Nudge Up": "Temporarily nudges the next face-down card up by 3 for the next guess, stopping at King.",
+  "Next Card Nudge Down": "Temporarily nudges the next face-down card down by 3 for the next guess, stopping at Ace.",  "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
   "Double Trouble": "Treat the current card as double its value for the next guess, up to King.",
-  "Odd One Out": "For the next card only: if it is odd, you lose. Otherwise you survive.",
+  "Odd One Out": "For the next card only: if it is odd, you lose. Aces count as odd even under Aces Wild. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
   "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
   "6/7": "Use only on an un-nudged 6 or 7, and it must be the first and only cheat played on that card. Nudges then lock. Guess correctly to pick 3 cheats in a row. Guess wrong and you lose.",
-  "Swap": "Replace the current face card with the card at the bottom of the deck.",
+  "Twin Peek": "Checks the next five cards and reveals whether any of them match the face-up card's current value.",
+  "Run Stopper": "Checks the next five cards and reveals whether at least one Ace or King appears.",
+  "Bang Average": "Reveals the exact average value of the next three face down cards.",
+  "God Save The King": "Play on any face card. If the next card is a King, the run survives even if your guess is wrong.",  "Swap": "Replace the current face card with the card at the bottom of the deck.",
   "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
 };
 
@@ -165,7 +175,7 @@ const CHEATS = [
       return next.value >= 5 && next.value <= 9 ? "Yes — between 5 and 9." : "No — outside 5–9.";
     },
   },
-  {
+    {
     id: "is_it_an_ace",
     name: "Is it an Ace?",
     rarity: "common",
@@ -175,9 +185,10 @@ const CHEATS = [
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
-      const next = peekNext();
-      if (!next) return "No next card.";
-      return next.rank === "A" ? "Yes — it is an Ace." : "No — not an Ace.";
+      const upcoming = [getNextCardAt(1), getNextCardAt(2), getNextCardAt(3)].filter(Boolean);
+      if (upcoming.length === 0) return "No next card.";
+      const found = upcoming.some((card) => card.rank === "A");
+      return found ? "Yes — an Ace is in the next three." : "No — no Ace in the next three.";
     },
   },
   {
@@ -232,7 +243,7 @@ const CHEATS = [
     name: "Number Remaining?",
     rarity: "uncommon",
     weight: 1,
-    included: true,
+    included: false,
     unlockAt: 3,
     stacking: "unique",
     consumeOnUse: true,
@@ -340,12 +351,12 @@ const CHEATS = [
       return next.value + next2.value < 15 ? "Yes — total is under 15." : "No — total is 15 or above.";
     },
   },
-  {
+    {
     id: "prime_ahead",
     name: "Prime Ahead?",
     rarity: "uncommon",
     weight: 1,
-    included: true,
+    included: false,
     unlockAt: 3,
     stacking: "unique",
     consumeOnUse: true,
@@ -596,11 +607,44 @@ const CHEATS = [
     },
   },
   {
+    id: "next_card_nudge_up",
+    name: "Next Card Nudge Up",
+    rarity: "uncommon",
+    weight: 0.8,
+    included: true,
+    unlockAt: 22,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      state.nextCardValueModifier = 3;
+      const treatedValue = clampCardValue(next.value + 3);
+      return `Next card is now treated as ${valueToRank(treatedValue)} for the next guess.`;
+    },
+  },
+  {
+    id: "next_card_nudge_down",
+    name: "Next Card Nudge Down",
+    rarity: "uncommon",
+    weight: 0.8,
+    included: true,
+    unlockAt: 22,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = peekNext();
+      if (!next) return "No next card.";
+      state.nextCardValueModifier = -3;
+      const treatedValue = clampCardValue(next.value - 3);
+      return `Next card is now treated as ${valueToRank(treatedValue)} for the next guess.`;
+    },
+  },  {
     id: "halve_it",
     name: "Halve It",
     rarity: "uncommon",
     weight: 1,
-    included: true,
+    included: false,
     unlockAt: 3,
     stacking: "unique",
     consumeOnUse: true,
@@ -706,6 +750,74 @@ const CHEATS = [
     },
   },
   {
+    id: "twin_peek",
+    name: "Twin Peek",
+    rarity: "uncommon",
+    weight: 0.9,
+    included: true,
+    unlockAt: 14,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      const upcoming = [1, 2, 3, 4, 5].map((offset) => getNextCardAt(offset)).filter(Boolean);
+      if (upcoming.length === 0) return "No next card.";
+      const found = upcoming.some((card) => card.value === currentVal);
+      return found ? "Yes — a match to the current value is in the next five." : "No — no match to the current value in the next five.";
+    },
+  },
+  {
+    id: "run_stopper",
+    name: "Run Stopper",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 16,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const upcoming = [1, 2, 3, 4, 5].map((offset) => getNextCardAt(offset)).filter(Boolean);
+      if (upcoming.length === 0) return "No next card.";
+      const found = upcoming.some((card) => card.rank === "A" || card.rank === "K");
+      return found ? "Yes — an Ace or King is in the next five." : "No — no Ace or King in the next five.";
+    },
+  },
+  {
+    id: "bang_average",
+    name: "Bang Average",
+    rarity: "uncommon",
+    weight: 0.8,
+    included: true,
+    unlockAt: 20,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const next = getNextCardAt(1);
+      const next2 = getNextCardAt(2);
+      const next3 = getNextCardAt(3);
+      if (!next || !next2 || !next3) return "Not enough cards remaining.";
+      const total = next.value + next2.value + next3.value;
+      return `Average = ${formatAverageValue(total, 3)}`;
+    },
+  },
+  {
+    id: "god_save_the_king",
+    name: "God Save The King",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 24,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      if (currentVal < 11) return "God Save The King can only be used on a face card.";
+      state.godSaveKingArmed = true;
+      return "God Save The King armed — if the next card is a King, the run survives even on a wrong guess.";
+    },
+  },  {
     id: "tear_corner",
     name: "Tear Corner",
     rarity: "common",

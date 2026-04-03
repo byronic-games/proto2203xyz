@@ -89,7 +89,26 @@ function initializeDailyModeFromUrl() {
   openDailyPowerChoice(requestedDailyDate);
 }
 
+function restoreGameStateFromUrlIfNeeded() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("resume")) return false;
+
+  const snapshot = loadGameStateSnapshot();
+  clearGameStateSnapshot();
+  if (!snapshot) return false;
+
+  state = snapshot;
+  if (!state.current && Array.isArray(state.deck) && state.deck.length) {
+    state.current = state.deck[state.index] || state.deck[0] || null;
+  }
+
+  return true;
+}
+
 runSelfTests();
 applyDebugActionsFromUrl();
+const restoredFromSnapshot = restoreGameStateFromUrlIfNeeded();
 render();
-initializeDailyModeFromUrl();
+if (!restoredFromSnapshot) {
+  initializeDailyModeFromUrl();
+}

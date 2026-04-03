@@ -71,8 +71,9 @@ document.getElementById("howto-close-icon-btn")?.addEventListener("click", close
 document.getElementById("howto-close-backdrop")?.addEventListener("click", closeHowToModal);
 
 document.getElementById("settings-btn")?.addEventListener("click", () => {
-  state.message = "Settings will come later.";
-  renderMessage();
+  saveGameStateSnapshot(state);
+  saveSettingsReturnUrl(`game.html?resume=1`);
+  window.location.href = "settings.html";
 });
 
 document.getElementById("nudge-up-btn")?.addEventListener("click", () => {

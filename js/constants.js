@@ -25,15 +25,17 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     const BEST_SCORE_KEY = "hl_prototype_best_score";
     const CARD_STATS_KEY = "hl_prototype_card_stats";
     const CARD_BACK_STATUS_KEY = "hl_prototype_card_back_status";
+    const GAME_STATE_SNAPSHOT_KEY = "hl_prototype_game_state_snapshot";
+    const SETTINGS_RETURN_URL_KEY = "hl_prototype_settings_return_url";
     const RUN_SEED_KEY = "hl_prototype_last_seed";
     const META_PROGRESSION_KEY = "hl_prototype_meta_progression";
     const GAME_VERSION = "v0.1";
 
     const CHEAT_RARITY = {
-      common: 60,
-      uncommon: 25,
-      rare: 10,
-      legendary: 5,
+      common: 50,
+      uncommon: 30,
+      rare: 20,
+      legendary: 0,
     };
 
 const CHEAT_UNLOCKS_KEY = "hl_prototype_cheat_unlocks";;
@@ -84,3 +86,4 @@ function clamp(value, min, max) {
 function getCardId(suit, rank) {
       return `${SUIT_NAMES[suit]}_${rank}`;
     }
+
