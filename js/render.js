@@ -211,25 +211,38 @@ function renderCurrentCard() {
   currentValueEl.innerText = "";
 }
 
-function getGuessPreferenceSummary(higherCount, lowerCount) {
+function getRedDeckConfidenceLabel(higherCount, lowerCount, attempts) {
   const total = (higherCount || 0) + (lowerCount || 0);
-  if (!total) return null;
+  if (attempts < 4 || !total) return "Unclear";
 
-  const higherPercent = Math.round(((higherCount || 0) / total) * 100);
-  const lowerPercent = 100 - higherPercent;
+  const dominantShare = Math.max(higherCount || 0, lowerCount || 0) / total;
+  if (dominantShare >= 0.75) return "High";
+  if (dominantShare >= 0.6) return "Medium";
+  return "Low";
+}
 
-  if (higherPercent === lowerPercent) {
-    return "Picked most: tied 50/50";
+function getRedDeckNudgeLabel(nudgedUpCount, nudgedDownCount, attempts) {
+  const totalNudges = (nudgedUpCount || 0) + (nudgedDownCount || 0);
+  if (!attempts) {
+    return totalNudges > 0 ? "Common" : "Unclear";
   }
 
-  return higherPercent > lowerPercent
-    ? `Picked most: Higher ${higherPercent}%`
-    : `Picked most: Lower ${lowerPercent}%`;
+  const nudgesPerAppearance = totalNudges / attempts;
+  if (nudgesPerAppearance < 0.35) return "Rare";
+  if (nudgesPerAppearance <= 0.9) return "Common";
+  return "Heavy";
+}
+
+function getRedDeckResultsLabel(correct, attempts) {
+  if (attempts < 4) return "Unclear";
+
+  const survivalRate = attempts > 0 ? (correct || 0) / attempts : 0;
+  if (survivalRate >= 0.7) return "Stable";
+  if (survivalRate >= 0.45) return "Swingy";
+  return "Harsh";
 }
 
 function getCardStatsTooltipLines(entry) {
-  const lines = [];
-
   const higherCount =
     (entry.guessStats?.base?.higher || 0) +
     (entry.guessStats?.nudgedUp?.higher || 0) +
@@ -240,22 +253,18 @@ function getCardStatsTooltipLines(entry) {
     (entry.guessStats?.nudgedDown?.lower || 0);
   const attempts = entry.attempts || 0;
   const correct = entry.correct || 0;
-  const faceUpLosses = Math.max(0, attempts - correct);
+  const nudgedUpCount = entry.nudgeStats?.up || 0;
+  const nudgedDownCount = entry.nudgeStats?.down || 0;
 
-  const pickedLine = getGuessPreferenceSummary(higherCount, lowerCount);
-  if (pickedLine) lines.push(pickedLine);
-
-  lines.push(`Nudged: up ${entry.nudgeStats?.up || 0} / down ${entry.nudgeStats?.down || 0}`);
-
-  if (attempts > 0) {
-    lines.push(`Face-up losses: ${faceUpLosses}`);
-  }
-
-  if (!pickedLine && attempts <= 0 && (entry.nudgeStats?.up || 0) <= 0 && (entry.nudgeStats?.down || 0) <= 0) {
+  if (attempts <= 0 && nudgedUpCount <= 0 && nudgedDownCount <= 0) {
     return ["No face-up stats yet."];
   }
 
-  return lines;
+  return [
+    `Confidence: ${getRedDeckConfidenceLabel(higherCount, lowerCount, attempts)}`,
+    `Nudges: ${getRedDeckNudgeLabel(nudgedUpCount, nudgedDownCount, attempts)}`,
+    `Results: ${getRedDeckResultsLabel(correct, attempts)}`,
+  ];
 }
 
 function renderNudgeControls() {

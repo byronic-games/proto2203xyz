@@ -986,14 +986,24 @@ function pickCheatFromChoice(index) {
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
 
-  if (canAddCheatToHand(cheat)) {
-    const shouldTrackDiscovery = state.runMode !== "daily";
-    const wasNew = shouldTrackDiscovery && !hasCheatBeenDiscovered(cheat.id);
+  const shouldTrackDiscovery = state.runMode !== "daily";
+  const wasNew = shouldTrackDiscovery && !hasCheatBeenDiscovered(cheat.id);
 
-    if (wasNew) {
-      markCheatDiscovered(cheat, "random");
-    }
+  if (wasNew) {
+    markCheatDiscovered(cheat, "random");
+  }
 
+  if (cheat.id === "nudge_up") {
+    state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
+    state.message = wasNew
+      ? "Picked NEW reward: Nudge +1 charge banked."
+      : "Picked reward: Nudge +1 charge banked.";
+  } else if (cheat.id === "nudge_down") {
+    state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 1;
+    state.message = wasNew
+      ? "Picked NEW reward: Nudge -1 charge banked."
+      : "Picked reward: Nudge -1 charge banked.";
+  } else if (canAddCheatToHand(cheat)) {
     state.cheats.push({ ...cheat });
 
     state.message = wasNew
