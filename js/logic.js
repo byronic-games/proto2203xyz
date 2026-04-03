@@ -798,13 +798,10 @@ function makeGuess(type) {
   updateBestScoreIfNeeded();
 
   if (state.index >= state.deck.length - 1) {
-    let unlockedRedNow = false;
     if (state.runMode !== "daily") {
-      const previousBlueWins = state.deckWins?.blue || 0;
       state.deckWins = recordDeckWin(state.currentDeckKey);
-      unlockedRedNow = state.currentDeckKey === "blue" && previousBlueWins === 0 && (state.deckWins?.blue || 0) > 0;
     }
-    state.message = unlockedRedNow ? " YOU CLEARED THE BLUE DECK! Red Deck unlocked." : " YOU CLEARED THE DECK!";
+    state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
     handleRunFinished(state.correctAnswers);

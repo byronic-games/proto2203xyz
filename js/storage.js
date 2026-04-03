@@ -154,7 +154,7 @@ function saveRedDeckDebugUnlock(enabled) {
 }
 
 function isRedDeckUnlocked() {
-  return getDeckWinCount("blue") > 0 || loadRedDeckDebugUnlock();
+  return loadRedDeckDebugUnlock();
 }
 
 function loadCheatUnlocks() {

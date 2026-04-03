@@ -81,7 +81,7 @@
             </button>
             <button class="deck-choice-card deck-choice-red" id="deck-pick-red" type="button">
               <span class="deck-choice-label">Red Deck</span>
-              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue once.</span>
+              <span class="deck-choice-desc" id="deck-red-desc">Coming soon.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -181,8 +181,7 @@
       }
 
       function isRedDeckUnlocked() {
-        const wins = loadDeckWins();
-        return wins.blue > 0 || sessionStorage.getItem(redDeckDebugUnlockKey) === "1";
+        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1";
       }
 
       function setSelectedDeck(deckKey) {
@@ -205,7 +204,7 @@
         redDeckBtn.classList.toggle("locked", !redUnlocked);
         redDeckDesc.textContent = redUnlocked
           ? "No nudge rewards. The next card back shows live face-up card stats."
-          : "Unlock by clearing Blue once.";
+          : "Coming soon.";
       }
 
       function openDeckModal() {
