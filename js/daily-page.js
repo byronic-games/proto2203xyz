@@ -11,12 +11,16 @@ function formatDailyDateLabel(dateKey) {
   });
 }
 
-function renderDailyRows(entries, currentPlayerId) {
+function renderDailyRows(entries, currentPlayerId, showScores = false) {
   const bodyEl = document.getElementById("daily-table-body");
   const countEl = document.getElementById("daily-board-count");
+  const scoreHeading = document.getElementById("daily-score-heading");
   if (!bodyEl || !countEl) return;
 
   bodyEl.innerHTML = "";
+  if (scoreHeading) {
+    scoreHeading.innerText = showScores ? "Score" : "Result";
+  }
 
   if (!entries.length) {
     bodyEl.innerHTML = "<tr><td colspan='3'>No daily scores yet. Set the pace.</td></tr>";
@@ -49,9 +53,9 @@ function renderDailyRows(entries, currentPlayerId) {
     nameTd.innerText = entry.playerName || "Unknown";
 
     const scoreTd = document.createElement("td");
-    scoreTd.dataset.label = "Score";
+    scoreTd.dataset.label = showScores ? "Score" : "Result";
     scoreTd.className = "score";
-    scoreTd.innerText = String(entry.score ?? 0);
+    scoreTd.innerText = showScores ? String(entry.score ?? 0) : "Hidden";
 
     tr.appendChild(rankTd);
     tr.appendChild(nameTd);
@@ -66,6 +70,12 @@ async function renderDailyPage() {
   const activeDateKey = String(params.get("date") || todayKey).trim() || todayKey;
   const currentPlayerId = getOrCreateDailyPlayerId();
   const currentAttempt = getLocalDailyAttempt(activeDateKey);
+  const hasCompletedAttempt =
+    !!currentAttempt &&
+    currentAttempt.dateKey === activeDateKey &&
+    currentAttempt.playerId === currentPlayerId &&
+    currentAttempt.completed === true;
+  const showScores = hasCompletedAttempt;
 
   const dateEl = document.getElementById("daily-date-label");
   const nameInput = document.getElementById("daily-name-input");
@@ -94,7 +104,7 @@ async function renderDailyPage() {
   }
 
   if (currentAttempt) {
-    if (currentAttempt.completed) {
+    if (hasCompletedAttempt) {
       resultPanel?.classList.remove("hidden");
       if (scoreEl) scoreEl.innerText = String(currentAttempt.score ?? 0);
       if (statusEl) {
@@ -110,7 +120,7 @@ async function renderDailyPage() {
     }
     if (startBtn) {
       startBtn.disabled = true;
-      startBtn.innerText = currentAttempt.completed ? "Daily Complete" : "Daily Locked";
+      startBtn.innerText = hasCompletedAttempt ? "Daily Complete" : "Daily Locked";
     }
   } else {
     resultPanel?.classList.add("hidden");
@@ -142,7 +152,7 @@ async function renderDailyPage() {
   });
 
   const leaderboard = await fetchDailyLeaderboard(activeDateKey, 100);
-  renderDailyRows(leaderboard, currentPlayerId);
+  renderDailyRows(leaderboard, currentPlayerId, showScores);
 }
 
 renderDailyPage();

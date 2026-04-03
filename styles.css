@@ -1336,6 +1336,7 @@ a {
   #cheats-panel {
     grid-area: cheats;
     align-self: start;
+    min-width: 0;
   }
 
   #memory-panel {
@@ -1358,7 +1359,26 @@ a {
 
   #cheat-list {
     display: flex;
-    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  #cheat-list::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+
+  #cheat-list::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 999px;
+  }
+
+  #cheat-list::-webkit-scrollbar-thumb {
+    background: rgba(247,125,246,0.5);
+    border-radius: 999px;
+    box-shadow: 0 0 10px rgba(247,125,246,0.18);
   }
 
   #bottom-bar {

@@ -310,6 +310,7 @@ function unmarkCardSeen(card) {
 function advanceToCard(card) {
   state.current = card;
   state.index += 1;
+  state.cheatUsesOnCurrentCard = 0;
   markCardSeen(card);
 }
 
@@ -385,6 +386,7 @@ function canUseNudge(direction) {
     !state.current ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
+    !!state.sixSevenArmed ||
     !!state.pauseForCheat;
   if (isBlocked) return false;
 
@@ -685,10 +687,12 @@ function makeGuess(type) {
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
+  const sixSevenWasArmed = !!state.sixSevenArmed;
 
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
   state.oddOneOutArmed = false;
+  state.sixSevenArmed = false;
 
   // --- Unified correct guess logic for streaks and extensibility ---
   let correct = false;
@@ -749,7 +753,9 @@ function makeGuess(type) {
     state.streak = 0;
     setCurrentCardFeedback("wrong");
     flashGameShell("wrong");
-    state.message = `❌ Wrong! It was ${describeCard(next)}.`;
+    state.message = sixSevenWasArmed
+      ? `❌ Wrong! 6/7 missed — it was ${describeCard(next)}.`
+      : `❌ Wrong! It was ${describeCard(next)}.`;
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
@@ -785,6 +791,22 @@ function makeGuess(type) {
   }
 
   const powerAwards = awardOnCorrectGuessPowers(type);
+
+  if (sixSevenWasArmed) {
+    state.streak = 0;
+    state.sixSevenRewardChoicesRemaining = 3;
+    state.pauseForCheat = true;
+    state.message = powerAwards.length > 0
+      ? `✅ 6/7 hit! Choose 3 cheats — power gained: ${powerAwards.join(", ")}.`
+      : "✅ 6/7 hit! Choose 3 cheats.";
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      offerCheatChoice();
+      render();
+    }, 1000);
+    return;
+  }
 
   // --- Handle streak and cheat selection pause ---
   if (state.streak >= getCheatRewardThreshold()) {

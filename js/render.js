@@ -425,11 +425,17 @@ function renderCheats() {
     btn.onclick = () => {
       if (held) return;
       if (state.gameOver || state.pendingCheatOptions.length || state.pendingPowerOptions.length) return;
+      if (state.sixSevenArmed) {
+        state.message = "6/7 is armed — no other cheats or nudges can be used on this card.";
+        render();
+        return;
+      }
       const result = cheat.use();
       state.message = result;
       if (cheat.consumeOnUse) {
         const originalIndex = state.cheats.findIndex((c) => c === cheat);
         if (originalIndex >= 0) removeCheatAt(originalIndex);
+        state.cheatUsesOnCurrentCard = (state.cheatUsesOnCurrentCard || 0) + 1;
       }
       render();
     };

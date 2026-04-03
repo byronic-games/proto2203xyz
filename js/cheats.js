@@ -114,6 +114,7 @@ const CHEAT_DESCRIPTIONS = {
   "Odd One Out": "For the next card only: if it is odd, you lose. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
   "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
+  "6/7": "Use only on an un-nudged printed 6 or 7, and it must be the first and only cheat played on that card. Nudges then lock. Guess correctly to pick 3 cheats in a row. Guess wrong and you lose.",
   "Swap": "Replace the current face card with the card at the bottom of the deck.",
   "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
 };
@@ -681,6 +682,30 @@ const CHEATS = [
     },
   },
   {
+    id: "six_seven",
+    name: "6/7",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 18,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      if ((state.cheatUsesOnCurrentCard || 0) > 0) {
+        return "6/7 must be the first cheat you play on this card.";
+      }
+      if ((state.currentValueModifier || 0) !== 0) {
+        return "6/7 can only be used on an un-nudged printed 6 or 7.";
+      }
+      if (state.current.value !== 6 && state.current.value !== 7) {
+        return "6/7 can only be used on a printed 6 or 7.";
+      }
+      state.sixSevenArmed = true;
+      return "6/7 armed — no nudges or other cheats on this card. Guess correctly to choose 3 cheats.";
+    },
+  },
+  {
     id: "tear_corner",
     name: "Tear Corner",
     rarity: "common",
@@ -797,7 +822,10 @@ function offerCheatChoice() {
   state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
   state.cheatChoiceIntroToken = (state.cheatChoiceIntroToken || 0) + 1;
 
-  if (newlyMetaUnlocked.length) {
+  if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
+    const pickNumber = 4 - state.sixSevenRewardChoicesRemaining;
+    state.message = `Choose bonus cheat ${pickNumber} of 3:`;
+  } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {
     state.message = "Choose 1 cheat:";
@@ -832,6 +860,13 @@ function pickCheatFromChoice(index) {
   state.pendingCheatOptions = [];
   state.justUnlockedCheatIds = [];
   state.cheatChoiceLockedUntil = 0;
+  if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
+    state.sixSevenRewardChoicesRemaining -= 1;
+    if (state.sixSevenRewardChoicesRemaining > 0) {
+      offerCheatChoice();
+      return;
+    }
+  }
   render();
 }
 
