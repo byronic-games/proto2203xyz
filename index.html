@@ -19,31 +19,65 @@
     <div class="glow glow-a"></div>
     <div class="glow glow-b"></div>
     <div class="glow glow-c"></div>
+    <div class="scanline-overlay"></div>
 
     <section class="intro-card">
-      <p class="eyebrow">A Game Of Impossible Odds</p>
-      <h1>52!</h1>
+      <div class="intro-grid">
+        <section class="intro-main">
+          <p class="eyebrow">Impossible Deck Prototype</p>
+          <h1>52!</h1>
+          <p class="tagline">A neon higher-or-lower run through a deck that may never have existed before.</p>
 
-      <p class="premise">
-        The number of ways to thoroughly shuffle a pack of playing cards is so large it is almost certain the resulting deck has never existed before.
-      </p>
-      <p class="premise emphasis">
-        52 cards sit before you. No-one in human history has ever correctly predicted whether each is higher or lower than the one before it.
-      </p>
-      <p class="question">Can you?</p>
+          <div class="intro-copy">
+            <p class="premise">
+              One card is face up. One card is waiting. Call <strong>Higher</strong> or <strong>Lower</strong> and try to survive all fifty-two.
+            </p>
+            <p class="premise emphasis">
+              Powers, cheats, nudges, seeds, and a little nerve are the only things standing between you and the Heroes board.
+            </p>
+          </div>
 
-      <div class="intro-actions">
-        <a class="play-button" href="game.html">Click To Play</a>
-        <button class="howto-button" id="howto-open-btn" type="button">How To Play</button>
-        <a class="heroes-button" href="heroes.html">52! Heroes!</a>
+          <div class="intro-actions">
+            <a class="intro-action action-play" href="game.html">
+              <span class="action-kicker">Start Run</span>
+              <span class="action-title">Play</span>
+            </a>
+            <button class="intro-action action-daily" id="daily-coming-soon-btn" type="button">
+              <span class="action-kicker">Daily Deck</span>
+              <span class="action-title">Coming Soon</span>
+            </button>
+            <button class="intro-action action-howto" id="howto-open-btn" type="button">
+              <span class="action-kicker">Learn The Rules</span>
+              <span class="action-title">How To Play</span>
+            </button>
+            <a class="intro-action action-heroes" href="heroes.html">
+              <span class="action-kicker">Legend Board</span>
+              <span class="action-title">Heroes</span>
+            </a>
+          </div>
+        </section>
+
+        <aside class="intro-side" aria-hidden="true">
+          <div class="signal-panel signal-panel-top">
+            <div class="signal-label">Format</div>
+            <div class="signal-value">Solo Run</div>
+            <div class="signal-sub">Seeded deck, one impossible climb.</div>
+          </div>
+
+          <div class="card-fan">
+            <div class="fancy-card card-1">A?</div>
+            <div class="fancy-card card-2">Q?</div>
+            <div class="fancy-card card-3">7?</div>
+          </div>
+
+          <div class="signal-panel signal-panel-bottom">
+            <div class="signal-label">Current Build</div>
+            <div class="signal-value">Blue Deck Live</div>
+            <div class="signal-sub">Daily mode will arrive in a later update.</div>
+          </div>
+        </aside>
       </div>
     </section>
-
-    <aside class="card-fan" aria-hidden="true">
-      <div class="fancy-card card-1">A?</div>
-      <div class="fancy-card card-2">Q?</div>
-      <div class="fancy-card card-3">7?</div>
-    </aside>
 
     <section id="howto-modal" class="howto-modal hidden" aria-hidden="true">
       <div class="howto-backdrop" id="howto-close-backdrop"></div>
@@ -99,6 +133,7 @@
       const openBtn = document.getElementById("howto-open-btn");
       const closeBtn = document.getElementById("howto-close-btn");
       const closeBackdrop = document.getElementById("howto-close-backdrop");
+      const dailyBtn = document.getElementById("daily-coming-soon-btn");
 
       if (!modal || !openBtn || !closeBtn || !closeBackdrop) return;
 
@@ -115,6 +150,10 @@
       openBtn.addEventListener("click", openModal);
       closeBtn.addEventListener("click", closeModal);
       closeBackdrop.addEventListener("click", closeModal);
+      dailyBtn?.addEventListener("click", () => {
+        dailyBtn.blur();
+        window.alert("Daily is coming soon.");
+      });
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") closeModal();
