@@ -190,10 +190,7 @@ function renderCurrentCard() {
     ${backStatus.tornCorner ? '<span class="tear-mark-face"></span>' : ""}
   `;
 
-  currentValueEl.innerText =
-    isTemporarilyModified
-      ? `As ${shownLabel} from ${describeCard(state.current)}`
-      : "";
+  currentValueEl.innerText = "";
 }
 
 function getGuessPreferenceSummary(higherCount, lowerCount) {
