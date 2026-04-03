@@ -170,7 +170,7 @@ async function openVictoryModal() {
 window.promptHeroNameForVictory = openVictoryModal;
 
 function getVictoryDeckLabel() {
-  return runHasPower("stats_display") ? "Red" : "Blue";
+  return getDeckName(state.currentDeckKey);
 }
 
 function getVictoryStartingPowerName() {

@@ -15,6 +15,17 @@ function normalizeGuessBucket(bucket = {}) {
   };
 }
 
+function normalizeDeckKey(deckKey = "blue") {
+  return String(deckKey || "").trim().toLowerCase() === "red" ? "red" : "blue";
+}
+
+function normalizeDeckWins(wins = {}) {
+  return {
+    blue: Number.isFinite(wins.blue) ? wins.blue : 0,
+    red: Number.isFinite(wins.red) ? wins.red : 0,
+  };
+}
+
 function normalizeCardStatsEntry(entry = {}) {
   return {
     correct: Number.isFinite(entry.correct) ? entry.correct : 0,
@@ -92,6 +103,58 @@ function loadMetaProgression() {
 
 function saveMetaProgression(value) {
   localStorage.setItem(META_PROGRESSION_KEY, String(value));
+}
+
+
+function loadSelectedDeck() {
+  return normalizeDeckKey(localStorage.getItem(SELECTED_DECK_KEY) || "blue");
+}
+
+function saveSelectedDeck(deckKey) {
+  localStorage.setItem(SELECTED_DECK_KEY, normalizeDeckKey(deckKey));
+}
+
+function loadDeckWins() {
+  const raw = localStorage.getItem(DECK_WINS_KEY);
+  if (!raw) return normalizeDeckWins();
+  try {
+    return normalizeDeckWins(JSON.parse(raw));
+  } catch {
+    return normalizeDeckWins();
+  }
+}
+
+function saveDeckWins(wins) {
+  localStorage.setItem(DECK_WINS_KEY, JSON.stringify(normalizeDeckWins(wins)));
+}
+
+function recordDeckWin(deckKey) {
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  const wins = loadDeckWins();
+  wins[normalizedDeckKey] = (wins[normalizedDeckKey] || 0) + 1;
+  saveDeckWins(wins);
+  return wins;
+}
+
+function getDeckWinCount(deckKey) {
+  const wins = loadDeckWins();
+  return wins[normalizeDeckKey(deckKey)] || 0;
+}
+
+function loadRedDeckDebugUnlock() {
+  return sessionStorage.getItem(RED_DECK_DEBUG_UNLOCK_KEY) === "1";
+}
+
+function saveRedDeckDebugUnlock(enabled) {
+  if (enabled) {
+    sessionStorage.setItem(RED_DECK_DEBUG_UNLOCK_KEY, "1");
+    return;
+  }
+  sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
+}
+
+function isRedDeckUnlocked() {
+  return getDeckWinCount("blue") > 0 || loadRedDeckDebugUnlock();
 }
 
 function loadCheatUnlocks() {

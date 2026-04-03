@@ -258,6 +258,12 @@ h1 {
   filter: brightness(1.04);
 }
 
+
+.action-card:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .action-card-rank,
 .action-card-title,
 .action-card-sub {
@@ -436,4 +442,106 @@ h1 {
   .action-card-sub {
     font-size: 0.5rem;
   }
+}
+
+
+.deck-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.deck-modal.hidden {
+  display: none;
+}
+
+.deck-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 4, 10, 0.76);
+  backdrop-filter: blur(10px);
+}
+
+.deck-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 520px);
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(47, 31, 61, 0.98), rgba(25, 17, 34, 0.98));
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deck-dialog h2 {
+  margin: 0 0 10px;
+  color: var(--pink);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.deck-copy {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.deck-choice-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.deck-choice-card {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  padding: 16px 14px;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  color: #fff;
+  cursor: pointer;
+}
+
+.deck-choice-blue {
+  background: linear-gradient(180deg, #74e8ff, #35c4f1);
+  color: #08202c;
+}
+
+.deck-choice-red {
+  background: linear-gradient(180deg, #ff8cab, #ef426f);
+  color: #fff5f7;
+}
+
+.deck-choice-card.locked,
+.deck-choice-card:disabled {
+  background: linear-gradient(180deg, rgba(96, 68, 119, 0.98), rgba(56, 39, 73, 0.98));
+  color: var(--muted);
+  cursor: not-allowed;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.deck-choice-label {
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.deck-choice-desc {
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.deck-close-btn {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-weight: 800;
 }

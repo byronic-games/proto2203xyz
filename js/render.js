@@ -216,8 +216,15 @@ function getGuessPreferenceSummary(higherCount, lowerCount) {
   if (!total) return null;
 
   const higherPercent = Math.round(((higherCount || 0) / total) * 100);
-  const lowerPercent = Math.round(((lowerCount || 0) / total) * 100);
-  return `Picked: H ${higherPercent}% / L ${lowerPercent}%`;
+  const lowerPercent = 100 - higherPercent;
+
+  if (higherPercent === lowerPercent) {
+    return "Picked most: tied 50/50";
+  }
+
+  return higherPercent > lowerPercent
+    ? `Picked most: Higher ${higherPercent}%`
+    : `Picked most: Lower ${lowerPercent}%`;
 }
 
 function getCardStatsTooltipLines(entry) {
@@ -231,18 +238,21 @@ function getCardStatsTooltipLines(entry) {
     (entry.guessStats?.base?.lower || 0) +
     (entry.guessStats?.nudgedUp?.lower || 0) +
     (entry.guessStats?.nudgedDown?.lower || 0);
+  const attempts = entry.attempts || 0;
+  const correct = entry.correct || 0;
+  const faceUpLosses = Math.max(0, attempts - correct);
 
   const pickedLine = getGuessPreferenceSummary(higherCount, lowerCount);
   if (pickedLine) lines.push(pickedLine);
 
-  const nudgedUpCount = entry.nudgeStats?.up || 0;
-  const nudgedDownCount = entry.nudgeStats?.down || 0;
-  if (nudgedUpCount > 0 || nudgedDownCount > 0) {
-    lines.push(`Nudged: up ${nudgedUpCount} / down ${nudgedDownCount}`);
+  lines.push(`Nudged: up ${entry.nudgeStats?.up || 0} / down ${entry.nudgeStats?.down || 0}`);
+
+  if (attempts > 0) {
+    lines.push(`Face-up losses: ${faceUpLosses}`);
   }
 
-  if (!lines.length) {
-    lines.push("No face-up stats yet.");
+  if (!pickedLine && attempts <= 0 && (entry.nudgeStats?.up || 0) <= 0 && (entry.nudgeStats?.down || 0) <= 0) {
+    return ["No face-up stats yet."];
   }
 
   return lines;
@@ -294,7 +304,7 @@ function renderFaceDownDeck() {
     ? getCardBackStatus(next.id)
     : { tornCorner: false, backColor: "blue" };
 
-  const backColor = backStatus.backColor || "blue";
+  const backColor = normalizeDeckKey(state.currentDeckKey) === "red" ? "pink" : (backStatus.backColor || "blue");
 
   deckEl.className = `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
   deckEl.setAttribute("data-back-color", backColor);
@@ -311,7 +321,7 @@ function renderFaceDownDeck() {
     deckEl.appendChild(tear);
   }
 
-  const shouldShowDeckStatsInline = !!next && backColor === "pink";
+  const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
 
   if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);

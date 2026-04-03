@@ -102,13 +102,14 @@ function openPowerChoice(forceRandom = false) {
   state.pendingPowerOptions = getRandomPowerOptions(2, chosenSeed);
   state.pendingRunMode = "standard";
   state.pendingDailyDateKey = "";
+  state.pendingDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
   state.pendingCheatOptions = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
-  state.message = "Choose 1 power for this run.";
+  state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck run.`;
   render();
 }
 
@@ -120,6 +121,7 @@ function openDailyPowerChoice(dateKey = "") {
   state.pendingPowerOptions = getRandomPowerOptions(2, chosenSeed, true);
   state.pendingRunMode = "daily";
   state.pendingDailyDateKey = chosenDateKey;
+  state.pendingDeckKey = "blue";
   state.pendingCheatOptions = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
@@ -174,6 +176,10 @@ function startRunWithPower(powerId) {
   const runMode = state.pendingRunMode || "standard";
   const dailyDateKey = runMode === "daily" ? state.pendingDailyDateKey || getCurrentDailyDateKey() : "";
   const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
+  const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  const currentDeckKey = runMode === "daily"
+    ? "blue"
+    : normalizeDeckKey(state.pendingDeckKey || selectedDeckKey);
   const activePowers = selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
     : ["nudge_engine"];
@@ -199,9 +205,12 @@ function startRunWithPower(powerId) {
     seenCardIds: new Set([deck[0].id]),
     powers: activePowers,
     selectedStartPowerId: selectedPowerId,
+    selectedDeckKey,
+    currentDeckKey,
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
+    deckWins: loadDeckWins(),
     cheatUnlocks: loadCheatUnlocks(),
     runMode,
     dailyDateKey,
@@ -215,6 +224,7 @@ function startRunWithPower(powerId) {
     pendingRunDeck: [],
     pendingRunMode: "standard",
     pendingDailyDateKey: "",
+    pendingDeckKey: selectedDeckKey,
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
@@ -236,6 +246,7 @@ function startRunWithPower(powerId) {
   }
 
   if (runMode !== "daily") {
+    saveSelectedDeck(currentDeckKey);
     saveLastRunSeed(chosenSeed);
   }
   render();
@@ -591,6 +602,9 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(BEST_SCORE_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
   localStorage.removeItem(CHEAT_UNLOCKS_KEY);
+  localStorage.removeItem(SELECTED_DECK_KEY);
+  localStorage.removeItem(DECK_WINS_KEY);
+  sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
 
   state = createEmptyState();
   state.message = " Debug: FULL RESET (everything cleared).";
@@ -784,7 +798,13 @@ function makeGuess(type) {
   updateBestScoreIfNeeded();
 
   if (state.index >= state.deck.length - 1) {
-    state.message = " YOU CLEARED THE DECK!";
+    let unlockedRedNow = false;
+    if (state.runMode !== "daily") {
+      const previousBlueWins = state.deckWins?.blue || 0;
+      state.deckWins = recordDeckWin(state.currentDeckKey);
+      unlockedRedNow = state.currentDeckKey === "blue" && previousBlueWins === 0 && (state.deckWins?.blue || 0) > 0;
+    }
+    state.message = unlockedRedNow ? " YOU CLEARED THE BLUE DECK! Red Deck unlocked." : " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
     handleRunFinished(state.correctAnswers);
@@ -916,10 +936,11 @@ function makeGuess(type) {
   }
 
   state.message =
-    runHasPower("stats_display") && runHasPower("nudge_engine")
-      ? "✅ Correct! Stats was active, so no Nudge was awarded."
+    normalizeDeckKey(state.currentDeckKey) === "red" && runHasPower("nudge_engine")
+      ? "✅ Correct! Red Deck was active, so no Nudge was awarded."
       : "✅ Correct!";
 
   render();
 }
+
 

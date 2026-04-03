@@ -45,11 +45,11 @@
         </div>
 
         <div class="card-action-fan">
-          <a class="action-card action-card-play" href="game.html">
+          <button class="action-card action-card-play" id="play-open-btn" type="button">
             <span class="action-card-rank">A</span>
             <span class="action-card-title">Play</span>
             <span class="action-card-sub">Start Run</span>
-          </a>
+          </button>
           <a class="action-card action-card-daily" href="daily.html">
             <span class="action-card-rank">7</span>
             <span class="action-card-title">Daily</span>
@@ -66,6 +66,26 @@
             <span class="action-card-sub">Leaderboard</span>
           </a>
         </div>
+      </section>
+
+
+      <section id="deck-modal" class="deck-modal hidden" aria-hidden="true">
+        <div class="deck-backdrop" id="deck-close-backdrop"></div>
+        <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
+          <h2 id="deck-title">Choose Your Deck</h2>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant.</p>
+          <div class="deck-choice-grid">
+            <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
+              <span class="deck-choice-label">Blue Deck</span>
+              <span class="deck-choice-desc">Classic run with nudge rewards on correct guesses.</span>
+            </button>
+            <button class="deck-choice-card deck-choice-red" id="deck-pick-red" type="button">
+              <span class="deck-choice-label">Red Deck</span>
+              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue once.</span>
+            </button>
+          </div>
+          <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
+        </article>
       </section>
     </section>
 
@@ -125,9 +145,49 @@
       const closeBtn = document.getElementById("howto-close-btn");
       const closeBackdrop = document.getElementById("howto-close-backdrop");
       const nameInput = document.getElementById("intro-name-input");
+      const playBtn = document.getElementById("play-open-btn");
+      const deckModal = document.getElementById("deck-modal");
+      const deckCloseBtn = document.getElementById("deck-close-btn");
+      const deckCloseBackdrop = document.getElementById("deck-close-backdrop");
+      const blueDeckBtn = document.getElementById("deck-pick-blue");
+      const redDeckBtn = document.getElementById("deck-pick-red");
+      const redDeckDesc = document.getElementById("deck-red-desc");
       const nameKey = "hl_prototype_hero_name";
+      const selectedDeckKey = "hl_prototype_selected_deck";
+      const deckWinsKey = "hl_prototype_deck_wins";
+      const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop) return;
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc) {
+        return;
+      }
+
+      let playHoldTimer = null;
+      let playHoldTriggered = false;
+      let suppressNextPlayClick = false;
+
+      function normalizeDeckWins(wins) {
+        return {
+          blue: Number.isFinite(wins?.blue) ? wins.blue : 0,
+          red: Number.isFinite(wins?.red) ? wins.red : 0,
+        };
+      }
+
+      function loadDeckWins() {
+        try {
+          return normalizeDeckWins(JSON.parse(localStorage.getItem(deckWinsKey) || "{}"));
+        } catch {
+          return normalizeDeckWins({});
+        }
+      }
+
+      function isRedDeckUnlocked() {
+        const wins = loadDeckWins();
+        return wins.blue > 0 || sessionStorage.getItem(redDeckDebugUnlockKey) === "1";
+      }
+
+      function setSelectedDeck(deckKey) {
+        localStorage.setItem(selectedDeckKey, deckKey === "red" ? "red" : "blue");
+      }
 
       function openModal() {
         modal.classList.remove("hidden");
@@ -139,9 +199,72 @@
         modal.setAttribute("aria-hidden", "true");
       }
 
+      function refreshDeckOptions() {
+        const redUnlocked = isRedDeckUnlocked();
+        redDeckBtn.disabled = !redUnlocked;
+        redDeckBtn.classList.toggle("locked", !redUnlocked);
+        redDeckDesc.textContent = redUnlocked
+          ? "No nudge rewards. The next card back shows live face-up card stats."
+          : "Unlock by clearing Blue once.";
+      }
+
+      function openDeckModal() {
+        refreshDeckOptions();
+        deckModal.classList.remove("hidden");
+        deckModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeDeckModal() {
+        deckModal.classList.add("hidden");
+        deckModal.setAttribute("aria-hidden", "true");
+      }
+
+      function chooseDeck(deckKey) {
+        if (deckKey === "red" && !isRedDeckUnlocked()) return;
+        setSelectedDeck(deckKey);
+        window.location.href = "game.html";
+      }
+
+      function clearPlayHoldTimer() {
+        if (playHoldTimer) {
+          clearTimeout(playHoldTimer);
+          playHoldTimer = null;
+        }
+      }
+
       openBtn.addEventListener("click", openModal);
       closeBtn.addEventListener("click", closeModal);
       closeBackdrop.addEventListener("click", closeModal);
+
+      deckCloseBtn.addEventListener("click", closeDeckModal);
+      deckCloseBackdrop.addEventListener("click", closeDeckModal);
+      blueDeckBtn.addEventListener("click", () => chooseDeck("blue"));
+      redDeckBtn.addEventListener("click", () => chooseDeck("red"));
+
+      playBtn.addEventListener("pointerdown", () => {
+        playHoldTriggered = false;
+        clearPlayHoldTimer();
+        playHoldTimer = window.setTimeout(() => {
+          sessionStorage.setItem(redDeckDebugUnlockKey, "1");
+          playHoldTriggered = true;
+          suppressNextPlayClick = true;
+          openDeckModal();
+        }, 10000);
+      });
+
+      ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+        playBtn.addEventListener(eventName, clearPlayHoldTimer);
+      });
+
+      playBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (suppressNextPlayClick || playHoldTriggered) {
+          suppressNextPlayClick = false;
+          playHoldTriggered = false;
+          return;
+        }
+        openDeckModal();
+      });
 
       if (nameInput) {
         nameInput.value = String(localStorage.getItem(nameKey) || "").trim();
@@ -151,10 +274,16 @@
       }
 
       window.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeModal();
+        if (event.key === "Escape") {
+          closeModal();
+          closeDeckModal();
+        }
       });
     })();
   </script>
+  </script>
 </body>
 </html>
+
+
 

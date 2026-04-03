@@ -79,6 +79,11 @@ function runHasPower(powerId) {
   return state.powers.includes(powerId);
 }
 
+
+function getDeckName(deckKey = state?.currentDeckKey || state?.selectedDeckKey || "blue") {
+  return normalizeDeckKey(deckKey) === "red" ? "Red" : "Blue";
+}
+
 function getPowerRarityLabel(power) {
   return (power?.rarity || "common").replace(/^\w/, (c) => c.toUpperCase());
 }
@@ -142,7 +147,7 @@ function getCheatRewardThreshold() {
 function awardOnCorrectGuessPowers(guessType) {
   const awardedNames = [];
 
-  if (runHasPower("stats_display")) {
+  if (normalizeDeckKey(state.currentDeckKey) === "red") {
     return awardedNames;
   }
 
