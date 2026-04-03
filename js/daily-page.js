@@ -123,12 +123,12 @@ async function renderDailyPage() {
       startBtn.innerText = hasCompletedAttempt ? "Daily Complete" : "Daily Locked";
     }
   } else {
-    resultPanel?.classList.add("hidden");
-    if (statusEl) {
-      statusEl.innerText = activeDateKey === todayKey
-        ? "You have one attempt on today's Daily."
-        : "This Daily is archived.";
-    }
+      resultPanel?.classList.add("hidden");
+      if (statusEl) {
+        statusEl.innerText = activeDateKey === todayKey
+          ? "You have one attempt on today's Daily. High scores revealed after your run."
+          : "This Daily is archived.";
+      }
     if (startBtn) {
       startBtn.disabled = activeDateKey !== todayKey;
       startBtn.innerText = activeDateKey === todayKey ? "Play Daily" : "Archive";
