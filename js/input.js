@@ -84,6 +84,7 @@ document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
 });
 
 const scoreEl = document.getElementById("score");
+const scoreDebugTapTarget = document.querySelector(".hud-card-score");
 let debugScoreTapCount = 0;
 let debugScoreTapWindowTimer = null;
 
@@ -95,7 +96,7 @@ function resetDebugScoreTapSequence() {
   }
 }
 
-scoreEl?.addEventListener("click", () => {
+function handleDebugScoreTap() {
   if (!window.testModeEnabled) return;
   if (state.runMode === "daily") return;
 
@@ -117,6 +118,12 @@ scoreEl?.addEventListener("click", () => {
 
   state.message = ` Debug: tap score ${debugScoreTapCount}/10 to add all cheats.`;
   renderMessage();
+}
+
+scoreDebugTapTarget?.addEventListener("pointerup", handleDebugScoreTap);
+scoreEl?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  handleDebugScoreTap();
 });
 
 function closeVictoryModal() {
