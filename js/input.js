@@ -139,6 +139,14 @@ async function openVictoryModal() {
 
 window.promptHeroNameForVictory = openVictoryModal;
 
+function getVictoryDeckLabel() {
+  return runHasPower("stats_display") ? "Red" : "Blue";
+}
+
+function getVictoryStartingPowerName() {
+  return state.selectedStartPowerId ? getPowerName(state.selectedStartPowerId) : "No Power";
+}
+
 document.getElementById("victory-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -149,7 +157,12 @@ document.getElementById("victory-form")?.addEventListener("submit", async (e) =>
   if (!inputEl || !statusEl || !submitBtn) return;
 
   submitBtn.disabled = true;
-  const result = await submitHeroWin(inputEl.value, `${GAME_VERSION}-${state.runSeed || ""}`);
+  const result = await submitHeroWin(
+    inputEl.value,
+    `${GAME_VERSION}-${state.runSeed || ""}`,
+    getVictoryDeckLabel(),
+    getVictoryStartingPowerName()
+  );
   statusEl.innerText = result.message;
 
   if (result.ok) {

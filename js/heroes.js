@@ -7,7 +7,7 @@ async function renderHeroesBoard() {
   bodyEl.innerHTML = "";
 
   if (!heroes.length) {
-    bodyEl.innerHTML = "<tr><td colspan='3'>No 52-card clears yet. Be the first hero.</td></tr>";
+    bodyEl.innerHTML = "<tr><td colspan='5'>No 52-card clears yet. Be the first hero.</td></tr>";
     noteEl.innerText = leaderboardRemoteEnabled()
       ? "Connected to online leaderboard."
       : "Showing local leaderboard only. Configure Supabase in js/leaderboard.js for global tracking.";
@@ -29,9 +29,19 @@ async function renderHeroesBoard() {
     dateTd.dataset.label = "Date";
     dateTd.innerText = formatHeroDate(hero.createdAt);
 
+    const deckTd = document.createElement("td");
+    deckTd.dataset.label = "Deck";
+    deckTd.innerText = hero.deck || "-";
+
+    const powerTd = document.createElement("td");
+    powerTd.dataset.label = "Power";
+    powerTd.innerText = hero.startingPower || "-";
+
     tr.appendChild(nameTd);
     tr.appendChild(seedTd);
     tr.appendChild(dateTd);
+    tr.appendChild(deckTd);
+    tr.appendChild(powerTd);
     bodyEl.appendChild(tr);
   });
 
@@ -39,5 +49,14 @@ async function renderHeroesBoard() {
     ? "Connected to online leaderboard."
     : "Showing local leaderboard only. Configure Supabase in js/leaderboard.js for global tracking.";
 }
+
+document.getElementById("heroes-back-btn")?.addEventListener("click", () => {
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  window.location.href = "game.html";
+});
 
 renderHeroesBoard();

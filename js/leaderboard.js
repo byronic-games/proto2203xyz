@@ -46,16 +46,30 @@ function savePreferredHeroName(name) {
   localStorage.setItem(HERO_NAME_KEY, sanitizeHeroName(name));
 }
 
-function buildHeroEntry(name, seed) {
+function normalizeHeroDeck(deck) {
+  const normalized = String(deck || "").trim();
+  if (!normalized) return "-";
+  if (normalized.toLowerCase() === "pink") return "Red";
+  return normalized;
+}
+
+function normalizeHeroPower(startingPower) {
+  const normalized = String(startingPower || "").trim();
+  return normalized || "-";
+}
+
+function buildHeroEntry(name, seed, deck = "-", startingPower = "-") {
   return {
     playerName: sanitizeHeroName(name),
     seed: String(seed || "").trim(),
     gameVersion: GAME_VERSION,
+    deck: normalizeHeroDeck(deck),
+    startingPower: normalizeHeroPower(startingPower),
     createdAt: new Date().toISOString(),
   };
 }
 
-async function submitHeroWin(name, seed) {
+async function submitHeroWin(name, seed, deck, startingPower) {
   const playerName = sanitizeHeroName(name);
   const normalizedSeed = String(seed || "").trim();
 
@@ -64,7 +78,7 @@ async function submitHeroWin(name, seed) {
 
   savePreferredHeroName(playerName);
 
-  const entry = buildHeroEntry(playerName, normalizedSeed);
+  const entry = buildHeroEntry(playerName, normalizedSeed, deck, startingPower);
   const localResult = addLocalHero(entry);
 
   if (!leaderboardRemoteEnabled()) {
@@ -86,6 +100,8 @@ async function submitHeroWin(name, seed) {
         player_name: entry.playerName,
         seed: entry.seed,
         game_version: entry.gameVersion,
+        deck: entry.deck,
+        starting_power: entry.startingPower,
       }),
     });
 
@@ -106,17 +122,26 @@ async function fetchHeroes(limit = 200) {
   }
 
   try {
-    const query = `select=player_name,seed,game_version,created_at&order=created_at.asc&limit=${Math.max(1, limit)}`;
-    const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.table}?${query}`;
-    const response = await fetch(url, {
-      headers: {
-        apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
-        Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
-      },
-    });
+    const fetchRemoteRows = async (selectClause) => {
+      const query = `${selectClause}&order=created_at.asc&limit=${Math.max(1, limit)}`;
+      const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.table}?${query}`;
+      return fetch(url, {
+        headers: {
+          apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
+          Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
+        },
+      });
+    };
+
+    let response = await fetchRemoteRows(
+      "select=player_name,seed,game_version,deck,starting_power,created_at"
+    );
 
     if (!response.ok) {
-      return localHeroes;
+      response = await fetchRemoteRows("select=player_name,seed,game_version,created_at");
+      if (!response.ok) {
+        return localHeroes;
+      }
     }
 
     const rows = await response.json();
@@ -126,6 +151,8 @@ async function fetchHeroes(limit = 200) {
       playerName: sanitizeHeroName(row.player_name || "Unknown"),
       seed: String(row.seed || ""),
       gameVersion: String(row.game_version || ""),
+      deck: normalizeHeroDeck(row.deck || ""),
+      startingPower: normalizeHeroPower(row.starting_power || ""),
       createdAt: String(row.created_at || ""),
     }));
 

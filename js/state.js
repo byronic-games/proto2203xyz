@@ -68,6 +68,8 @@ function createEmptyState() {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    cheatChoiceIntroToken: 0,
+    recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
   };

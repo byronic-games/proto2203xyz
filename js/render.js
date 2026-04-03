@@ -3,14 +3,30 @@ function renderScores() {
   const bestScoreEl = document.getElementById("best-score");
   const streakEl = document.getElementById("current-streak");
 
-  if (scoreEl) scoreEl.innerText = String(state.correctAnswers);
-  if (bestScoreEl) bestScoreEl.innerText = String(state.bestScore);
+  if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
+  if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   if (streakEl) streakEl.innerText = "";
 
   const metaEl = document.getElementById("meta-progression");
   if (metaEl) {
     metaEl.innerText = state.metaProgression ?? 0;
   }
+}
+
+function setAnimatedText(el, value) {
+  if (!el) return;
+
+  const nextValue = String(value ?? "");
+  const previousValue = el.dataset.renderValue;
+  el.innerText = nextValue;
+
+  if (previousValue !== undefined && previousValue !== nextValue) {
+    el.classList.remove("hud-pop");
+    void el.offsetWidth;
+    el.classList.add("hud-pop");
+  }
+
+  el.dataset.renderValue = nextValue;
 }
 
 function renderSeedControls() {
@@ -308,7 +324,7 @@ function renderFaceDownDeck() {
   const remainingCount = getFaceDownCount();
   countEl.innerText = "";
   if (remainingValueEl) {
-    remainingValueEl.innerText = String(remainingCount).padStart(2, "0");
+    setAnimatedText(remainingValueEl, String(remainingCount).padStart(2, "0"));
   }
 }
 
@@ -476,12 +492,16 @@ function renderCheatChoice() {
   container.setAttribute("aria-hidden", "false");
 
   const choiceLocked = Date.now() < (state.cheatChoiceLockedUntil || 0);
+  const introToken = String(state.cheatChoiceIntroToken || 0);
+  const introFresh = list.dataset.introToken !== introToken;
+  list.dataset.introToken = introToken;
 
   state.pendingCheatOptions.forEach((cheat, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card ${cheat.rarity || "common"}`;
+    btn.className = `choice-card ${cheat.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
     btn.disabled = choiceLocked;
+    btn.style.setProperty("--choice-index", String(i));
 
     const top = document.createElement("div");
     top.className = "choice-top";
@@ -618,8 +638,9 @@ function renderSeenGrid() {
     for (const rank of RANKS) {
       const cardId = getCardId(suit, rank.r);
       const seen = state.seenCardIds.has(cardId);
+      const isFresh = state.recentlySeenCardId === cardId;
       const cell = document.createElement("div");
-      cell.className = `grid-cell ${seen ? "seen" : ""} ${isRed({ suit }) ? "red" : "black"}`;
+      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed({ suit }) ? "red" : "black"}`.trim();
       cell.innerText = seen ? "✓" : "";
       grid.appendChild(cell);
     }

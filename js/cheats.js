@@ -778,6 +778,7 @@ function offerCheatChoice() {
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
   state.pendingCheatOptions = getRandomCheatOptions(3);
   state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
+  state.cheatChoiceIntroToken = (state.cheatChoiceIntroToken || 0) + 1;
 
   if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;

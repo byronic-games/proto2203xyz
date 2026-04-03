@@ -31,6 +31,44 @@ function buildRunFromControls(forceRandom = false) {
 }
 
 let currentCardFeedbackTimer = null;
+let gameShellFlashTimer = null;
+let recentlySeenCardTimer = null;
+
+function flashGameShell(effect) {
+  const gameEl = document.getElementById("game");
+  if (!gameEl) return;
+
+  gameEl.classList.remove("flash-correct", "flash-wrong");
+  if (gameShellFlashTimer) {
+    clearTimeout(gameShellFlashTimer);
+    gameShellFlashTimer = null;
+  }
+
+  if (!effect) return;
+
+  gameEl.classList.add(`flash-${effect}`);
+  gameShellFlashTimer = setTimeout(() => {
+    gameEl.classList.remove("flash-correct", "flash-wrong");
+    gameShellFlashTimer = null;
+  }, 220);
+}
+
+function setRecentlySeenCard(cardId) {
+  state.recentlySeenCardId = cardId || "";
+
+  if (recentlySeenCardTimer) {
+    clearTimeout(recentlySeenCardTimer);
+    recentlySeenCardTimer = null;
+  }
+
+  if (!cardId) return;
+
+  recentlySeenCardTimer = setTimeout(() => {
+    state.recentlySeenCardId = "";
+    recentlySeenCardTimer = null;
+    renderSeenGrid();
+  }, 520);
+}
 
 function setCurrentCardFeedback(effect) {
   state.currentCardFeedback = effect || "";
@@ -148,6 +186,8 @@ function startRunWithPower(powerId) {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    cheatChoiceIntroToken: 0,
+    recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
     lucky7Armed: false,
@@ -199,6 +239,7 @@ function isPictureCard(card) {
 function markCardSeen(card) {
   if (!card) return;
   state.seenCardIds.add(card.id);
+  setRecentlySeenCard(card.id);
 }
 
 function unmarkCardSeen(card) {
@@ -647,6 +688,7 @@ function makeGuess(type) {
     state.currentValueModifier = 0;
     state.streak = 0;
     setCurrentCardFeedback("wrong");
+    flashGameShell("wrong");
     state.message = `❌ Wrong! It was ${describeCard(next)}.`;
     state.gameOver = true;
     updateBestScoreIfNeeded();
@@ -664,6 +706,7 @@ function makeGuess(type) {
   state.currentValueModifier = 0;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
+  flashGameShell("correct");
   addMetaProgression(1);
   updateBestScoreIfNeeded();
 
