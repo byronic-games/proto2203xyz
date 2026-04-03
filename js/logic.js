@@ -30,6 +30,13 @@ function buildRunFromControls(forceRandom = false) {
   return { chosenSeed, deck };
 }
 
+function buildDailyRun(dateKey) {
+  const chosenDateKey = String(dateKey || "").trim() || getCurrentDailyDateKey();
+  const chosenSeed = getDailySeedForDate(chosenDateKey);
+  const deck = createDeck(chosenSeed);
+  return { chosenDateKey, chosenSeed, deck };
+}
+
 let currentCardFeedbackTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
@@ -92,7 +99,9 @@ function openPowerChoice(forceRandom = false) {
 
   state.pendingRunSeed = chosenSeed;
   state.pendingRunDeck = deck;
-  state.pendingPowerOptions = getRandomPowerOptions(2);
+  state.pendingPowerOptions = getRandomPowerOptions(2, chosenSeed);
+  state.pendingRunMode = "standard";
+  state.pendingDailyDateKey = "";
   state.pendingCheatOptions = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
@@ -100,6 +109,24 @@ function openPowerChoice(forceRandom = false) {
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
   state.message = "Choose 1 power for this run.";
+  render();
+}
+
+function openDailyPowerChoice(dateKey = "") {
+  const { chosenDateKey, chosenSeed, deck } = buildDailyRun(dateKey);
+
+  state.pendingRunSeed = chosenSeed;
+  state.pendingRunDeck = deck;
+  state.pendingPowerOptions = getRandomPowerOptions(2, chosenSeed, true);
+  state.pendingRunMode = "daily";
+  state.pendingDailyDateKey = chosenDateKey;
+  state.pendingCheatOptions = [];
+  state.cheatChoiceLockedUntil = 0;
+  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.pauseForCheat = false;
+  state.restartConfirmArmed = false;
+  state.deckStatsTooltipOpen = false;
+  state.message = `Daily for ${chosenDateKey}: choose 1 power.`;
   render();
 }
 
@@ -144,6 +171,8 @@ function startRunWithPower(powerId) {
   const deck = state.pendingRunDeck?.length
     ? [...state.pendingRunDeck]
     : buildRunFromControls(false).deck;
+  const runMode = state.pendingRunMode || "standard";
+  const dailyDateKey = runMode === "daily" ? state.pendingDailyDateKey || getCurrentDailyDateKey() : "";
   const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
   const activePowers = selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
@@ -174,6 +203,9 @@ function startRunWithPower(powerId) {
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
     cheatUnlocks: loadCheatUnlocks(),
+    runMode,
+    dailyDateKey,
+    dailyCheatOfferCount: 0,
     justUnlockedCheatIds: [],
     cheatChoiceLockedUntil: 0,
     powerChoiceLockedUntil: 0,
@@ -181,6 +213,8 @@ function startRunWithPower(powerId) {
     pendingPowerOptions: [],
     pendingRunSeed: "",
     pendingRunDeck: [],
+    pendingRunMode: "standard",
+    pendingDailyDateKey: "",
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
@@ -197,8 +231,32 @@ function startRunWithPower(powerId) {
 
   applyRunPowerSetup(selectedPowerId);
 
+  if (runMode === "daily") {
+    lockDailyAttempt(dailyDateKey, chosenSeed, loadPreferredPlayerName());
+  }
+
   saveLastRunSeed(chosenSeed);
   render();
+}
+
+function handleRunFinished(finalScore) {
+  if (state.runMode !== "daily") return;
+
+  const dateKey = state.dailyDateKey || getCurrentDailyDateKey();
+  const playerName = loadPreferredPlayerName();
+  const entry = buildDailyEntry({
+    dateKey,
+    seed: state.runSeed,
+    playerName: playerName || "Unknown",
+    playerId: getOrCreateDailyPlayerId(),
+    score: finalScore,
+  });
+
+  submitDailyResult(entry).finally(() => {
+    window.setTimeout(() => {
+      window.location.href = `daily.html?date=${encodeURIComponent(dateKey)}`;
+    }, 900);
+  });
 }
 
 function startRun(forceRandom = false) {
@@ -693,6 +751,7 @@ function makeGuess(type) {
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
+    handleRunFinished(state.correctAnswers);
     return;
   }
 
@@ -714,7 +773,9 @@ function makeGuess(type) {
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
+    handleRunFinished(state.correctAnswers);
     if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+      if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
       window.promptHeroNameForVictory();
     }

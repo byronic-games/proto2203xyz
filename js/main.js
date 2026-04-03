@@ -26,6 +26,12 @@ function runSelfTests() {
       console.assert(isAceWildAutoCorrect(1, { value: 9 }) === true, "Aces Wild should auto-correct guesses from an Ace.");
       console.assert(isAceWildAutoCorrect(7, { value: 1 }) === true, "Aces Wild should auto-correct guesses when the next card is an Ace.");
       console.assert(isAceWildAutoCorrect(7, { value: 9 }) === false, "Aces Wild should not auto-correct non-Ace comparisons.");
+      state = { ...(state || createEmptyState()), metaProgression: 999 };
+      const powerSeedA = getRandomPowerOptions(2, "ABC123").map((power) => power.id).join("|");
+      const powerSeedB = getRandomPowerOptions(2, "ABC123").map((power) => power.id).join("|");
+      console.assert(powerSeedA === powerSeedB, "Seeded power offers should be deterministic for the same seed.");
+      const powerOfferSeed = getStartPowerOfferSeed("ABC123");
+      console.assert(powerOfferSeed.includes(GAME_VERSION), "Seeded power offers should be version-aware.");
       state = priorState;
     }
 
@@ -71,6 +77,19 @@ function applyDebugActionsFromUrl() {
   }
 }
 
+function initializeDailyModeFromUrl() {
+  const requestedDailyDate = getRequestedDailyDateKeyFromUrl();
+  if (!requestedDailyDate) return;
+
+  if (hasPlayedDaily(requestedDailyDate)) {
+    window.location.replace(`daily.html?date=${encodeURIComponent(requestedDailyDate)}`);
+    return;
+  }
+
+  openDailyPowerChoice(requestedDailyDate);
+}
+
 runSelfTests();
 applyDebugActionsFromUrl();
 render();
+initializeDailyModeFromUrl();

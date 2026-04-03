@@ -22,11 +22,11 @@ function isPrimeCardValue(value) {
   return value === 2 || value === 3 || value === 5 || value === 7 || value === 11 || value === 13;
 }
 
-function getWeightedRandomIndex(items, getWeight) {
+function getWeightedRandomIndex(items, getWeight, rng = Math.random) {
   const totalWeight = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
   if (totalWeight <= 0) return -1;
 
-  let roll = Math.random() * totalWeight;
+  let roll = rng() * totalWeight;
   for (let i = 0; i < items.length; i += 1) {
     roll -= Math.max(0, getWeight(items[i]));
     if (roll <= 0) return i;
@@ -737,12 +737,12 @@ function canAddCheatToHand(cheatDef) {
   return !state.cheats.some((c) => c.id === cheatDef.id);
 }
 
-function getEligibleCheatPool() {
+function getEligibleCheatPool(includeAll = false) {
   const ownedStartPowerId = state.selectedStartPowerId;
 
   return CHEATS.filter((c) => {
     if (!c.included) return false;
-    if ((state.metaProgression ?? 0) < (c.unlockAt ?? 0)) return false;
+    if (!includeAll && (state.metaProgression ?? 0) < (c.unlockAt ?? 0)) return false;
 
     if (c.poolExcludedIfPowerOwned && c.poolExcludedIfPowerOwned === ownedStartPowerId) {
       return false;
@@ -757,15 +757,23 @@ function getEligibleCheatPool() {
     }
 
     return true;
-  });
+  }).sort((a, b) => String(a.id).localeCompare(String(b.id)));
 }
 
-function getRandomCheatOptions(count = 3) {
-  const pool = [...getEligibleCheatPool()];
+function getDailyCheatOfferSeed(offerIndex) {
+  return `${state.runSeed}|daily-cheat-offer-v1|${offerIndex}`;
+}
+
+function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
+  const pool = [...getEligibleCheatPool(includeAll)];
   const options = [];
+  const seeded = !!normalizeSeed(seedString);
+  const rng = seeded
+    ? mulberry32(stringToSeedNumber(`${GAME_VERSION}|${seedString}`))
+    : null;
 
   while (options.length < count && pool.length > 0) {
-    const idx = getWeightedRandomIndex(pool, getCheatWeight);
+    const idx = getWeightedRandomIndex(pool, getCheatWeight, seeded ? rng : Math.random);
     if (idx < 0) break;
     options.push(pool.splice(idx, 1)[0]);
   }
@@ -774,9 +782,18 @@ function getRandomCheatOptions(count = 3) {
 }
 
 function offerCheatChoice() {
-  const newlyMetaUnlocked = markMetaUnlockedCheats();
+  const isDailyRun = state.runMode === "daily";
+  const newlyMetaUnlocked = isDailyRun ? [] : markMetaUnlockedCheats();
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
-  state.pendingCheatOptions = getRandomCheatOptions(3);
+
+  if (isDailyRun) {
+    const offerIndex = (state.dailyCheatOfferCount || 0) + 1;
+    state.pendingCheatOptions = getRandomCheatOptions(3, getDailyCheatOfferSeed(offerIndex), true);
+    state.dailyCheatOfferCount = offerIndex;
+  } else {
+    state.pendingCheatOptions = getRandomCheatOptions(3);
+  }
+
   state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
   state.cheatChoiceIntroToken = (state.cheatChoiceIntroToken || 0) + 1;
 
@@ -796,7 +813,8 @@ function pickCheatFromChoice(index) {
   if (!cheat) return;
 
   if (canAddCheatToHand(cheat)) {
-    const wasNew = !hasCheatBeenDiscovered(cheat.id);
+    const shouldTrackDiscovery = state.runMode !== "daily";
+    const wasNew = shouldTrackDiscovery && !hasCheatBeenDiscovered(cheat.id);
 
     if (wasNew) {
       markCheatDiscovered(cheat, "random");

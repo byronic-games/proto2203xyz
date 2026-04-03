@@ -34,9 +34,11 @@ function renderSeedControls() {
   const seedDisplay = document.getElementById("current-seed");
 
   if (seedDisplay) {
-    seedDisplay.innerText = state.runSeed
-      ? `${GAME_VERSION}-${state.runSeed}`
-      : `${GAME_VERSION}-`;
+    seedDisplay.innerText = state.runMode === "daily"
+      ? `DAILY-${state.dailyDateKey || state.runSeed || ""}`
+      : state.runSeed
+        ? `${GAME_VERSION}-${state.runSeed}`
+        : `${GAME_VERSION}-`;
   }
 
   if (seedInput && !seedInput.dataset.initialized) {

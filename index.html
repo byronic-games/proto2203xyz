@@ -39,17 +39,22 @@
           </p>
         </div>
 
+        <div class="intro-name">
+          <label for="intro-name-input">Player Name</label>
+          <input id="intro-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name">
+        </div>
+
         <div class="card-action-fan">
           <a class="action-card action-card-play" href="game.html">
             <span class="action-card-rank">A</span>
             <span class="action-card-title">Play</span>
             <span class="action-card-sub">Start Run</span>
           </a>
-          <button class="action-card action-card-daily" id="daily-coming-soon-btn" type="button">
+          <a class="action-card action-card-daily" href="daily.html">
             <span class="action-card-rank">7</span>
             <span class="action-card-title">Daily</span>
-            <span class="action-card-sub">Coming Soon</span>
-          </button>
+            <span class="action-card-sub">Shared Run</span>
+          </a>
           <button class="action-card action-card-howto" id="howto-open-btn" type="button">
             <span class="action-card-rank">Q</span>
             <span class="action-card-title">How To</span>
@@ -118,7 +123,8 @@
       const openBtn = document.getElementById("howto-open-btn");
       const closeBtn = document.getElementById("howto-close-btn");
       const closeBackdrop = document.getElementById("howto-close-backdrop");
-      const dailyBtn = document.getElementById("daily-coming-soon-btn");
+      const nameInput = document.getElementById("intro-name-input");
+      const nameKey = "hl_prototype_hero_name";
 
       if (!modal || !openBtn || !closeBtn || !closeBackdrop) return;
 
@@ -135,10 +141,13 @@
       openBtn.addEventListener("click", openModal);
       closeBtn.addEventListener("click", closeModal);
       closeBackdrop.addEventListener("click", closeModal);
-      dailyBtn?.addEventListener("click", () => {
-        dailyBtn.blur();
-        window.alert("Daily is coming soon.");
-      });
+
+      if (nameInput) {
+        nameInput.value = String(localStorage.getItem(nameKey) || "").trim();
+        nameInput.addEventListener("input", () => {
+          localStorage.setItem(nameKey, String(nameInput.value || "").trim().replace(/\s+/g, " ").slice(0, 24));
+        });
+      }
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") closeModal();

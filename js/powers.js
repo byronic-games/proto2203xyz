@@ -64,6 +64,8 @@ const POWERS = [
   },
 ];
 
+const START_POWER_SEED_RULESET = "start-power-v1";
+
 function getPowerName(powerId) {
   const power = POWERS.find((p) => p.id === powerId);
   return power ? power.name : powerId;
@@ -102,19 +104,31 @@ function getPowerIcon(powerId) {
   }
 }
 
-function getUnlockedPowerPool() {
+function getUnlockedPowerPool(includeAll = false) {
   return POWERS.filter((power) => {
     if (!power.included) return false;
+    if (includeAll) return true;
     return (state.metaProgression ?? 0) >= (power.unlockAt ?? 0);
-  });
+  }).sort((a, b) => String(a.id).localeCompare(String(b.id)));
 }
 
-function getRandomPowerOptions(count = 2) {
-  const pool = [...getUnlockedPowerPool()];
+function getStartPowerOfferSeed(seedString) {
+  const normalizedSeed = normalizeSeed(seedString) || "NO-SEED";
+  return `${GAME_VERSION}|${START_POWER_SEED_RULESET}|${normalizedSeed}`;
+}
+
+function getRandomPowerOptions(count = 2, seedString = "", includeAll = false) {
+  const pool = [...getUnlockedPowerPool(includeAll)];
   const options = [];
+  const seeded = !!normalizeSeed(seedString);
+  const rng = seeded
+    ? mulberry32(stringToSeedNumber(getStartPowerOfferSeed(seedString)))
+    : null;
 
   while (options.length < count && pool.length > 0) {
-    const idx = Math.floor(Math.random() * pool.length);
+    const idx = seeded
+      ? Math.floor(rng() * pool.length)
+      : Math.floor(Math.random() * pool.length);
     options.push(pool.splice(idx, 1)[0]);
   }
 

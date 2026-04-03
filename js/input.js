@@ -4,6 +4,14 @@ document.getElementById("lower-btn").onclick = () => makeGuess("lower");
 document.getElementById("restart-btn").onclick = () => {
   const runIsActive = !state.gameOver && !!state.current;
 
+  if (state.runMode === "daily") {
+    state.message = state.gameOver
+      ? "Daily is complete. View the daily board for your result."
+      : "Daily runs cannot be restarted.";
+    render();
+    return;
+  }
+
   if (!runIsActive) {
     startRun(true);
     return;
@@ -126,9 +134,22 @@ async function openVictoryModal() {
 
   if (!modal || !seedEl || !statusEl || !inputEl) return;
 
+  const preferredName = loadPreferredHeroName();
+  if (preferredName && state.runMode !== "daily") {
+    const result = await submitHeroWin(
+      preferredName,
+      `${GAME_VERSION}-${state.runSeed || ""}`,
+      getVictoryDeckLabel(),
+      getVictoryStartingPowerName()
+    );
+    state.message = `🏆 ${result.message}`;
+    renderMessage();
+    return;
+  }
+
   seedEl.innerText = `Seed: ${GAME_VERSION}-${state.runSeed || ""}`;
   statusEl.innerText = "";
-  inputEl.value = loadPreferredHeroName();
+  inputEl.value = preferredName;
 
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
