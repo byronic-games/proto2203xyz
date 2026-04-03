@@ -132,7 +132,7 @@ window.CHEAT_BALANCE_OVERRIDES = {
                 },
     "six_seven":  {
                        "stacking":  "unique",
-                       "description":  "Use only on an un-nudged printed 6 or 7, and it must be the first and only cheat played on that card. Nudges then lock. Guess correctly to pick 3 cheats in a row. Guess wrong and you lose.",
+                       "description":  "Use only on an un-nudged 6 or 7, and it must be the first and only cheat played on that card. Nudges then lock. Guess correctly to pick 3 cheats in a row. Guess wrong and you lose.",
                        "weight":  0.8,
                        "unlockAt":  18,
                        "name":  "6/7",
