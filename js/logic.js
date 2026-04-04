@@ -80,22 +80,25 @@ function spawnVictoryConfetti() {
   if (!confettiEl) return;
 
   const colors = ["#9ff0ff", "#5bdbfb", "#c7ff54", "#f5ebff", "#ffcf72", "#f77df6"];
-  const pieces = 54;
+  const piecesPerWave = 54;
+  const waveOffsets = [0, 320, 640];
 
   confettiEl.innerHTML = "";
 
-  for (let i = 0; i < pieces; i += 1) {
-    const piece = document.createElement("span");
-    piece.className = "confetti-piece";
-    piece.style.setProperty("--x", `${Math.random() * 100}%`);
-    piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
-    piece.style.setProperty("--fall-distance", `${280 + Math.round(Math.random() * 210)}px`);
-    piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
-    piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
-    piece.style.setProperty("--fall-delay", `${Math.round(Math.random() * 220)}ms`);
-    piece.style.setProperty("--confetti-color", colors[i % colors.length]);
-    confettiEl.appendChild(piece);
-  }
+  waveOffsets.forEach((waveOffset, waveIndex) => {
+    for (let i = 0; i < piecesPerWave; i += 1) {
+      const piece = document.createElement("span");
+      piece.className = "confetti-piece";
+      piece.style.setProperty("--x", `${Math.random() * 100}%`);
+      piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
+      piece.style.setProperty("--fall-distance", `${280 + Math.round(Math.random() * 210)}px`);
+      piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
+      piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
+      piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 220)}ms`);
+      piece.style.setProperty("--confetti-color", colors[(waveIndex * piecesPerWave + i) % colors.length]);
+      confettiEl.appendChild(piece);
+    }
+  });
 }
 
 function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
@@ -114,7 +117,7 @@ function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
 
   victoryEffectTimer = setTimeout(() => {
     clearVictoryEffects();
-  }, 2600);
+  }, 3600);
 }
 
 function triggerGameOverEffect(detailText = "") {
