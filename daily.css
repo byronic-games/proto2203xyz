@@ -132,47 +132,52 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 7px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .daily-nav-wrapper .summary-value {
   margin-top: 0;
   flex-shrink: 0;
+  min-width: 160px;
+  text-align: center;
 }
 
 .daily-nav-btn {
   flex-shrink: 0;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  background: rgba(27, 16, 38, 0.6);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(51, 220, 255, 0.08);
   color: var(--cyan);
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.daily-nav-btn:not(.disabled):hover {
-  background: rgba(51, 220, 255, 0.12);
-  border-color: rgba(51, 220, 255, 0.4);
-  color: #33dcff;
+.daily-nav-btn:not(:disabled):hover {
+  background: rgba(51, 220, 255, 0.16);
+  border-color: rgba(51, 220, 255, 0.5);
+  transform: scale(1.05);
 }
 
-.daily-nav-btn:not(.disabled):active {
-  transform: scale(0.95);
+.daily-nav-btn:not(:disabled):active {
+  transform: scale(0.98);
+  background: rgba(51, 220, 255, 0.24);
 }
 
-.daily-nav-btn.disabled {
-  opacity: 0.3;
+.daily-nav-btn:disabled {
+  opacity: 0.25;
   cursor: not-allowed;
-  color: var(--muted);
+  background: rgba(51, 220, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.05);
 }
 

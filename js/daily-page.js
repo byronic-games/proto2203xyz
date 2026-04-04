@@ -65,13 +65,14 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
 }
 
 function navigateToDailyDate(dateKey) {
-  window.location.href = `daily.html?date=${encodeURIComponent(dateKey)}`;
+  // Update URL without full page reload
+  window.history.replaceState({ date: dateKey }, "", `daily.html?date=${encodeURIComponent(dateKey)}`);
+  // Re-render with new date
+  refreshDailyPageForDate(dateKey);
 }
 
-async function renderDailyPage() {
-  const params = new URLSearchParams(window.location.search);
+async function refreshDailyPageForDate(activeDateKey) {
   const todayKey = getCurrentDailyDateKey();
-  const activeDateKey = String(params.get("date") || todayKey).trim() || todayKey;
   const currentPlayerId = getOrCreateDailyPlayerId();
   const currentAttempt = getLocalDailyAttempt(activeDateKey);
   const hasCompletedAttempt =
@@ -81,58 +82,39 @@ async function renderDailyPage() {
     currentAttempt.completed === true;
   const showScores = hasCompletedAttempt;
 
+  // Update date label
   const dateEl = document.getElementById("daily-date-label");
-  const prevNavBtn = document.getElementById("daily-nav-prev");
-  const nextNavBtn = document.getElementById("daily-nav-next");
-  const nameInput = document.getElementById("daily-name-input");
-  const statusEl = document.getElementById("daily-status");
-  const scoreEl = document.getElementById("daily-score-label");
-  const resultPanel = document.getElementById("daily-result-panel");
-  const startBtn = document.getElementById("daily-start-btn");
-  const closeBtn = document.getElementById("daily-close-btn");
-
   if (dateEl) dateEl.innerText = formatDailyDateLabel(activeDateKey);
   
-  // Setup navigation buttons
+  // Update navigation buttons
+  const prevNavBtn = document.getElementById("daily-nav-prev");
+  const nextNavBtn = document.getElementById("daily-nav-next");
+  
   const canGoPrev = canNavigatePrevious(activeDateKey);
   const canGoNext = canNavigateNext(activeDateKey);
   
   if (prevNavBtn) {
     prevNavBtn.disabled = !canGoPrev;
-    prevNavBtn.className = `daily-nav-btn daily-nav-prev ${!canGoPrev ? "disabled" : ""}`;
-    prevNavBtn.addEventListener("click", () => {
-      if (canGoPrev) {
-        navigateToDailyDate(decrementDateKey(activeDateKey));
-      }
-    });
+    prevNavBtn.onclick = (e) => {
+      e.preventDefault();
+      if (canGoPrev) navigateToDailyDate(decrementDateKey(activeDateKey));
+    };
   }
   
   if (nextNavBtn) {
     nextNavBtn.disabled = !canGoNext;
-    nextNavBtn.className = `daily-nav-btn daily-nav-next ${!canGoNext ? "disabled" : ""}`;
-    nextNavBtn.addEventListener("click", () => {
-      if (canGoNext) {
-        navigateToDailyDate(incrementDateKey(activeDateKey));
-      }
-    });
-  }
-  
-  if (nameInput) {
-    nameInput.value = loadPreferredPlayerName();
-    nameInput.addEventListener("input", () => {
-      savePreferredPlayerName(nameInput.value);
-    });
+    nextNavBtn.onclick = (e) => {
+      e.preventDefault();
+      if (canGoNext) navigateToDailyDate(incrementDateKey(activeDateKey));
+    };
   }
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      if (window.history.length > 1) {
-        window.history.back();
-        return;
-      }
-      window.location.href = "index.html";
-    });
-  }
+  // Update status and button states
+  const statusEl = document.getElementById("daily-status");
+  const scoreEl = document.getElementById("daily-score-label");
+  const resultPanel = document.getElementById("daily-result-panel");
+  const startBtn = document.getElementById("daily-start-btn");
+  const nameInput = document.getElementById("daily-name-input");
 
   if (currentAttempt) {
     if (hasCompletedAttempt) {
@@ -166,24 +148,54 @@ async function renderDailyPage() {
     }
   }
 
-  startBtn?.addEventListener("click", () => {
-    const playerName = savePreferredPlayerName(nameInput?.value || "");
-    if (!playerName) {
-      if (statusEl) statusEl.innerText = "Enter a player name before starting the Daily.";
-      nameInput?.focus();
-      return;
-    }
+  if (startBtn) {
+    startBtn.onclick = () => {
+      const playerName = savePreferredPlayerName(nameInput?.value || "");
+      if (!playerName) {
+        if (statusEl) statusEl.innerText = "Enter a player name before starting the Daily.";
+        nameInput?.focus();
+        return;
+      }
 
-    if (hasPlayedDaily(activeDateKey)) {
-      window.location.href = `daily.html?date=${encodeURIComponent(activeDateKey)}`;
-      return;
-    }
+      if (hasPlayedDaily(activeDateKey)) {
+        // Already played, just stay here (don't allow replay)
+        return;
+      }
 
-    window.location.href = buildDailyGameUrl(activeDateKey);
-  });
+      window.location.href = buildDailyGameUrl(activeDateKey);
+    };
+  }
 
+  // Fetch and render leaderboard
   const leaderboard = await fetchDailyLeaderboard(activeDateKey, 100);
   renderDailyRows(leaderboard, currentPlayerId, showScores);
+}
+
+async function renderDailyPage() {
+  const params = new URLSearchParams(window.location.search);
+  const todayKey = getCurrentDailyDateKey();
+  const activeDateKey = String(params.get("date") || todayKey).trim() || todayKey;
+  const nameInput = document.getElementById("daily-name-input");
+  const closeBtn = document.getElementById("daily-close-btn");
+
+  if (nameInput) {
+    nameInput.value = loadPreferredPlayerName();
+    nameInput.addEventListener("input", () => {
+      savePreferredPlayerName(nameInput.value);
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      window.location.href = "index.html";
+    });
+  }
+
+  await refreshDailyPageForDate(activeDateKey);
 }
 
 renderDailyPage();
