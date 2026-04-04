@@ -134,6 +134,10 @@ a {
   animation: game-flash-wrong 220ms ease-out;
 }
 
+#game.game-over-effect {
+  animation: game-over-drain 700ms ease-out;
+}
+
 @keyframes game-flash-correct {
   0% {
     opacity: 0;
@@ -161,6 +165,18 @@ a {
   }
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes game-over-drain {
+  0% {
+    filter: brightness(1) saturate(1);
+  }
+  35% {
+    filter: brightness(0.9) saturate(0.86);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
   }
 }
 
@@ -391,6 +407,12 @@ a {
 
 #play-area {
   padding: 2px 0 0;
+  position: relative;
+  transform-origin: center top;
+}
+
+#game.game-over-effect #play-area {
+  animation: play-area-collapse 620ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 #card-row {
@@ -398,6 +420,113 @@ a {
   grid-template-columns: 1fr 1fr;
   gap: 18px;
   align-items: start;
+  position: relative;
+  margin-bottom: 58px;
+}
+
+#card-row::after {
+  content: "GAME OVER";
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  transform: translate(-50%, -50%) scale(1);
+  width: clamp(220px, 72%, 420px);
+  padding: 10px 16px;
+  border-top: 2px solid rgba(255, 132, 164, 0.7);
+  border-bottom: 2px solid rgba(255, 132, 164, 0.7);
+  color: rgba(255, 224, 232, 0.98);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.45rem, 4.2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow:
+    0 0 22px rgba(255, 102, 140, 0.42),
+    0 0 40px rgba(239, 66, 111, 0.16);
+  background: linear-gradient(180deg, rgba(56, 14, 28, 0.06), rgba(56, 14, 28, 0.24), rgba(56, 14, 28, 0.06));
+  box-shadow: 0 0 30px rgba(239, 66, 111, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+#game.game-over-effect #card-row::after {
+  opacity: 0.97;
+  animation: game-over-board-stamp 620ms cubic-bezier(0.18, 0.82, 0.22, 1);
+}
+
+#game-over-detail {
+  min-height: 0;
+  margin: -8px auto 4px;
+  width: min(92%, 430px);
+  padding: 0 8px;
+  font-size: 0.84rem;
+  line-height: 1.3;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: none;
+}
+
+#victory-banner {
+  position: absolute;
+  left: 50%;
+  top: 72%;
+  transform: translate(-50%, -50%);
+  width: min(92%, 760px);
+  padding: 0 12px;
+  pointer-events: none;
+  z-index: 4;
+  color: rgba(168, 236, 255, 0.98);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.5rem, 4.6vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 20px rgba(0, 232, 255, 0.3),
+    0 0 40px rgba(84, 184, 255, 0.18);
+  text-align: center;
+  opacity: 0;
+}
+
+#game-over-detail {
+  color: rgba(255, 224, 232, 0.94);
+}
+
+#victory-confetti {
+  position: absolute;
+  inset: 12px 0 112px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+#game.victory-effect-active #victory-banner:not(:empty) {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+#game.game-over-effect #game-over-detail:not(:empty) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -12%;
+  left: var(--x, 50%);
+  width: 10px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--confetti-color, #9ff0ff);
+  opacity: 0;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+  animation: confetti-fall var(--fall-duration, 1900ms) ease-out forwards;
+  animation-delay: var(--fall-delay, 0ms);
 }
 
 .play-stack {
@@ -428,6 +557,10 @@ a {
   grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
   gap: 10px;
+}
+
+#game.game-over-effect .current-card-wrap {
+  animation: current-card-judder 280ms ease-out;
 }
 
 .nudge-stack {
@@ -607,6 +740,11 @@ a {
   max-width: var(--card-width);
   min-height: var(--card-height);
   max-height: var(--card-height);
+  transform-origin: center center;
+}
+
+#game.game-over-effect #face-down-deck {
+  animation: deck-collapse-shudder 520ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 .card-back::before {
@@ -651,6 +789,92 @@ a {
   color: var(--text);
   font-size: 0.68rem;
   line-height: 1.35;
+}
+
+@keyframes play-area-collapse {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  18% {
+    transform: translateY(1px) scale(0.992);
+  }
+  45% {
+    transform: translateY(7px) scale(0.985);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes game-over-board-stamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+    filter: blur(4px);
+  }
+  22% {
+    opacity: 0.97;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0.97;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.9);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(var(--drift-x, 0px), var(--fall-distance, 360px), 0)
+      rotate(var(--spin-amount, 540deg))
+      scale(1);
+  }
+}
+
+@keyframes current-card-judder {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes deck-collapse-shudder {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  16% {
+    transform: translate(-4px, 0) rotate(-4deg) scale(1.02);
+  }
+  30% {
+    transform: translate(4px, 1px) rotate(3deg) scale(0.99);
+  }
+  48% {
+    transform: translate(-3px, 3px) rotate(-3deg) scale(0.97);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
 }
 
 #current-effective-value,

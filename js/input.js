@@ -86,14 +86,25 @@ document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
 
 const scoreEl = document.getElementById("score");
 const scoreDebugTapTarget = document.querySelector(".hud-card-score");
+const remainingDebugTapTarget = document.querySelector(".hud-card-remaining");
 let debugScoreTapCount = 0;
 let debugScoreTapWindowTimer = null;
+let debugRemainingTapCount = 0;
+let debugRemainingTapWindowTimer = null;
 
 function resetDebugScoreTapSequence() {
   debugScoreTapCount = 0;
   if (debugScoreTapWindowTimer) {
     clearTimeout(debugScoreTapWindowTimer);
     debugScoreTapWindowTimer = null;
+  }
+}
+
+function resetDebugRemainingTapSequence() {
+  debugRemainingTapCount = 0;
+  if (debugRemainingTapWindowTimer) {
+    clearTimeout(debugRemainingTapWindowTimer);
+    debugRemainingTapWindowTimer = null;
   }
 }
 
@@ -121,11 +132,37 @@ function handleDebugScoreTap() {
   renderMessage();
 }
 
+function handleDebugRemainingTap() {
+  if (!window.testModeEnabled) return;
+
+  debugRemainingTapCount += 1;
+
+  if (debugRemainingTapWindowTimer) {
+    clearTimeout(debugRemainingTapWindowTimer);
+  }
+
+  debugRemainingTapWindowTimer = setTimeout(() => {
+    resetDebugRemainingTapSequence();
+  }, 2200);
+
+  if (debugRemainingTapCount >= 10) {
+    resetDebugRemainingTapSequence();
+    triggerVictoryEffect();
+    state.message = " Debug: victory celebration triggered.";
+    renderMessage();
+    return;
+  }
+
+  state.message = ` Debug: tap cards remaining ${debugRemainingTapCount}/10 for victory celebration.`;
+  renderMessage();
+}
+
 scoreDebugTapTarget?.addEventListener("pointerup", handleDebugScoreTap);
 scoreEl?.addEventListener("click", (e) => {
   e.stopPropagation();
   handleDebugScoreTap();
 });
+remainingDebugTapTarget?.addEventListener("pointerup", handleDebugRemainingTap);
 
 function closeVictoryModal() {
   const modal = document.getElementById("victory-modal");
@@ -276,6 +313,13 @@ window.addEventListener("keydown", (e) => {
 
     if (matchesKey("n", "KeyN")) {
       addBulkNudgesForDebug();
+      return;
+    }
+
+    if (matchesKey("w", "KeyW")) {
+      triggerVictoryEffect();
+      state.message = " Debug: victory celebration triggered.";
+      renderMessage();
       return;
     }
   }

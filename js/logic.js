@@ -1,4 +1,6 @@
 const POWER_CHOICE_LOCK_MS = 500;
+const ENABLE_GAME_OVER_EFFECTS = true;
+const ENABLE_VICTORY_EFFECTS = true;
 
 function buildRunFromControls(forceRandom = false) {
   const seedInput = document.getElementById("run-seed-input");
@@ -40,6 +42,95 @@ function buildDailyRun(dateKey) {
 let currentCardFeedbackTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
+let victoryEffectTimer = null;
+
+function clearGameOverEffects() {
+  const gameEl = document.getElementById("game");
+  const detailEl = document.getElementById("game-over-detail");
+  if (gameEl) {
+    gameEl.classList.remove("game-over-effect");
+  }
+  if (detailEl) {
+    detailEl.innerText = "";
+  }
+}
+
+function clearVictoryEffects() {
+  const gameEl = document.getElementById("game");
+  const bannerEl = document.getElementById("victory-banner");
+  const confettiEl = document.getElementById("victory-confetti");
+
+  if (gameEl) {
+    gameEl.classList.remove("victory-effect-active");
+  }
+  if (bannerEl) {
+    bannerEl.innerText = "";
+  }
+  if (confettiEl) {
+    confettiEl.innerHTML = "";
+  }
+  if (victoryEffectTimer) {
+    clearTimeout(victoryEffectTimer);
+    victoryEffectTimer = null;
+  }
+}
+
+function spawnVictoryConfetti() {
+  const confettiEl = document.getElementById("victory-confetti");
+  if (!confettiEl) return;
+
+  const colors = ["#9ff0ff", "#5bdbfb", "#c7ff54", "#f5ebff", "#ffcf72", "#f77df6"];
+  const pieces = 54;
+
+  confettiEl.innerHTML = "";
+
+  for (let i = 0; i < pieces; i += 1) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.setProperty("--x", `${Math.random() * 100}%`);
+    piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
+    piece.style.setProperty("--fall-distance", `${280 + Math.round(Math.random() * 210)}px`);
+    piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
+    piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
+    piece.style.setProperty("--fall-delay", `${Math.round(Math.random() * 220)}ms`);
+    piece.style.setProperty("--confetti-color", colors[i % colors.length]);
+    confettiEl.appendChild(piece);
+  }
+}
+
+function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
+  if (!ENABLE_VICTORY_EFFECTS) return;
+
+  const gameEl = document.getElementById("game");
+  const bannerEl = document.getElementById("victory-banner");
+  if (!gameEl || !bannerEl) return;
+
+  clearGameOverEffects();
+  clearVictoryEffects();
+  bannerEl.innerText = titleText;
+  spawnVictoryConfetti();
+  void gameEl.offsetWidth;
+  gameEl.classList.add("victory-effect-active");
+
+  victoryEffectTimer = setTimeout(() => {
+    clearVictoryEffects();
+  }, 2600);
+}
+
+function triggerGameOverEffect(detailText = "") {
+  if (!ENABLE_GAME_OVER_EFFECTS) return;
+
+  const gameEl = document.getElementById("game");
+  const detailEl = document.getElementById("game-over-detail");
+  if (!gameEl) return;
+
+  clearGameOverEffects();
+  void gameEl.offsetWidth;
+  gameEl.classList.add("game-over-effect");
+  if (detailEl) {
+    detailEl.innerText = detailText || "";
+  }
+}
 
 function flashGameShell(effect) {
   const gameEl = document.getElementById("game");
@@ -95,6 +186,8 @@ function setCurrentCardFeedback(effect) {
 }
 
 function openPowerChoice(forceRandom = false) {
+  clearGameOverEffects();
+  clearVictoryEffects();
   const { chosenSeed, deck } = buildRunFromControls(forceRandom);
 
   state.pendingRunSeed = chosenSeed;
@@ -114,6 +207,8 @@ function openPowerChoice(forceRandom = false) {
 }
 
 function openDailyPowerChoice(dateKey = "") {
+  clearGameOverEffects();
+  clearVictoryEffects();
   const { chosenDateKey, chosenSeed, deck } = buildDailyRun(dateKey);
 
   state.pendingRunSeed = chosenSeed;
@@ -165,6 +260,8 @@ function applyRunPowerSetup(powerId) {
 }
 
 function startRunWithPower(powerId) {
+  clearGameOverEffects();
+  clearVictoryEffects();
   const selectedPower = getPowerById(powerId);
   const chosenSeed =
     state.pendingRunSeed ||
@@ -355,6 +452,33 @@ function buildComparisonSnippet(currentCard, effectiveValue, nextCard, nextEffec
   }
   const symbol = effectiveValue < nextEffectiveValue ? "<" : ">";
   return `${formatCurrentJudgedValueForMessage(currentCard, effectiveValue)} ${symbol} ${formatNextValueForMessage(nextCard, nextEffectiveValue)}`;
+}
+
+function formatCurrentCardForLossMessage(card, effectiveValue) {
+  if (!card) return "?";
+  if (effectiveValue !== card.value) {
+    return `${describeCard(card)} (treated as ${valueToRank(effectiveValue)})`;
+  }
+  return describeCard(card);
+}
+
+function formatNextCardForLossMessage(card, effectiveValue = card?.value) {
+  if (!card) return "?";
+  if (effectiveValue !== card.value) {
+    return `${describeCard(card)} (treated as ${valueToRank(effectiveValue)})`;
+  }
+  return describeCard(card);
+}
+
+function buildWrongGuessMessage(type, currentCard, currentEffectiveValue, nextCard, nextEffectiveValue, prefix = "") {
+  const currentLabel = formatCurrentCardForLossMessage(currentCard, currentEffectiveValue);
+  const nextLabel = formatNextCardForLossMessage(nextCard, nextEffectiveValue);
+
+  if (type === "higher") {
+    return `${prefix}${nextLabel} was lower than ${currentLabel}.`;
+  }
+
+  return `${prefix}${nextLabel} was higher than ${currentLabel}.`;
 }
 
 function getEffectiveValueForModifier(card, modifier = 0) {
@@ -638,8 +762,9 @@ function fullResetAllStateForDebug() {
   Beginner-friendly onboarding helper.
 
   For players with meta progression 20 or below:
-  - On J / Q / K, avoid a HIGHER next card
-  - On A / 2 / 3 / 4, avoid a LOWER next card
+  - On 8 / 9 / 10 / J / Q / K, avoid a HIGHER next card
+  - On A / 2 / 3 / 4 / 5, avoid a LOWER next card
+  - 6 and 7 remain fully random
 
   This does NOT force a win.
   It simply swaps a safer valid card into the next position in the deck,
@@ -661,8 +786,8 @@ function maybeBiasUpcomingCardForNewPlayers() {
   let nextCardAlreadySafe = true;
   let candidateIndexes = [];
 
-  if (currentValue >= 9) {
-    // J / Q / K / 10 / 9 : next card should not be higher
+  if (currentValue >= 8) {
+    // 8 / 9 / 10 / J / Q / K : next card should not be higher
     nextCardAlreadySafe = currentNext.value <= currentValue;
 
     for (let i = nextIndex + 1; i < state.deck.length; i += 1) {
@@ -670,8 +795,8 @@ function maybeBiasUpcomingCardForNewPlayers() {
         candidateIndexes.push(i);
       }
     }
-  } else if (currentValue <= 4) {
-    // A / 2 / 3 / 4 : next card should not be lower
+  } else if (currentValue <= 5) {
+    // A / 2 / 3 / 4 / 5 : next card should not be lower
     nextCardAlreadySafe = currentNext.value >= currentValue;
 
     for (let i = nextIndex + 1; i < state.deck.length; i += 1) {
@@ -745,12 +870,17 @@ function makeGuess(type) {
   const nextIsOddForOddOneOut = next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
   if (oddOneOutWasArmed) {
     if (nextIsOddForOddOneOut) {
+      const lossCurrentCard = state.current;
       recordCurrentCardGuess(state.current, type, false);
       recordFaceDownOutcome(next, true, currentWasBase);
       advanceToCard(next);
       state.currentValueModifier = 0;
       state.streak = 0;
-      state.message = `💀 Odd One Out! ${describeCard(next)} is odd, so the run ends.`;
+      setCurrentCardFeedback("wrong");
+      flashGameShell("wrong");
+      const lossMessage = `Odd One Out triggered — next card was ${formatNextCardForLossMessage(next)}.`;
+      triggerGameOverEffect(lossMessage);
+      state.message = `💀 ${lossMessage}`;
       state.gameOver = true;
       updateBestScoreIfNeeded();
       render();
@@ -789,6 +919,7 @@ function makeGuess(type) {
   }
 
   if (!correct) {
+    const lossCurrentCard = state.current;
     recordCurrentCardGuess(state.current, type, false);
     recordFaceDownOutcome(next, true, currentWasBase);
     advanceToCard(next);
@@ -796,9 +927,11 @@ function makeGuess(type) {
     state.streak = 0;
     setCurrentCardFeedback("wrong");
     flashGameShell("wrong");
-    state.message = sixSevenWasArmed
-      ? `❌ Wrong! 6/7 missed — it was ${describeCard(next)}.`
-      : `❌ Wrong! It was ${describeCard(next)}.`;
+    const lossDetail = sixSevenWasArmed
+      ? `6/7 failed — ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
+      : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
+    triggerGameOverEffect(lossDetail);
+    state.message = `❌ ${lossDetail}`;
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
@@ -829,11 +962,14 @@ function makeGuess(type) {
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
+    triggerVictoryEffect();
     handleRunFinished(state.correctAnswers);
     if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
       if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
-      window.promptHeroNameForVictory();
+      window.setTimeout(() => {
+        window.promptHeroNameForVictory();
+      }, 900);
     }
     return;
   }

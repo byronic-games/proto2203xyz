@@ -658,7 +658,21 @@ function renderSeenGrid() {
 
 function renderMessage() {
   const el = document.getElementById("message-bar");
+  const gameEl = document.getElementById("game");
+  const gameOverDetailEl = document.getElementById("game-over-detail");
   if (!el) return;
+
+  const usingBoardGameOverMessage =
+    !!gameEl &&
+    gameEl.classList.contains("game-over-effect") &&
+    !!gameOverDetailEl &&
+    !!String(gameOverDetailEl.innerText || "").trim();
+
+  if (usingBoardGameOverMessage) {
+    el.style.display = "flex";
+    el.innerText = "";
+    return;
+  }
 
   if (!state.message) {
     el.style.display = "none";
