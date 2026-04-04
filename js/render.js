@@ -301,7 +301,8 @@ function renderFaceDownDeck() {
 
   if (!state.current) {
     deckEl.innerHTML = "";
-    deckEl.className = "card-back card-back-blue";
+    const idleDeckBackColor = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey) === "red" ? "pink" : "blue";
+    deckEl.className = `card-back card-back-${idleDeckBackColor}`;
     deckEl.removeAttribute("data-back-color");
     countEl.innerText = "";
     if (remainingValueEl) remainingValueEl.innerText = "00";
@@ -313,7 +314,7 @@ function renderFaceDownDeck() {
     ? getCardBackStatus(next.id)
     : { tornCorner: false, backColor: "blue" };
 
-  const backColor = normalizeDeckKey(state.currentDeckKey) === "red" ? "pink" : (backStatus.backColor || "blue");
+  const backColor = normalizeDeckKey(state.currentDeckKey) === "red" ? "pink" : "blue";
 
   deckEl.className = `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
   deckEl.setAttribute("data-back-color", backColor);

@@ -26,6 +26,20 @@ function normalizeDeckWins(wins = {}) {
   };
 }
 
+function normalizeProfileStats(stats = {}) {
+  return {
+    totalCorrectGuesses: Number.isFinite(stats.totalCorrectGuesses) ? stats.totalCorrectGuesses : 0,
+    runsStarted: Number.isFinite(stats.runsStarted) ? stats.runsStarted : 0,
+    dailyRunsStarted: Number.isFinite(stats.dailyRunsStarted) ? stats.dailyRunsStarted : 0,
+    blueRunsStarted: Number.isFinite(stats.blueRunsStarted) ? stats.blueRunsStarted : 0,
+    redRunsStarted: Number.isFinite(stats.redRunsStarted) ? stats.redRunsStarted : 0,
+    totalDecksCleared: Number.isFinite(stats.totalDecksCleared) ? stats.totalDecksCleared : 0,
+    decksClearedByColor: normalizeDeckWins(stats.decksClearedByColor),
+    dailyAttempts: Number.isFinite(stats.dailyAttempts) ? stats.dailyAttempts : 0,
+    lastUpdatedAt: String(stats.lastUpdatedAt || ""),
+  };
+}
+
 function normalizeCardStatsEntry(entry = {}) {
   return {
     correct: Number.isFinite(entry.correct) ? entry.correct : 0,
@@ -155,6 +169,56 @@ function saveRedDeckDebugUnlock(enabled) {
 
 function isRedDeckUnlocked() {
   return loadRedDeckDebugUnlock();
+}
+
+function loadProfileStats() {
+  const raw = localStorage.getItem(PROFILE_STATS_KEY);
+  if (!raw) return normalizeProfileStats();
+  try {
+    return normalizeProfileStats(JSON.parse(raw));
+  } catch {
+    return normalizeProfileStats();
+  }
+}
+
+function saveProfileStats(stats) {
+  const normalized = normalizeProfileStats({
+    ...stats,
+    lastUpdatedAt: new Date().toISOString(),
+  });
+  localStorage.setItem(PROFILE_STATS_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+function recordRunStarted(deckKey, runMode = "standard") {
+  const stats = loadProfileStats();
+  stats.runsStarted += 1;
+  if (runMode === "daily") {
+    stats.dailyRunsStarted += 1;
+    stats.dailyAttempts += 1;
+  } else {
+    const normalizedDeckKey = normalizeDeckKey(deckKey);
+    if (normalizedDeckKey === "red") {
+      stats.redRunsStarted += 1;
+    } else {
+      stats.blueRunsStarted += 1;
+    }
+  }
+  return saveProfileStats(stats);
+}
+
+function recordCorrectGuessProgress(amount = 1) {
+  const stats = loadProfileStats();
+  stats.totalCorrectGuesses += Math.max(0, Number(amount) || 0);
+  return saveProfileStats(stats);
+}
+
+function recordDeckClearProgress(deckKey) {
+  const stats = loadProfileStats();
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  stats.totalDecksCleared += 1;
+  stats.decksClearedByColor[normalizedDeckKey] = (stats.decksClearedByColor[normalizedDeckKey] || 0) + 1;
+  return saveProfileStats(stats);
 }
 
 function loadCheatUnlocks() {

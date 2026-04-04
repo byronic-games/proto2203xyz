@@ -245,6 +245,8 @@ function startRunWithPower(powerId) {
     lockDailyAttempt(dailyDateKey, chosenSeed, loadPreferredPlayerName());
   }
 
+  recordRunStarted(currentDeckKey, runMode);
+
   if (runMode !== "daily") {
     saveSelectedDeck(currentDeckKey);
     saveLastRunSeed(chosenSeed);
@@ -602,6 +604,7 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(BEST_SCORE_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
   localStorage.removeItem(CHEAT_UNLOCKS_KEY);
+  localStorage.removeItem(PROFILE_STATS_KEY);
   localStorage.removeItem(SELECTED_DECK_KEY);
   localStorage.removeItem(DECK_WINS_KEY);
   sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
@@ -790,6 +793,7 @@ function makeGuess(type) {
   recordFaceDownOutcome(next, false, currentWasBase);
   advanceToCard(next);
   state.correctAnswers += 1;
+  recordCorrectGuessProgress(1);
   state.currentValueModifier = 0;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
@@ -800,6 +804,7 @@ function makeGuess(type) {
   if (state.index >= state.deck.length - 1) {
     if (state.runMode !== "daily") {
       state.deckWins = recordDeckWin(state.currentDeckKey);
+      recordDeckClearProgress(state.currentDeckKey);
     }
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;

@@ -30,6 +30,7 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     const SELECTED_DECK_KEY = "hl_prototype_selected_deck";
     const DECK_WINS_KEY = "hl_prototype_deck_wins";
     const RED_DECK_DEBUG_UNLOCK_KEY = "hl_prototype_red_deck_debug_unlock";
+    const PROFILE_STATS_KEY = "hl_prototype_profile_stats";
     const RUN_SEED_KEY = "hl_prototype_last_seed";
     const META_PROGRESSION_KEY = "hl_prototype_meta_progression";
     const GAME_VERSION = "v0.1";
