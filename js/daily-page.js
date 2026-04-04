@@ -64,6 +64,10 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
   });
 }
 
+function navigateToDailyDate(dateKey) {
+  window.location.href = `daily.html?date=${encodeURIComponent(dateKey)}`;
+}
+
 async function renderDailyPage() {
   const params = new URLSearchParams(window.location.search);
   const todayKey = getCurrentDailyDateKey();
@@ -78,6 +82,8 @@ async function renderDailyPage() {
   const showScores = hasCompletedAttempt;
 
   const dateEl = document.getElementById("daily-date-label");
+  const prevNavBtn = document.getElementById("daily-nav-prev");
+  const nextNavBtn = document.getElementById("daily-nav-next");
   const nameInput = document.getElementById("daily-name-input");
   const statusEl = document.getElementById("daily-status");
   const scoreEl = document.getElementById("daily-score-label");
@@ -86,6 +92,31 @@ async function renderDailyPage() {
   const closeBtn = document.getElementById("daily-close-btn");
 
   if (dateEl) dateEl.innerText = formatDailyDateLabel(activeDateKey);
+  
+  // Setup navigation buttons
+  const canGoPrev = canNavigatePrevious(activeDateKey);
+  const canGoNext = canNavigateNext(activeDateKey);
+  
+  if (prevNavBtn) {
+    prevNavBtn.disabled = !canGoPrev;
+    prevNavBtn.className = `daily-nav-btn daily-nav-prev ${!canGoPrev ? "disabled" : ""}`;
+    prevNavBtn.addEventListener("click", () => {
+      if (canGoPrev) {
+        navigateToDailyDate(decrementDateKey(activeDateKey));
+      }
+    });
+  }
+  
+  if (nextNavBtn) {
+    nextNavBtn.disabled = !canGoNext;
+    nextNavBtn.className = `daily-nav-btn daily-nav-next ${!canGoNext ? "disabled" : ""}`;
+    nextNavBtn.addEventListener("click", () => {
+      if (canGoNext) {
+        navigateToDailyDate(incrementDateKey(activeDateKey));
+      }
+    });
+  }
+  
   if (nameInput) {
     nameInput.value = loadPreferredPlayerName();
     nameInput.addEventListener("input", () => {

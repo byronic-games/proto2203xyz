@@ -219,6 +219,41 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
   }
 }
 
+function addDaysToDateKey(dateKey, daysToAdd) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + daysToAdd);
+  return getCurrentDailyDateKey(date);
+}
+
+function incrementDateKey(dateKey) {
+  return addDaysToDateKey(dateKey, 1);
+}
+
+function decrementDateKey(dateKey) {
+  return addDaysToDateKey(dateKey, -1);
+}
+
+const DAILY_LAUNCH_DATE = "2026-04-03";
+
+function canNavigateToDate(dateKey) {
+  const today = getCurrentDailyDateKey();
+  // Can't go to future
+  if (dateKey > today) return false;
+  // Can't go before launch date
+  if (dateKey < DAILY_LAUNCH_DATE) return false;
+  return true;
+}
+
+function canNavigatePrevious(currentDateKey) {
+  const prevDate = decrementDateKey(currentDateKey);
+  return canNavigateToDate(prevDate);
+}
+
+function canNavigateNext(currentDateKey) {
+  const nextDate = incrementDateKey(currentDateKey);
+  return canNavigateToDate(nextDate);
+}
+
 function buildDailyGameUrl(dateKey) {
   const params = new URLSearchParams({
     mode: "daily",
