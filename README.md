@@ -81,6 +81,7 @@ Tracked card stats now include:
 - nudged-up guess preference: `Nudged up: higher/lower X%`
 - nudged-down guess preference: `Nudged down: higher/lower X%`
 - `Ended run` count only when the revealed losing card was judged against an unnuged base card
+- blue-deck face-up nudge tracking: how often a card was nudged at all, plus total up/down nudge amount
 
 This structure is intended to stay expandable for future stat ideas.
 

@@ -80,7 +80,8 @@ async function refreshDailyPageForDate(activeDateKey) {
     currentAttempt.dateKey === activeDateKey &&
     currentAttempt.playerId === currentPlayerId &&
     currentAttempt.completed === true;
-  const showScores = hasCompletedAttempt;
+  // Show scores for past dailies, or if player has completed today's
+  const showScores = activeDateKey !== todayKey || hasCompletedAttempt;
 
   // Update date label
   const dateEl = document.getElementById("daily-date-label");

@@ -211,59 +211,25 @@ function renderCurrentCard() {
   currentValueEl.innerText = "";
 }
 
-function getRedDeckConfidenceLabel(higherCount, lowerCount, attempts) {
-  const total = (higherCount || 0) + (lowerCount || 0);
-  if (attempts < 4 || !total) return "Unclear";
-
-  const dominantShare = Math.max(higherCount || 0, lowerCount || 0) / total;
-  if (dominantShare >= 0.75) return "High";
-  if (dominantShare >= 0.6) return "Medium";
-  return "Low";
-}
-
-function getRedDeckNudgeLabel(nudgedUpCount, nudgedDownCount, attempts) {
-  const totalNudges = (nudgedUpCount || 0) + (nudgedDownCount || 0);
-  if (!attempts) {
-    return totalNudges > 0 ? "Common" : "Unclear";
-  }
-
-  const nudgesPerAppearance = totalNudges / attempts;
-  if (nudgesPerAppearance < 0.35) return "Rare";
-  if (nudgesPerAppearance <= 0.9) return "Common";
-  return "Heavy";
-}
-
-function getRedDeckResultsLabel(correct, attempts) {
-  if (attempts < 4) return "Unclear";
-
-  const survivalRate = attempts > 0 ? (correct || 0) / attempts : 0;
-  if (survivalRate >= 0.7) return "Stable";
-  if (survivalRate >= 0.45) return "Swingy";
-  return "Harsh";
+function formatNudgedPercentage(nudgedUses, totalUses) {
+  if (!totalUses) return "0%";
+  return `${Math.round((nudgedUses / totalUses) * 100)}%`;
 }
 
 function getCardStatsTooltipLines(entry) {
-  const higherCount =
-    (entry.guessStats?.base?.higher || 0) +
-    (entry.guessStats?.nudgedUp?.higher || 0) +
-    (entry.guessStats?.nudgedDown?.higher || 0);
-  const lowerCount =
-    (entry.guessStats?.base?.lower || 0) +
-    (entry.guessStats?.nudgedUp?.lower || 0) +
-    (entry.guessStats?.nudgedDown?.lower || 0);
-  const attempts = entry.attempts || 0;
-  const correct = entry.correct || 0;
-  const nudgedUpCount = entry.nudgeStats?.up || 0;
-  const nudgedDownCount = entry.nudgeStats?.down || 0;
+  const blueFaceUpUses = entry.nudgeStats?.blueFaceUpUses || 0;
+  const blueNudgedUses = entry.nudgeStats?.blueNudgedUses || 0;
+  const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
+  const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
 
-  if (attempts <= 0 && nudgedUpCount <= 0 && nudgedDownCount <= 0) {
+  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0) {
     return ["No face-up stats yet."];
   }
 
   return [
-    `Confidence: ${getRedDeckConfidenceLabel(higherCount, lowerCount, attempts)}`,
-    `Nudges: ${getRedDeckNudgeLabel(nudgedUpCount, nudgedDownCount, attempts)}`,
-    `Results: ${getRedDeckResultsLabel(correct, attempts)}`,
+    `Nudged: ${formatNudgedPercentage(blueNudgedUses, blueFaceUpUses)}`,
+    `Up Total: ${totalUpAmount}`,
+    `Down Total: ${totalDownAmount}`,
   ];
 }
 

@@ -483,6 +483,12 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
   const entry = getCardStatsEntry(card.id);
   const guessBucket = entry.guessStats[getGuessContextKey()];
   entry.attempts += 1;
+  if (normalizeDeckKey(state.currentDeckKey) === "blue") {
+    entry.nudgeStats.blueFaceUpUses += 1;
+    if ((state.currentValueModifier || 0) !== 0) {
+      entry.nudgeStats.blueNudgedUses += 1;
+    }
+  }
   if (wasCorrectGuess) entry.correct += 1;
   if (guessType === "higher" || guessType === "lower") {
     guessBucket[guessType] += 1;
@@ -492,12 +498,26 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
 
 function recordCurrentCardNudge(card, direction) {
   if (!card) return;
+  if (normalizeDeckKey(state.currentDeckKey) !== "blue") return;
   const entry = getCardStatsEntry(card.id);
   if (!entry.nudgeStats) {
-    entry.nudgeStats = { up: 0, down: 0 };
+    entry.nudgeStats = {
+      up: 0,
+      down: 0,
+      blueFaceUpUses: 0,
+      blueNudgedUses: 0,
+      totalUpAmount: 0,
+      totalDownAmount: 0,
+    };
   }
-  if (direction === "up") entry.nudgeStats.up += 1;
-  if (direction === "down") entry.nudgeStats.down += 1;
+  if (direction === "up") {
+    entry.nudgeStats.up += 1;
+    entry.nudgeStats.totalUpAmount += 1;
+  }
+  if (direction === "down") {
+    entry.nudgeStats.down += 1;
+    entry.nudgeStats.totalDownAmount += 1;
+  }
   saveCardStats(state.cardStats);
 }
 

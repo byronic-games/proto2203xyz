@@ -57,6 +57,26 @@ function normalizeCardStatsEntry(entry = {}) {
         : Number.isFinite(entry.nudgedDownCount)
           ? entry.nudgedDownCount
           : 0,
+      blueFaceUpUses: Number.isFinite(entry.nudgeStats?.blueFaceUpUses)
+        ? entry.nudgeStats.blueFaceUpUses
+        : Number.isFinite(entry.blueFaceUpUses)
+          ? entry.blueFaceUpUses
+          : 0,
+      blueNudgedUses: Number.isFinite(entry.nudgeStats?.blueNudgedUses)
+        ? entry.nudgeStats.blueNudgedUses
+        : Number.isFinite(entry.blueNudgedUses)
+          ? entry.blueNudgedUses
+          : 0,
+      totalUpAmount: Number.isFinite(entry.nudgeStats?.totalUpAmount)
+        ? entry.nudgeStats.totalUpAmount
+        : Number.isFinite(entry.totalNudgeUpAmount)
+          ? entry.totalNudgeUpAmount
+          : 0,
+      totalDownAmount: Number.isFinite(entry.nudgeStats?.totalDownAmount)
+        ? entry.nudgeStats.totalDownAmount
+        : Number.isFinite(entry.totalNudgeDownAmount)
+          ? entry.totalNudgeDownAmount
+          : 0,
     },
     guessStats: {
       base: normalizeGuessBucket(entry.guessStats?.base),
