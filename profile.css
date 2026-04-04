@@ -40,7 +40,7 @@ body::before {
 .profile-shell {
   min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 14px;
   position: relative;
@@ -61,7 +61,8 @@ body::before {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .profile-card::before,

@@ -1,6 +1,19 @@
 const PROFILE_NAME_KEY = "hl_prototype_hero_name";
+const DAILY_LOCAL_ATTEMPTS_KEY = "hl_prototype_daily_attempts_local";
+
+function getCompletedDailyRunCount() {
+  try {
+    const attempts = JSON.parse(localStorage.getItem(DAILY_LOCAL_ATTEMPTS_KEY) || "{}");
+    if (!attempts || typeof attempts !== "object") return 0;
+
+    return Object.values(attempts).filter((entry) => entry?.completed === true).length;
+  } catch {
+    return 0;
+  }
+}
 
 function getProfileAchievements(stats, deckWins) {
+  const completedDailyRuns = getCompletedDailyRunCount();
   return [
     {
       label: "First Deck Cleared",
@@ -25,6 +38,10 @@ function getProfileAchievements(stats, deckWins) {
     {
       label: "Daily Starter",
       unlocked: (stats.dailyAttempts || 0) >= 1,
+    },
+    {
+      label: "Daily Completed",
+      unlocked: completedDailyRuns >= 1,
     },
   ];
 }

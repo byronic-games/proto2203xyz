@@ -34,6 +34,10 @@ function formatAverageValue(total, count) {
   if (Number.isInteger(average)) return String(average);
   return average.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
+function formatCheatValue(value) {
+  return valueToRank(value);
+}
+
 function getWeightedRandomIndex(items, getWeight, rng = Math.random) {
   const totalWeight = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
   if (totalWeight <= 0) return -1;
@@ -501,7 +505,7 @@ const CHEATS = [
       if (!next || !next2) return "Not enough cards remaining.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
-      return `Higher = ${Math.max(nextValue, next2Value)}`;
+      return `Higher = ${formatCheatValue(Math.max(nextValue, next2Value))}`;
     },
   },
   {
@@ -519,7 +523,7 @@ const CHEATS = [
       if (!next || !next2) return "Not enough cards remaining.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
-      return `Lower = ${Math.min(nextValue, next2Value)}`;
+      return `Lower = ${formatCheatValue(Math.min(nextValue, next2Value))}`;
     },
   },
   {
@@ -1025,5 +1029,7 @@ function pickCheatFromChoice(index) {
   }
   render();
 }
+
+
 
 
