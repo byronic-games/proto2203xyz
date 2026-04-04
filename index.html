@@ -62,52 +62,16 @@
           </a>
         </div>
 
-        <section class="profile-panel" id="profile-panel" aria-labelledby="profile-title">
-          <div class="profile-header">
-            <div>
-              <div class="profile-eyebrow">Player Profile</div>
-              <h2 id="profile-title">Progress</h2>
-            </div>
-            <div class="profile-stamp" id="profile-stamp">New Challenger</div>
-          </div>
-
-          <div class="profile-name">
+        <div class="intro-footer-row">
+          <div class="intro-name">
             <label for="intro-name-input">Player Name</label>
             <input id="intro-name-input" type="text" maxlength="24" autocomplete="name" placeholder="Your name">
           </div>
-
-          <div class="profile-stats-grid" id="profile-stats-grid">
-            <article class="profile-stat">
-              <div class="profile-stat-label">Best Run</div>
-              <div class="profile-stat-value" id="profile-best-run">0</div>
-            </article>
-            <article class="profile-stat">
-              <div class="profile-stat-label">Total Correct</div>
-              <div class="profile-stat-value" id="profile-total-correct">0</div>
-            </article>
-            <article class="profile-stat">
-              <div class="profile-stat-label">Decks Beaten</div>
-              <div class="profile-stat-value" id="profile-decks-beaten">0</div>
-            </article>
-            <article class="profile-stat">
-              <div class="profile-stat-label">Runs Started</div>
-              <div class="profile-stat-value" id="profile-runs-started">0</div>
-            </article>
-            <article class="profile-stat">
-              <div class="profile-stat-label">Blue Clears</div>
-              <div class="profile-stat-value" id="profile-blue-clears">0</div>
-            </article>
-            <article class="profile-stat">
-              <div class="profile-stat-label">Red Clears</div>
-              <div class="profile-stat-value" id="profile-red-clears">0</div>
-            </article>
-          </div>
-
-          <div class="profile-achievements">
-            <div class="profile-eyebrow">Achievements</div>
-            <div class="profile-achievement-list" id="profile-achievement-list"></div>
-          </div>
-        </section>
+          <a class="profile-launch" href="profile.html">
+            <span class="profile-launch-label">Profile</span>
+            <span class="profile-launch-sub">Stats & Stamps</span>
+          </a>
+        </div>
       </section>
 
 
@@ -194,22 +158,12 @@
       const blueDeckBtn = document.getElementById("deck-pick-blue");
       const redDeckBtn = document.getElementById("deck-pick-red");
       const redDeckDesc = document.getElementById("deck-red-desc");
-      const profileStamp = document.getElementById("profile-stamp");
-      const bestRunEl = document.getElementById("profile-best-run");
-      const totalCorrectEl = document.getElementById("profile-total-correct");
-      const decksBeatenEl = document.getElementById("profile-decks-beaten");
-      const runsStartedEl = document.getElementById("profile-runs-started");
-      const blueClearsEl = document.getElementById("profile-blue-clears");
-      const redClearsEl = document.getElementById("profile-red-clears");
-      const achievementListEl = document.getElementById("profile-achievement-list");
       const nameKey = "hl_prototype_hero_name";
       const selectedDeckKey = "hl_prototype_selected_deck";
       const deckWinsKey = "hl_prototype_deck_wins";
       const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
-      const bestScoreKey = "hl_prototype_best_score";
-      const profileStatsKey = "hl_prototype_profile_stats";
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !nameInput || !profileStamp || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !achievementListEl) {
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !nameInput) {
         return;
       }
 
@@ -230,88 +184,6 @@
         } catch {
           return normalizeDeckWins({});
         }
-      }
-
-      function loadProfileStats() {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(profileStatsKey) || "{}");
-          return {
-            totalCorrectGuesses: Number.isFinite(parsed?.totalCorrectGuesses) ? parsed.totalCorrectGuesses : 0,
-            runsStarted: Number.isFinite(parsed?.runsStarted) ? parsed.runsStarted : 0,
-            totalDecksCleared: Number.isFinite(parsed?.totalDecksCleared) ? parsed.totalDecksCleared : 0,
-            decksClearedByColor: normalizeDeckWins(parsed?.decksClearedByColor || {}),
-            dailyAttempts: Number.isFinite(parsed?.dailyAttempts) ? parsed.dailyAttempts : 0,
-          };
-        } catch {
-          return {
-            totalCorrectGuesses: 0,
-            runsStarted: 0,
-            totalDecksCleared: 0,
-            decksClearedByColor: normalizeDeckWins({}),
-            dailyAttempts: 0,
-          };
-        }
-      }
-
-      function getProfileAchievements(stats, deckWins) {
-        return [
-          {
-            label: "First Deck Cleared",
-            unlocked: (stats.totalDecksCleared || 0) >= 1,
-          },
-          {
-            label: "Blue Deck Cleared",
-            unlocked: (deckWins.blue || 0) >= 1,
-          },
-          {
-            label: "Red Deck Cleared",
-            unlocked: (deckWins.red || 0) >= 1,
-          },
-          {
-            label: "100 Correct Guesses",
-            unlocked: (stats.totalCorrectGuesses || 0) >= 100,
-          },
-          {
-            label: "10 Decks Beaten",
-            unlocked: (stats.totalDecksCleared || 0) >= 10,
-          },
-          {
-            label: "Daily Starter",
-            unlocked: (stats.dailyAttempts || 0) >= 1,
-          },
-        ];
-      }
-
-      function renderProfile() {
-        const deckWins = loadDeckWins();
-        const stats = loadProfileStats();
-        const bestRun = Number(localStorage.getItem(bestScoreKey) || 0) || 0;
-        const achievements = getProfileAchievements(stats, deckWins);
-        const unlockedCount = achievements.filter((entry) => entry.unlocked).length;
-
-        bestRunEl.textContent = String(bestRun);
-        totalCorrectEl.textContent = String(stats.totalCorrectGuesses || 0);
-        decksBeatenEl.textContent = String(stats.totalDecksCleared || 0);
-        runsStartedEl.textContent = String(stats.runsStarted || 0);
-        blueClearsEl.textContent = String(deckWins.blue || 0);
-        redClearsEl.textContent = String(deckWins.red || 0);
-
-        profileStamp.textContent =
-          unlockedCount >= 4
-            ? "Deck Veteran"
-            : unlockedCount >= 2
-              ? "Run Survivor"
-              : unlockedCount >= 1
-                ? "First Stamp"
-                : "New Challenger";
-
-        achievementListEl.innerHTML = "";
-        achievements.forEach((achievement) => {
-          const item = document.createElement("div");
-          item.className = `profile-achievement ${achievement.unlocked ? "unlocked" : "locked"}`;
-          item.textContent = achievement.unlocked ? `Stamped: ${achievement.label}` : `Locked: ${achievement.label}`;
-          achievementListEl.appendChild(item);
-        });
       }
 
       function isRedDeckUnlocked() {
@@ -403,8 +275,6 @@
       nameInput.addEventListener("input", () => {
         localStorage.setItem(nameKey, String(nameInput.value || "").trim().replace(/\s+/g, " ").slice(0, 24));
       });
-
-      renderProfile();
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
