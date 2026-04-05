@@ -23,6 +23,7 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     ];
 
     const BEST_SCORE_KEY = "hl_prototype_best_score";
+    const BEST_SCORES_BY_MODE_KEY = "hl_prototype_best_scores_by_mode";
     const CARD_STATS_KEY = "hl_prototype_card_stats";
     const CARD_BACK_STATUS_KEY = "hl_prototype_card_back_status";
     const GAME_STATE_SNAPSHOT_KEY = "hl_prototype_game_state_snapshot";
@@ -34,6 +35,7 @@ const SUITS = ["♠", "♥", "♦", "♣"];
     const RUN_SEED_KEY = "hl_prototype_last_seed";
     const META_PROGRESSION_KEY = "hl_prototype_meta_progression";
     const GAME_VERSION = "v0.1";
+    const DEFAULT_LEVEL_NUMBER = 1;
 
     const CHEAT_RARITY = {
       common: 50,

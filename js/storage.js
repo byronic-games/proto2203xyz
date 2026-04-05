@@ -1,12 +1,62 @@
-function loadBestScore() {
-      const raw = localStorage.getItem(BEST_SCORE_KEY);
-      const value = Number(raw);
-      return Number.isFinite(value) ? value : 0;
-    }
+function normalizeLevelNumber(level = DEFAULT_LEVEL_NUMBER) {
+  const value = Number(level);
+  return Number.isFinite(value) && value >= 1 ? Math.floor(value) : DEFAULT_LEVEL_NUMBER;
+}
 
-function saveBestScore(score) {
-      localStorage.setItem(BEST_SCORE_KEY, String(score));
+function getBestScoreBucketKey(deckKey = "blue", level = DEFAULT_LEVEL_NUMBER) {
+  return `${normalizeDeckKey(deckKey)}|${normalizeLevelNumber(level)}`;
+}
+
+function normalizeBestScoreMap(bestScores = {}) {
+  const normalized = {};
+  if (!bestScores || typeof bestScores !== "object") return normalized;
+
+  Object.entries(bestScores).forEach(([bucketKey, score]) => {
+    const numericScore = Number(score);
+    normalized[String(bucketKey)] = Number.isFinite(numericScore) && numericScore > 0 ? numericScore : 0;
+  });
+
+  return normalized;
+}
+
+function loadBestScoreMap() {
+  let bestScores = {};
+
+  try {
+    const raw = localStorage.getItem(BEST_SCORES_BY_MODE_KEY);
+    if (raw) {
+      bestScores = normalizeBestScoreMap(JSON.parse(raw));
     }
+  } catch {
+    bestScores = {};
+  }
+
+  const blueLevelOneKey = getBestScoreBucketKey("blue", DEFAULT_LEVEL_NUMBER);
+  const legacyBest = Number(localStorage.getItem(BEST_SCORE_KEY));
+  if (!(blueLevelOneKey in bestScores) && Number.isFinite(legacyBest) && legacyBest > 0) {
+    bestScores[blueLevelOneKey] = legacyBest;
+    localStorage.setItem(BEST_SCORES_BY_MODE_KEY, JSON.stringify(bestScores));
+  }
+
+  return bestScores;
+}
+
+function loadBestScore(deckKey = "blue", level = DEFAULT_LEVEL_NUMBER) {
+  const bestScores = loadBestScoreMap();
+  return bestScores[getBestScoreBucketKey(deckKey, level)] || 0;
+}
+
+function saveBestScore(score, deckKey = "blue", level = DEFAULT_LEVEL_NUMBER) {
+  const normalizedScore = Math.max(0, Number(score) || 0);
+  const bucketKey = getBestScoreBucketKey(deckKey, level);
+  const bestScores = loadBestScoreMap();
+  bestScores[bucketKey] = normalizedScore;
+  localStorage.setItem(BEST_SCORES_BY_MODE_KEY, JSON.stringify(bestScores));
+
+  if (bucketKey === getBestScoreBucketKey("blue", DEFAULT_LEVEL_NUMBER)) {
+    localStorage.setItem(BEST_SCORE_KEY, String(normalizedScore));
+  }
+}
 
 function normalizeGuessBucket(bucket = {}) {
   return {

@@ -2,7 +2,11 @@ function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
   const streakEl = document.getElementById("current-streak");
+  const bestDeckKey = state.gameOver
+    ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
+    : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
 
+  state.bestScore = loadBestScore(bestDeckKey, DEFAULT_LEVEL_NUMBER);
   if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   if (streakEl) streakEl.innerText = "";
@@ -29,16 +33,22 @@ function setAnimatedText(el, value) {
   el.dataset.renderValue = nextValue;
 }
 
-function renderSeedControls() {
+function renderHeaderStatus() {
   const seedInput = document.getElementById("run-seed-input");
-  const seedDisplay = document.getElementById("current-seed");
+  const runStatusEl = document.getElementById("header-run-status");
+  const runTitleEl = document.getElementById("header-run-title");
+  const runPowerEl = document.getElementById("header-run-power");
 
-  if (seedDisplay) {
-    seedDisplay.innerText = state.runMode === "daily"
-      ? `DAILY-${state.dailyDateKey || state.runSeed || ""}`
-      : state.runSeed
-        ? `${GAME_VERSION}-${state.runSeed}`
-        : `${GAME_VERSION}-`;
+  if (runStatusEl && runTitleEl && runPowerEl) {
+    if (!state.gameOver && state.current) {
+      runTitleEl.innerText = `${getDeckName(state.currentDeckKey)} Deck • Level ${DEFAULT_LEVEL_NUMBER}`;
+      runPowerEl.innerText = `Starting Power: ${getPowerName(state.selectedStartPowerId)}`;
+      runStatusEl.classList.remove("is-empty");
+    } else {
+      runTitleEl.innerText = "";
+      runPowerEl.innerText = "";
+      runStatusEl.classList.add("is-empty");
+    }
   }
 
   if (seedInput && !seedInput.dataset.initialized) {
@@ -694,7 +704,7 @@ function renderNextInfo() {
 
 function render() {
   renderScores();
-  renderSeedControls();
+  renderHeaderStatus();
   renderStartPowerSelector();
   renderCheatGuide();
   renderActivePowers();

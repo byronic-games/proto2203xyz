@@ -181,9 +181,9 @@ a {
 }
 
 #app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
   gap: 10px;
 }
 
@@ -204,9 +204,40 @@ a {
   gap: 12px;
 }
 
-.header-seed,
 .header-best {
   text-align: right;
+}
+
+.header-run-status {
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.header-run-status.is-empty {
+  opacity: 0;
+}
+
+.header-run-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  line-height: 1.1;
+}
+
+.header-run-power {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.15;
 }
 
 .hud-label,
@@ -221,14 +252,6 @@ a {
 }
 
 .hud-label {
-  color: var(--cyan);
-}
-
-#current-seed {
-  margin-top: 3px;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
   color: var(--cyan);
 }
 
@@ -1633,6 +1656,19 @@ a {
 
   .header-meta {
     gap: 8px;
+  }
+
+  .header-run-status {
+    min-height: 36px;
+  }
+
+  .header-run-title {
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+  }
+
+  .header-run-power {
+    font-size: 0.62rem;
   }
 
   #best-score {

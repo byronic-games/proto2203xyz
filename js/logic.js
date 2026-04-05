@@ -301,7 +301,7 @@ function startRunWithPower(powerId) {
     currentValueModifier: 0,
     correctAnswers: 0,
     streak: 0,
-    bestScore: loadBestScore(),
+    bestScore: loadBestScore(currentDeckKey, DEFAULT_LEVEL_NUMBER),
     seenCardIds: new Set([deck[0].id]),
     powers: activePowers,
     selectedStartPowerId: selectedPowerId,
@@ -392,7 +392,7 @@ function pickPowerFromChoice(index) {
 function updateBestScoreIfNeeded() {
   if (state.correctAnswers > state.bestScore) {
     state.bestScore = state.correctAnswers;
-    saveBestScore(state.bestScore);
+    saveBestScore(state.bestScore, state.currentDeckKey, DEFAULT_LEVEL_NUMBER);
   }
 }
 
@@ -749,6 +749,7 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(CARD_BACK_STATUS_KEY);
   localStorage.removeItem(RUN_SEED_KEY);
   localStorage.removeItem(BEST_SCORE_KEY);
+  localStorage.removeItem(BEST_SCORES_BY_MODE_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
   localStorage.removeItem(CHEAT_UNLOCKS_KEY);
   localStorage.removeItem(PROFILE_STATS_KEY);
