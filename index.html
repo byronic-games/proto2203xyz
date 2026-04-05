@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css?v=20260405c">
+  <link rel="stylesheet" href="intro.css?v=20260405d">
 </head>
 <body>
   <main class="intro-shell">
@@ -374,7 +374,12 @@
         if (levelNumber >= 3) return;
         setSelectedDeck(pendingDeckSelection);
         setSelectedLevel(levelNumber);
-        window.location.href = "game.html";
+        sessionStorage.removeItem("hl_prototype_game_state_snapshot");
+        const params = new URLSearchParams({
+          deck: pendingDeckSelection,
+          level: String(normalizeLevelNumber(levelNumber)),
+        });
+        window.location.href = `game.html?${params.toString()}`;
       }
 
       function clearPlayHoldTimer() {

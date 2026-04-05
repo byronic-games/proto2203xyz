@@ -76,6 +76,12 @@ document.getElementById("settings-btn")?.addEventListener("click", () => {
   window.location.href = "settings.html";
 });
 
+document.getElementById("exit-btn")?.addEventListener("click", () => {
+  window.skipAutoSnapshot = true;
+  clearGameStateSnapshot();
+  window.location.href = "index.html?v=20260405d";
+});
+
 document.getElementById("nudge-up-btn")?.addEventListener("click", () => {
   useNudgeCharge("up");
 });
@@ -255,6 +261,11 @@ document.getElementById("victory-modal")?.addEventListener("click", (e) => {
   if (e.target && e.target.classList && e.target.classList.contains("victory-backdrop")) {
     closeVictoryModal();
   }
+});
+
+window.addEventListener("pagehide", () => {
+  if (window.skipAutoSnapshot) return;
+  saveGameStateSnapshot(state);
 });
 
 function closeAllTransientTooltips() {

@@ -89,17 +89,42 @@ function initializeDailyModeFromUrl() {
   openDailyPowerChoice(requestedDailyDate);
 }
 
+function applyDeckLevelSelectionFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedDeck = params.get("deck");
+  const requestedLevel = params.get("level");
+
+  if (!requestedDeck && !requestedLevel) return;
+
+  const selectedDeckKey = requestedDeck ? normalizeDeckKey(requestedDeck) : normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  const selectedLevelNumber = requestedLevel ? normalizeLevelNumber(requestedLevel) : normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
+
+  state.selectedDeckKey = selectedDeckKey;
+  state.currentDeckKey = state.gameOver ? selectedDeckKey : state.currentDeckKey;
+  state.pendingDeckKey = selectedDeckKey;
+  state.selectedLevelNumber = selectedLevelNumber;
+  state.currentLevelNumber = state.gameOver ? selectedLevelNumber : state.currentLevelNumber;
+  state.pendingLevelNumber = selectedLevelNumber;
+  state.bestScore = loadBestScore(selectedDeckKey, selectedLevelNumber);
+
+  saveSelectedDeck(selectedDeckKey);
+  saveSelectedLevel(selectedLevelNumber);
+}
+
 function restoreGameStateFromUrlIfNeeded() {
   const params = new URLSearchParams(window.location.search);
-  if (!params.has("resume")) return false;
+  if (!params.has("resume") && !sessionStorage.getItem(GAME_STATE_SNAPSHOT_KEY)) return false;
 
   const snapshot = loadGameStateSnapshot();
-  clearGameStateSnapshot();
   if (!snapshot) return false;
 
   state = snapshot;
   if (!state.current && Array.isArray(state.deck) && state.deck.length) {
     state.current = state.deck[state.index] || state.deck[0] || null;
+  }
+
+  if (params.has("resume")) {
+    clearGameStateSnapshot();
   }
 
   return true;
@@ -108,6 +133,9 @@ function restoreGameStateFromUrlIfNeeded() {
 runSelfTests();
 applyDebugActionsFromUrl();
 const restoredFromSnapshot = restoreGameStateFromUrlIfNeeded();
+if (!restoredFromSnapshot) {
+  applyDeckLevelSelectionFromUrl();
+}
 render();
 if (!restoredFromSnapshot) {
   initializeDailyModeFromUrl();
