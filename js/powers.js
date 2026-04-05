@@ -137,6 +137,18 @@ function getStartPowerOfferSeed(seedString) {
   return `${GAME_VERSION}|${START_POWER_SEED_RULESET}|${normalizedSeed}`;
 }
 
+function isNudgeStartingPower(power) {
+  return ["balanced_nudges", "updraft", "downforce"].includes(power?.id);
+}
+
+function pickPowerOptionFromPool(pool, seeded, rng) {
+  if (!pool.length) return null;
+  const idx = seeded
+    ? Math.floor(rng() * pool.length)
+    : Math.floor(Math.random() * pool.length);
+  return pool.splice(idx, 1)[0] || null;
+}
+
 function getRandomPowerOptions(count = 2, seedString = "", includeAll = false) {
   const pool = [...getUnlockedPowerPool(includeAll)];
   const options = [];
@@ -145,11 +157,38 @@ function getRandomPowerOptions(count = 2, seedString = "", includeAll = false) {
     ? mulberry32(stringToSeedNumber(getStartPowerOfferSeed(seedString)))
     : null;
 
+  if (count >= 2) {
+    const nudgePool = pool.filter(isNudgeStartingPower);
+    const nonNudgePool = pool.filter((power) => !isNudgeStartingPower(power));
+
+    if (nudgePool.length > 0 && nonNudgePool.length > 0) {
+      const nudgePick = pickPowerOptionFromPool(nudgePool, seeded, rng);
+      const nonNudgePick = pickPowerOptionFromPool(nonNudgePool, seeded, rng);
+
+      if (nudgePick) {
+        options.push(nudgePick);
+      }
+
+      if (nonNudgePick) {
+        options.push(nonNudgePick);
+      }
+
+      if (options.length > 1) {
+        const shouldSwapOrder = seeded ? rng() >= 0.5 : Math.random() >= 0.5;
+        if (shouldSwapOrder) {
+          options.reverse();
+        }
+      }
+
+      const pickedIds = new Set(options.map((power) => power.id));
+      pool.splice(0, pool.length, ...pool.filter((power) => !pickedIds.has(power.id)));
+    }
+  }
+
   while (options.length < count && pool.length > 0) {
-    const idx = seeded
-      ? Math.floor(rng() * pool.length)
-      : Math.floor(Math.random() * pool.length);
-    options.push(pool.splice(idx, 1)[0]);
+    const picked = pickPowerOptionFromPool(pool, seeded, rng);
+    if (!picked) break;
+    options.push(picked);
   }
 
   return options;
