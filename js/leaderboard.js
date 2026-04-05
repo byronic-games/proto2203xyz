@@ -63,6 +63,18 @@ function normalizeHeroLevel(level = DEFAULT_LEVEL_NUMBER) {
   return Number.isFinite(value) && value >= 1 ? Math.floor(value) : DEFAULT_LEVEL_NUMBER;
 }
 
+function normalizeHeroEntry(entry = {}) {
+  return {
+    playerName: sanitizeHeroName(entry.playerName || entry.player_name || "Unknown"),
+    seed: String(entry.seed || ""),
+    gameVersion: String(entry.gameVersion || entry.game_version || ""),
+    deck: normalizeHeroDeck(entry.deck || ""),
+    deckLevel: normalizeHeroLevel(entry.deckLevel ?? entry.deck_level),
+    startingPower: normalizeHeroPower(entry.startingPower || entry.starting_power || ""),
+    createdAt: String(entry.createdAt || entry.created_at || ""),
+  };
+}
+
 function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel = DEFAULT_LEVEL_NUMBER) {
   return {
     playerName: sanitizeHeroName(name),
@@ -175,17 +187,33 @@ async function fetchHeroes(limit = 200) {
     const rows = await response.json();
     if (!Array.isArray(rows)) return localHeroes;
 
-    const mapped = rows.map((row) => ({
-      playerName: sanitizeHeroName(row.player_name || "Unknown"),
-      seed: String(row.seed || ""),
-      gameVersion: String(row.game_version || ""),
-      deck: normalizeHeroDeck(row.deck || ""),
-      deckLevel: normalizeHeroLevel(row.deck_level),
-      startingPower: normalizeHeroPower(row.starting_power || ""),
-      createdAt: String(row.created_at || ""),
-    }));
+    const mergedBySeed = new Map();
 
-    return mapped.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    rows
+      .map((row) => normalizeHeroEntry(row))
+      .forEach((hero) => {
+        mergedBySeed.set(hero.seed, hero);
+      });
+
+    localHeroes
+      .map((hero) => normalizeHeroEntry(hero))
+      .forEach((hero) => {
+        const existing = mergedBySeed.get(hero.seed);
+        if (!existing) {
+          mergedBySeed.set(hero.seed, hero);
+          return;
+        }
+
+        mergedBySeed.set(hero.seed, {
+          ...existing,
+          deck: hero.deck || existing.deck,
+          deckLevel: hero.deckLevel || existing.deckLevel,
+          startingPower: hero.startingPower || existing.startingPower,
+          createdAt: hero.createdAt || existing.createdAt,
+        });
+      });
+
+    return Array.from(mergedBySeed.values()).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   } catch {
     return localHeroes;
   }
