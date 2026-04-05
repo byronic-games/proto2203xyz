@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css?v=20260405d">
+  <link rel="stylesheet" href="intro.css?v=20260405e">
 </head>
 <body>
   <main class="intro-shell">
@@ -110,7 +110,7 @@
             </button>
             <button class="deck-choice-card level-choice-card level-choice-soon" id="level-pick-3" type="button" disabled>
               <span class="deck-choice-label">Level 3</span>
-              <span class="deck-choice-desc" id="level-3-desc">Coming soon.</span>
+              <span class="deck-choice-desc" id="level-3-desc">Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.</span>
             </button>
           </div>
           <button id="level-close-btn" class="deck-close-btn" type="button">Back</button>
@@ -327,10 +327,11 @@
       function openLevelModal(deckKey) {
         pendingDeckSelection = deckKey === "red" ? "red" : "blue";
         const blueLevelTwoUnlocked = hasClearedDeckLevel("blue", 1);
+        const blueLevelThreeUnlocked = hasClearedDeckLevel("blue", 2);
         const isBlueDeck = pendingDeckSelection === "blue";
 
         levelCopy.textContent = isBlueDeck
-          ? "Blue Deck levels tune how often Cheats appear. Level 2 stretches the run harder."
+          ? "Blue Deck levels tune how often Cheats appear. Level 3 keeps the tougher pacing and cuts each cheat choice down to 1 from 2."
           : "Red Deck levels are opening up gradually. Level 1 is available now.";
 
         levelOneDesc.textContent = isBlueDeck
@@ -345,9 +346,13 @@
               : "Unlock by clearing Blue Deck Level 1.")
           : "Coming soon.";
 
-        levelThreeBtn.disabled = true;
-        levelThreeBtn.classList.add("locked");
-        levelThreeDesc.textContent = "Coming soon.";
+        levelThreeBtn.disabled = !isBlueDeck || !blueLevelThreeUnlocked;
+        levelThreeBtn.classList.toggle("locked", !isBlueDeck || !blueLevelThreeUnlocked);
+        levelThreeDesc.textContent = isBlueDeck
+          ? (blueLevelThreeUnlocked
+              ? "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2."
+              : "Unlock by clearing Blue Deck Level 2.")
+          : "Coming soon.";
 
         deckModal.classList.add("hidden");
         deckModal.setAttribute("aria-hidden", "true");
@@ -370,8 +375,9 @@
 
       function chooseLevel(levelNumber) {
         if (pendingDeckSelection === "blue" && levelNumber === 2 && !hasClearedDeckLevel("blue", 1)) return;
+        if (pendingDeckSelection === "blue" && levelNumber === 3 && !hasClearedDeckLevel("blue", 2)) return;
         if (pendingDeckSelection !== "blue" && levelNumber > 1) return;
-        if (levelNumber >= 3) return;
+        if (levelNumber > 3) return;
         setSelectedDeck(pendingDeckSelection);
         setSelectedLevel(levelNumber);
         sessionStorage.removeItem("hl_prototype_game_state_snapshot");

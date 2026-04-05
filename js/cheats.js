@@ -939,6 +939,13 @@ function getDailyCheatOfferSeed(offerIndex) {
   return `${state.runSeed}|daily-cheat-offer-v1|${offerIndex}`;
 }
 
+function getCheatOfferOptionCount() {
+  if (state.runMode === "daily") return 3;
+  const currentDeckKey = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue");
+  const currentLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
+  return currentDeckKey === "blue" && currentLevelNumber >= 3 ? 2 : 3;
+}
+
 function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
   const pool = [...getEligibleCheatPool(includeAll)];
   const options = [];
@@ -958,15 +965,16 @@ function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
 
 function offerCheatChoice() {
   const isDailyRun = state.runMode === "daily";
+  const optionCount = isDailyRun ? 3 : getCheatOfferOptionCount();
   const newlyMetaUnlocked = isDailyRun ? [] : markMetaUnlockedCheats();
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
 
   if (isDailyRun) {
     const offerIndex = (state.dailyCheatOfferCount || 0) + 1;
-    state.pendingCheatOptions = getRandomCheatOptions(3, getDailyCheatOfferSeed(offerIndex), true);
+    state.pendingCheatOptions = getRandomCheatOptions(optionCount, getDailyCheatOfferSeed(offerIndex), true);
     state.dailyCheatOfferCount = offerIndex;
   } else {
-    state.pendingCheatOptions = getRandomCheatOptions(3);
+    state.pendingCheatOptions = getRandomCheatOptions(optionCount);
   }
 
   state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
