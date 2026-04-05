@@ -1103,10 +1103,7 @@ a {
 }
 
 #utility-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  order: 6;
+  display: none;
 }
 
 #active-powers,
@@ -1561,7 +1558,7 @@ a {
       "message message"
       "hud hud"
       "play cheats"
-      "memory utility";
+      "memory cheats";
     align-items: start;
   }
 
@@ -1586,11 +1583,6 @@ a {
   #memory-panel {
     grid-area: memory;
     min-height: 290px;
-  }
-
-  #utility-row {
-    grid-area: utility;
-    grid-template-columns: 1fr;
   }
 
   #game {
