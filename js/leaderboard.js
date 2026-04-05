@@ -58,18 +58,24 @@ function normalizeHeroPower(startingPower) {
   return normalized || "-";
 }
 
-function buildHeroEntry(name, seed, deck = "-", startingPower = "-") {
+function normalizeHeroLevel(level = DEFAULT_LEVEL_NUMBER) {
+  const value = Number(level);
+  return Number.isFinite(value) && value >= 1 ? Math.floor(value) : DEFAULT_LEVEL_NUMBER;
+}
+
+function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel = DEFAULT_LEVEL_NUMBER) {
   return {
     playerName: sanitizeHeroName(name),
     seed: String(seed || "").trim(),
     gameVersion: GAME_VERSION,
     deck: normalizeHeroDeck(deck),
+    deckLevel: normalizeHeroLevel(deckLevel),
     startingPower: normalizeHeroPower(startingPower),
     createdAt: new Date().toISOString(),
   };
 }
 
-async function submitHeroWin(name, seed, deck, startingPower) {
+async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAULT_LEVEL_NUMBER) {
   const playerName = sanitizeHeroName(name);
   const normalizedSeed = String(seed || "").trim();
 
@@ -78,7 +84,7 @@ async function submitHeroWin(name, seed, deck, startingPower) {
 
   savePreferredHeroName(playerName);
 
-  const entry = buildHeroEntry(playerName, normalizedSeed, deck, startingPower);
+  const entry = buildHeroEntry(playerName, normalizedSeed, deck, startingPower, deckLevel);
   const localResult = addLocalHero(entry);
 
   if (!leaderboardRemoteEnabled()) {
@@ -88,22 +94,41 @@ async function submitHeroWin(name, seed, deck, startingPower) {
 
   try {
     const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.table}`;
-    const response = await fetch(url, {
+    const headers = {
+      apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
+      Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    };
+    const payloadWithLevel = {
+      player_name: entry.playerName,
+      seed: entry.seed,
+      game_version: entry.gameVersion,
+      deck: entry.deck,
+      deck_level: entry.deckLevel,
+      starting_power: entry.startingPower,
+    };
+    const payloadWithoutLevel = {
+      player_name: entry.playerName,
+      seed: entry.seed,
+      game_version: entry.gameVersion,
+      deck: entry.deck,
+      starting_power: entry.startingPower,
+    };
+
+    let response = await fetch(url, {
       method: "POST",
-      headers: {
-        apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
-        Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        player_name: entry.playerName,
-        seed: entry.seed,
-        game_version: entry.gameVersion,
-        deck: entry.deck,
-        starting_power: entry.startingPower,
-      }),
+      headers,
+      body: JSON.stringify(payloadWithLevel),
     });
+
+    if (!response.ok && response.status !== 409) {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payloadWithoutLevel),
+      });
+    }
 
     if (response.ok) return { ok: true, message: "Hero recorded." };
     if (response.status === 409) return { ok: true, message: "Seed already listed in heroes." };
@@ -134,11 +159,14 @@ async function fetchHeroes(limit = 200) {
     };
 
     let response = await fetchRemoteRows(
-      "select=player_name,seed,game_version,deck,starting_power,created_at"
+      "select=player_name,seed,game_version,deck,deck_level,starting_power,created_at"
     );
 
     if (!response.ok) {
-      response = await fetchRemoteRows("select=player_name,seed,game_version,created_at");
+      response = await fetchRemoteRows("select=player_name,seed,game_version,deck,starting_power,created_at");
+      if (!response.ok) {
+        response = await fetchRemoteRows("select=player_name,seed,game_version,created_at");
+      }
       if (!response.ok) {
         return localHeroes;
       }
@@ -152,6 +180,7 @@ async function fetchHeroes(limit = 200) {
       seed: String(row.seed || ""),
       gameVersion: String(row.game_version || ""),
       deck: normalizeHeroDeck(row.deck || ""),
+      deckLevel: normalizeHeroLevel(row.deck_level),
       startingPower: normalizeHeroPower(row.starting_power || ""),
       createdAt: String(row.created_at || ""),
     }));

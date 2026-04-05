@@ -7,7 +7,7 @@ async function renderHeroesBoard() {
   bodyEl.innerHTML = "";
 
   if (!heroes.length) {
-    bodyEl.innerHTML = "<tr><td colspan='5'>No 52-card clears yet. Be the first hero.</td></tr>";
+    bodyEl.innerHTML = "<tr><td colspan='6'>No 52-card clears yet. Be the first hero.</td></tr>";
     noteEl.innerText = leaderboardRemoteEnabled()
       ? "Connected to online leaderboard."
       : "Showing local leaderboard only. Configure Supabase in js/leaderboard.js for global tracking.";
@@ -33,6 +33,10 @@ async function renderHeroesBoard() {
     deckTd.dataset.label = "Deck";
     deckTd.innerText = hero.deck || "-";
 
+    const levelTd = document.createElement("td");
+    levelTd.dataset.label = "Level";
+    levelTd.innerText = String(hero.deckLevel || 1);
+
     const powerTd = document.createElement("td");
     powerTd.dataset.label = "Power";
     powerTd.innerText = hero.startingPower || "-";
@@ -41,6 +45,7 @@ async function renderHeroesBoard() {
     tr.appendChild(seedTd);
     tr.appendChild(dateTd);
     tr.appendChild(deckTd);
+    tr.appendChild(levelTd);
     tr.appendChild(powerTd);
     bodyEl.appendChild(tr);
   });

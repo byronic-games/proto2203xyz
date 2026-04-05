@@ -19,6 +19,20 @@ function normalizeBestScoreMap(bestScores = {}) {
   return normalized;
 }
 
+function normalizeDeckLevelClears(clears = {}) {
+  const normalized = {};
+  if (!clears || typeof clears !== "object") return normalized;
+
+  Object.entries(clears).forEach(([bucketKey, clearCount]) => {
+    const numericClearCount = Number(clearCount);
+    normalized[String(bucketKey)] = Number.isFinite(numericClearCount) && numericClearCount > 0
+      ? Math.floor(numericClearCount)
+      : 0;
+  });
+
+  return normalized;
+}
+
 function loadBestScoreMap() {
   let bestScores = {};
 
@@ -56,6 +70,69 @@ function saveBestScore(score, deckKey = "blue", level = DEFAULT_LEVEL_NUMBER) {
   if (bucketKey === getBestScoreBucketKey("blue", DEFAULT_LEVEL_NUMBER)) {
     localStorage.setItem(BEST_SCORE_KEY, String(normalizedScore));
   }
+}
+
+function loadSelectedLevel() {
+  return normalizeLevelNumber(localStorage.getItem(SELECTED_LEVEL_KEY) || DEFAULT_LEVEL_NUMBER);
+}
+
+function saveSelectedLevel(level) {
+  localStorage.setItem(SELECTED_LEVEL_KEY, String(normalizeLevelNumber(level)));
+}
+
+function loadDeckLevelClears() {
+  let clears = {};
+
+  try {
+    const raw = localStorage.getItem(DECK_LEVEL_CLEARS_KEY);
+    if (raw) {
+      clears = normalizeDeckLevelClears(JSON.parse(raw));
+    }
+  } catch {
+    clears = {};
+  }
+
+  const legacyDeckWins = loadDeckWins();
+  const blueLevelOneKey = getBestScoreBucketKey("blue", 1);
+  const redLevelOneKey = getBestScoreBucketKey("red", 1);
+  let migrated = false;
+
+  if (!(blueLevelOneKey in clears) && (legacyDeckWins.blue || 0) > 0) {
+    clears[blueLevelOneKey] = legacyDeckWins.blue;
+    migrated = true;
+  }
+
+  if (!(redLevelOneKey in clears) && (legacyDeckWins.red || 0) > 0) {
+    clears[redLevelOneKey] = legacyDeckWins.red;
+    migrated = true;
+  }
+
+  if (migrated) {
+    saveDeckLevelClears(clears);
+  }
+
+  return clears;
+}
+
+function saveDeckLevelClears(clears) {
+  localStorage.setItem(DECK_LEVEL_CLEARS_KEY, JSON.stringify(normalizeDeckLevelClears(clears)));
+}
+
+function recordDeckLevelClear(deckKey, level = DEFAULT_LEVEL_NUMBER) {
+  const bucketKey = getBestScoreBucketKey(deckKey, level);
+  const clears = loadDeckLevelClears();
+  clears[bucketKey] = (clears[bucketKey] || 0) + 1;
+  saveDeckLevelClears(clears);
+  return clears;
+}
+
+function getDeckLevelClearCount(deckKey, level = DEFAULT_LEVEL_NUMBER) {
+  const clears = loadDeckLevelClears();
+  return clears[getBestScoreBucketKey(deckKey, level)] || 0;
+}
+
+function hasClearedDeckLevel(deckKey, level = DEFAULT_LEVEL_NUMBER) {
+  return getDeckLevelClearCount(deckKey, level) > 0;
 }
 
 function normalizeGuessBucket(bucket = {}) {

@@ -612,6 +612,21 @@ h1 {
   color: #fff5f7;
 }
 
+.level-choice-1 {
+  background: linear-gradient(180deg, #74e8ff, #35c4f1);
+  color: #08202c;
+}
+
+.level-choice-2 {
+  background: linear-gradient(180deg, #d8ff75 0%, #b7f13d 100%);
+  color: #213100;
+}
+
+.level-choice-soon {
+  background: linear-gradient(180deg, rgba(96, 68, 119, 0.98), rgba(56, 39, 73, 0.98));
+  color: var(--muted);
+}
+
 .deck-choice-card.locked,
 .deck-choice-card:disabled {
   background: linear-gradient(180deg, rgba(96, 68, 119, 0.98), rgba(56, 39, 73, 0.98));

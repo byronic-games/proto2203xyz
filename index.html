@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css">
+  <link rel="stylesheet" href="intro.css?v=20260405c">
 </head>
 <body>
   <main class="intro-shell">
@@ -75,9 +75,9 @@
       </section>
 
 
-      <section id="deck-modal" class="deck-modal hidden" aria-hidden="true">
-        <div class="deck-backdrop" id="deck-close-backdrop"></div>
-        <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
+        <section id="deck-modal" class="deck-modal hidden" aria-hidden="true">
+          <div class="deck-backdrop" id="deck-close-backdrop"></div>
+          <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
           <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant.</p>
           <div class="deck-choice-grid">
@@ -91,6 +91,29 @@
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
+        </article>
+      </section>
+
+      <section id="level-modal" class="deck-modal hidden" aria-hidden="true">
+        <div class="deck-backdrop" id="level-close-backdrop"></div>
+        <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="level-title">
+          <h2 id="level-title">Choose Your Level</h2>
+          <p class="deck-copy" id="level-copy">Pick the difficulty level for this deck.</p>
+          <div class="deck-choice-grid">
+            <button class="deck-choice-card level-choice-card level-choice-1" id="level-pick-1" type="button">
+              <span class="deck-choice-label">Level 1</span>
+              <span class="deck-choice-desc" id="level-1-desc">Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers.</span>
+            </button>
+            <button class="deck-choice-card level-choice-card level-choice-2" id="level-pick-2" type="button">
+              <span class="deck-choice-label">Level 2</span>
+              <span class="deck-choice-desc" id="level-2-desc">Cheats appear every 4 correct guesses, or every 3 with Quick Fingers.</span>
+            </button>
+            <button class="deck-choice-card level-choice-card level-choice-soon" id="level-pick-3" type="button" disabled>
+              <span class="deck-choice-label">Level 3</span>
+              <span class="deck-choice-desc" id="level-3-desc">Coming soon.</span>
+            </button>
+          </div>
+          <button id="level-close-btn" class="deck-close-btn" type="button">Back</button>
         </article>
       </section>
     </section>
@@ -133,7 +156,7 @@
         <div class="howto-block">
           <h3>What You See</h3>
           <ul>
-            <li>The top HUD shows your seed, best run, cards cleared, and cards remaining.</li>
+            <li>The top HUD shows your current deck and level, best run, cards cleared, and cards remaining.</li>
             <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
             <li>The tracked grid records which cards you have already seen this run.</li>
           </ul>
@@ -155,15 +178,28 @@
       const deckModal = document.getElementById("deck-modal");
       const deckCloseBtn = document.getElementById("deck-close-btn");
       const deckCloseBackdrop = document.getElementById("deck-close-backdrop");
+      const levelModal = document.getElementById("level-modal");
+      const levelCloseBtn = document.getElementById("level-close-btn");
+      const levelCloseBackdrop = document.getElementById("level-close-backdrop");
       const blueDeckBtn = document.getElementById("deck-pick-blue");
       const redDeckBtn = document.getElementById("deck-pick-red");
       const redDeckDesc = document.getElementById("deck-red-desc");
+      const levelCopy = document.getElementById("level-copy");
+      const levelOneBtn = document.getElementById("level-pick-1");
+      const levelTwoBtn = document.getElementById("level-pick-2");
+      const levelThreeBtn = document.getElementById("level-pick-3");
+      const levelOneDesc = document.getElementById("level-1-desc");
+      const levelTwoDesc = document.getElementById("level-2-desc");
+      const levelThreeDesc = document.getElementById("level-3-desc");
       const nameKey = "hl_prototype_hero_name";
       const selectedDeckKey = "hl_prototype_selected_deck";
+      const selectedLevelKey = "hl_prototype_selected_level";
       const deckWinsKey = "hl_prototype_deck_wins";
+      const deckLevelClearsKey = "hl_prototype_deck_level_clears";
       const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
+      let pendingDeckSelection = "blue";
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !nameInput) {
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !nameInput) {
         return;
       }
 
@@ -171,19 +207,79 @@
       let playHoldTriggered = false;
       let suppressNextPlayClick = false;
 
-      function normalizeDeckWins(wins) {
-        return {
-          blue: Number.isFinite(wins?.blue) ? wins.blue : 0,
-          red: Number.isFinite(wins?.red) ? wins.red : 0,
-        };
+      function normalizeLevelNumber(level) {
+        const value = Number(level);
+        return Number.isFinite(value) && value >= 1 ? Math.floor(value) : 1;
       }
 
-      function loadDeckWins() {
+      function getDeckLevelKey(deckKey, levelNumber) {
+        return `${deckKey === "red" ? "red" : "blue"}|${normalizeLevelNumber(levelNumber)}`;
+      }
+
+      function normalizeDeckLevelClears(clears) {
+        const normalized = {};
+        if (!clears || typeof clears !== "object") return normalized;
+
+        Object.entries(clears).forEach(([bucketKey, clearCount]) => {
+          const numericClearCount = Number(clearCount);
+          normalized[String(bucketKey)] = Number.isFinite(numericClearCount) && numericClearCount > 0
+            ? Math.floor(numericClearCount)
+            : 0;
+        });
+
+        return normalized;
+      }
+
+      function loadDeckLevelClears() {
+        let clears = {};
+
         try {
-          return normalizeDeckWins(JSON.parse(localStorage.getItem(deckWinsKey) || "{}"));
+          clears = normalizeDeckLevelClears(JSON.parse(localStorage.getItem(deckLevelClearsKey) || "{}"));
         } catch {
-          return normalizeDeckWins({});
+          clears = normalizeDeckLevelClears({});
         }
+
+        try {
+          const legacyDeckWins = JSON.parse(localStorage.getItem(deckWinsKey) || "{}");
+          const blueWins = Number(legacyDeckWins?.blue) || 0;
+          const redWins = Number(legacyDeckWins?.red) || 0;
+          const blueLevelOneKey = getDeckLevelKey("blue", 1);
+          const redLevelOneKey = getDeckLevelKey("red", 1);
+          let migrated = false;
+
+          if (!(blueLevelOneKey in clears) && blueWins > 0) {
+            clears[blueLevelOneKey] = blueWins;
+            migrated = true;
+          }
+
+          if (!(redLevelOneKey in clears) && redWins > 0) {
+            clears[redLevelOneKey] = redWins;
+            migrated = true;
+          }
+
+          if (migrated) {
+            localStorage.setItem(deckLevelClearsKey, JSON.stringify(clears));
+          }
+        } catch {
+          // ignore legacy migration issues on the intro page
+        }
+
+        return clears;
+      }
+
+      function hasClearedDeckLevel(deckKey, levelNumber) {
+        const clears = loadDeckLevelClears();
+        return (clears[getDeckLevelKey(deckKey, levelNumber)] || 0) > 0;
+      }
+
+      function unlockAllDecksAndLevelsForDebug() {
+        sessionStorage.setItem(redDeckDebugUnlockKey, "1");
+
+        const clears = loadDeckLevelClears();
+        clears[getDeckLevelKey("blue", 1)] = Math.max(1, clears[getDeckLevelKey("blue", 1)] || 0);
+        clears[getDeckLevelKey("blue", 2)] = Math.max(1, clears[getDeckLevelKey("blue", 2)] || 0);
+        clears[getDeckLevelKey("red", 1)] = Math.max(1, clears[getDeckLevelKey("red", 1)] || 0);
+        localStorage.setItem(deckLevelClearsKey, JSON.stringify(clears));
       }
 
       function isRedDeckUnlocked() {
@@ -192,6 +288,10 @@
 
       function setSelectedDeck(deckKey) {
         localStorage.setItem(selectedDeckKey, deckKey === "red" ? "red" : "blue");
+      }
+
+      function setSelectedLevel(levelNumber) {
+        localStorage.setItem(selectedLevelKey, String(normalizeLevelNumber(levelNumber)));
       }
 
       function openModal() {
@@ -224,9 +324,56 @@
         deckModal.setAttribute("aria-hidden", "true");
       }
 
+      function openLevelModal(deckKey) {
+        pendingDeckSelection = deckKey === "red" ? "red" : "blue";
+        const blueLevelTwoUnlocked = hasClearedDeckLevel("blue", 1);
+        const isBlueDeck = pendingDeckSelection === "blue";
+
+        levelCopy.textContent = isBlueDeck
+          ? "Blue Deck levels tune how often Cheats appear. Level 2 stretches the run harder."
+          : "Red Deck levels are opening up gradually. Level 1 is available now.";
+
+        levelOneDesc.textContent = isBlueDeck
+          ? "Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers."
+          : "Stats-driven run. No nudge rewards, with Red deck card-history reads active.";
+
+        levelTwoBtn.disabled = !isBlueDeck || !blueLevelTwoUnlocked;
+        levelTwoBtn.classList.toggle("locked", !isBlueDeck || !blueLevelTwoUnlocked);
+        levelTwoDesc.textContent = isBlueDeck
+          ? (blueLevelTwoUnlocked
+              ? "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers."
+              : "Unlock by clearing Blue Deck Level 1.")
+          : "Coming soon.";
+
+        levelThreeBtn.disabled = true;
+        levelThreeBtn.classList.add("locked");
+        levelThreeDesc.textContent = "Coming soon.";
+
+        deckModal.classList.add("hidden");
+        deckModal.setAttribute("aria-hidden", "true");
+        levelModal.classList.remove("hidden");
+        levelModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeLevelModal(reopenDeck = false) {
+        levelModal.classList.add("hidden");
+        levelModal.setAttribute("aria-hidden", "true");
+        if (reopenDeck) {
+          openDeckModal();
+        }
+      }
+
       function chooseDeck(deckKey) {
         if (deckKey === "red" && !isRedDeckUnlocked()) return;
-        setSelectedDeck(deckKey);
+        openLevelModal(deckKey);
+      }
+
+      function chooseLevel(levelNumber) {
+        if (pendingDeckSelection === "blue" && levelNumber === 2 && !hasClearedDeckLevel("blue", 1)) return;
+        if (pendingDeckSelection !== "blue" && levelNumber > 1) return;
+        if (levelNumber >= 3) return;
+        setSelectedDeck(pendingDeckSelection);
+        setSelectedLevel(levelNumber);
         window.location.href = "game.html";
       }
 
@@ -243,14 +390,19 @@
 
       deckCloseBtn.addEventListener("click", closeDeckModal);
       deckCloseBackdrop.addEventListener("click", closeDeckModal);
+      levelCloseBtn.addEventListener("click", () => closeLevelModal(true));
+      levelCloseBackdrop.addEventListener("click", () => closeLevelModal(true));
       blueDeckBtn.addEventListener("click", () => chooseDeck("blue"));
       redDeckBtn.addEventListener("click", () => chooseDeck("red"));
+      levelOneBtn.addEventListener("click", () => chooseLevel(1));
+      levelTwoBtn.addEventListener("click", () => chooseLevel(2));
+      levelThreeBtn.addEventListener("click", () => chooseLevel(3));
 
       playBtn.addEventListener("pointerdown", () => {
         playHoldTriggered = false;
         clearPlayHoldTimer();
         playHoldTimer = window.setTimeout(() => {
-          sessionStorage.setItem(redDeckDebugUnlockKey, "1");
+          unlockAllDecksAndLevelsForDebug();
           playHoldTriggered = true;
           suppressNextPlayClick = true;
           openDeckModal();
@@ -280,6 +432,7 @@
         if (event.key === "Escape") {
           closeModal();
           closeDeckModal();
+          closeLevelModal();
         }
       });
     })();

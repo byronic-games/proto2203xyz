@@ -199,13 +199,14 @@ function openPowerChoice(forceRandom = false) {
   state.pendingRunMode = "standard";
   state.pendingDailyDateKey = "";
   state.pendingDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  state.pendingLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   state.pendingCheatOptions = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
-  state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck run.`;
+  state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck Level ${state.pendingLevelNumber} run.`;
   render();
 }
 
@@ -220,6 +221,7 @@ function openDailyPowerChoice(dateKey = "") {
   state.pendingRunMode = "daily";
   state.pendingDailyDateKey = chosenDateKey;
   state.pendingDeckKey = "blue";
+  state.pendingLevelNumber = DEFAULT_LEVEL_NUMBER;
   state.pendingCheatOptions = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
@@ -277,9 +279,13 @@ function startRunWithPower(powerId) {
   const dailyDateKey = runMode === "daily" ? state.pendingDailyDateKey || getCurrentDailyDateKey() : "";
   const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
   const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   const currentDeckKey = runMode === "daily"
     ? "blue"
     : normalizeDeckKey(state.pendingDeckKey || selectedDeckKey);
+  const currentLevelNumber = runMode === "daily"
+    ? DEFAULT_LEVEL_NUMBER
+    : normalizeLevelNumber(state.pendingLevelNumber || selectedLevelNumber);
   const activePowers = selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
     : ["nudge_engine"];
@@ -301,16 +307,19 @@ function startRunWithPower(powerId) {
     currentValueModifier: 0,
     correctAnswers: 0,
     streak: 0,
-    bestScore: loadBestScore(currentDeckKey, DEFAULT_LEVEL_NUMBER),
+    bestScore: loadBestScore(currentDeckKey, currentLevelNumber),
     seenCardIds: new Set([deck[0].id]),
     powers: activePowers,
     selectedStartPowerId: selectedPowerId,
     selectedDeckKey,
     currentDeckKey,
+    selectedLevelNumber,
+    currentLevelNumber,
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
     deckWins: loadDeckWins(),
+    deckLevelClears: loadDeckLevelClears(),
     cheatUnlocks: loadCheatUnlocks(),
     runMode,
     dailyDateKey,
@@ -325,6 +334,7 @@ function startRunWithPower(powerId) {
     pendingRunMode: "standard",
     pendingDailyDateKey: "",
     pendingDeckKey: selectedDeckKey,
+    pendingLevelNumber: selectedLevelNumber,
     runSeed: chosenSeed,
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,
@@ -349,6 +359,7 @@ function startRunWithPower(powerId) {
 
   if (runMode !== "daily") {
     saveSelectedDeck(currentDeckKey);
+    saveSelectedLevel(currentLevelNumber);
     saveLastRunSeed(chosenSeed);
   }
   render();
@@ -392,7 +403,7 @@ function pickPowerFromChoice(index) {
 function updateBestScoreIfNeeded() {
   if (state.correctAnswers > state.bestScore) {
     state.bestScore = state.correctAnswers;
-    saveBestScore(state.bestScore, state.currentDeckKey, DEFAULT_LEVEL_NUMBER);
+    saveBestScore(state.bestScore, state.currentDeckKey, state.currentLevelNumber);
   }
 }
 
@@ -750,11 +761,13 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(RUN_SEED_KEY);
   localStorage.removeItem(BEST_SCORE_KEY);
   localStorage.removeItem(BEST_SCORES_BY_MODE_KEY);
+  localStorage.removeItem(SELECTED_LEVEL_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
   localStorage.removeItem(CHEAT_UNLOCKS_KEY);
   localStorage.removeItem(PROFILE_STATS_KEY);
   localStorage.removeItem(SELECTED_DECK_KEY);
   localStorage.removeItem(DECK_WINS_KEY);
+  localStorage.removeItem(DECK_LEVEL_CLEARS_KEY);
   sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
 
   state = createEmptyState();
@@ -961,6 +974,7 @@ function makeGuess(type) {
   if (state.index >= state.deck.length - 1) {
     if (state.runMode !== "daily") {
       state.deckWins = recordDeckWin(state.currentDeckKey);
+      state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
       recordDeckClearProgress(state.currentDeckKey);
     }
     state.message = " YOU CLEARED THE DECK!";

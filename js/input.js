@@ -186,7 +186,8 @@ async function openVictoryModal() {
       preferredName,
       `${GAME_VERSION}-${state.runSeed || ""}`,
       getVictoryDeckLabel(),
-      getVictoryStartingPowerName()
+      getVictoryStartingPowerName(),
+      getVictoryDeckLevel()
     );
     state.message = `🏆 ${result.message}`;
     renderMessage();
@@ -214,6 +215,10 @@ function getVictoryStartingPowerName() {
   return state.selectedStartPowerId ? getPowerName(state.selectedStartPowerId) : "No Power";
 }
 
+function getVictoryDeckLevel() {
+  return normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || DEFAULT_LEVEL_NUMBER);
+}
+
 document.getElementById("victory-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -228,7 +233,8 @@ document.getElementById("victory-form")?.addEventListener("submit", async (e) =>
     inputEl.value,
     `${GAME_VERSION}-${state.runSeed || ""}`,
     getVictoryDeckLabel(),
-    getVictoryStartingPowerName()
+    getVictoryStartingPowerName(),
+    getVictoryDeckLevel()
   );
   statusEl.innerText = result.message;
 

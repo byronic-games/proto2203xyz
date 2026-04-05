@@ -5,8 +5,11 @@ function renderScores() {
   const bestDeckKey = state.gameOver
     ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
     : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
+  const bestLevelNumber = state.gameOver
+    ? normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel())
+    : normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
 
-  state.bestScore = loadBestScore(bestDeckKey, DEFAULT_LEVEL_NUMBER);
+  state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   if (streakEl) streakEl.innerText = "";
@@ -40,11 +43,12 @@ function renderHeaderStatus() {
   const runPowerEl = document.getElementById("header-run-power");
   const hasActiveRun = !state.gameOver && !!state.current;
   const runDeckName = getDeckName(state.currentDeckKey || state.selectedDeckKey || "blue");
+  const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
   const runPowerName = getPowerName(state.selectedStartPowerId);
 
   if (runStatusEl && runTitleEl && runPowerEl) {
     if (hasActiveRun) {
-      runTitleEl.innerText = `${runDeckName} Deck - Level ${DEFAULT_LEVEL_NUMBER}`;
+      runTitleEl.innerText = `${runDeckName} Deck - Level ${runLevelNumber}`;
       runPowerEl.innerText = `Starting Power: ${runPowerName}`;
       runStatusEl.hidden = false;
     } else {
@@ -187,7 +191,7 @@ function renderActivePowers() {
   activePowersEl.innerHTML = `
     <div class="power-summary">
       <div class="power-summary-name">${ownedPower.name}</div>
-      <div class="power-summary-desc">${ownedPower.description}</div>
+      <div class="power-summary-desc">${getPowerDescription(ownedPower)}</div>
     </div>
   `;
 }
@@ -596,7 +600,10 @@ function renderPowerChoice() {
 
     const desc = document.createElement("div");
     desc.className = "choice-desc";
-    desc.innerText = power.description;
+    desc.innerText = getPowerDescription(power, {
+      deckKey: state.pendingDeckKey || state.selectedDeckKey || loadSelectedDeck(),
+      levelNumber: state.pendingLevelNumber || state.selectedLevelNumber || loadSelectedLevel(),
+    });
 
     const tag = document.createElement("div");
     tag.className = "choice-tag";
