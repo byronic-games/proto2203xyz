@@ -33,7 +33,7 @@ function addLocalHero(entry) {
   const heroes = getLocalHeroes();
   if (heroes.some((h) => h.seed === entry.seed)) return { saved: false, reason: "duplicate" };
   heroes.push(entry);
-  heroes.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+  heroes.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   saveLocalHeroes(heroes);
   return { saved: true };
 }
@@ -123,7 +123,7 @@ async function fetchHeroes(limit = 200) {
 
   try {
     const fetchRemoteRows = async (selectClause) => {
-      const query = `${selectClause}&order=created_at.asc&limit=${Math.max(1, limit)}`;
+      const query = `${selectClause}&order=created_at.desc&limit=${Math.max(1, limit)}`;
       const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.table}?${query}`;
       return fetch(url, {
         headers: {
@@ -156,7 +156,7 @@ async function fetchHeroes(limit = 200) {
       createdAt: String(row.created_at || ""),
     }));
 
-    return mapped;
+    return mapped.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   } catch {
     return localHeroes;
   }

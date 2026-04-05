@@ -1720,8 +1720,24 @@ a {
     padding: 8px 10px;
   }
 
+  #memory-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  #seen-grid-wrap {
+    flex: 0 0 auto;
+    overflow-y: visible;
+    padding: 8px 8px 4px;
+  }
+
   .section-bar {
     margin-bottom: 6px;
+  }
+
+  .seen-grid-note {
+    margin-top: 6px;
+    margin-bottom: 0;
   }
 
   #cheat-list {
