@@ -73,7 +73,7 @@ document.getElementById("howto-close-backdrop")?.addEventListener("click", close
 document.getElementById("settings-btn")?.addEventListener("click", () => {
   saveGameStateSnapshot(state);
   saveSettingsReturnUrl(`game.html?resume=1`);
-  window.location.href = "settings.html";
+  window.location.href = "settings.html?v=20260405g";
 });
 
 document.getElementById("exit-btn")?.addEventListener("click", () => {
@@ -337,6 +337,28 @@ window.addEventListener("keydown", (e) => {
       triggerVictoryEffect();
       state.message = " Debug: victory celebration triggered.";
       renderMessage();
+      return;
+    }
+
+    if (matchesKey("l", "KeyL")) {
+      const exportedLog = typeof window.exportRunDebugLog === "function"
+        ? window.exportRunDebugLog()
+        : "[]";
+
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(exportedLog).then(() => {
+          state.message = " Debug: run log copied to clipboard.";
+          renderMessage();
+        }).catch(() => {
+          console.log(exportedLog);
+          state.message = " Debug: run log written to console.";
+          renderMessage();
+        });
+      } else {
+        console.log(exportedLog);
+        state.message = " Debug: run log written to console.";
+        renderMessage();
+      }
       return;
     }
   }

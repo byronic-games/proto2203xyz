@@ -33,6 +33,14 @@ function normalizeDeckLevelClears(clears = {}) {
   return normalized;
 }
 
+function normalizeRunDebugLog(entries = []) {
+  if (!Array.isArray(entries)) return [];
+
+  return entries
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) => ({ ...entry }));
+}
+
 function loadBestScoreMap() {
   let bestScores = {};
 
@@ -74,6 +82,24 @@ function saveBestScore(score, deckKey = "blue", level = DEFAULT_LEVEL_NUMBER) {
 
 function loadSelectedLevel() {
   return normalizeLevelNumber(localStorage.getItem(SELECTED_LEVEL_KEY) || DEFAULT_LEVEL_NUMBER);
+}
+
+function loadRunDebugLog() {
+  try {
+    const raw = localStorage.getItem(RUN_DEBUG_LOG_KEY);
+    if (!raw) return [];
+    return normalizeRunDebugLog(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+}
+
+function saveRunDebugLog(entries) {
+  localStorage.setItem(RUN_DEBUG_LOG_KEY, JSON.stringify(normalizeRunDebugLog(entries)));
+}
+
+function clearRunDebugLog() {
+  localStorage.removeItem(RUN_DEBUG_LOG_KEY);
 }
 
 function saveSelectedLevel(level) {

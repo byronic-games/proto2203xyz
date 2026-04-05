@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="settings.css">
+  <link rel="stylesheet" href="settings.css?v=20260405f">
 </head>
 <body>
   <main class="settings-shell">
@@ -33,14 +33,29 @@
         <p id="settings-status" class="settings-status">Deck stats on the red back stay untouched.</p>
       </section>
 
+      <section class="settings-panel">
+        <div class="section-title">Run Log</div>
+        <p class="section-copy">Download the latest run trace as a JSON file so it can be shared when something odd happens.</p>
+
+        <button id="export-log-btn" class="action-button" type="button">
+          <span class="action-label">Download Run Log</span>
+        </button>
+
+        <button id="share-log-btn" class="action-button" type="button">
+          <span class="action-label">Share Run Log</span>
+        </button>
+
+        <p id="log-export-status" class="settings-status">Latest run log ready when available.</p>
+      </section>
+
       <div class="actions">
         <button id="settings-close-btn" class="btn btn-secondary" type="button">Exit</button>
       </div>
     </section>
   </main>
 
-  <script src="js/constants.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/settings.js"></script>
+  <script src="js/constants.js?v=20260405g"></script>
+  <script src="js/storage.js?v=20260405g"></script>
+  <script src="js/settings.js?v=20260405g"></script>
 </body>
 </html>

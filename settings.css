@@ -113,6 +113,20 @@ h1 {
   box-shadow: inset 0 0 0 1px rgba(247, 125, 246, 0.38);
 }
 
+.action-button {
+  min-height: 64px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(143, 239, 255, 0.22), rgba(83, 215, 246, 0.14));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(51, 220, 255, 0.42);
+}
+
+.action-button:disabled {
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
 .hold-fill {
   position: absolute;
   inset: 0 auto 0 0;
@@ -124,6 +138,18 @@ h1 {
 .hold-label {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 18px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.action-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -62,6 +62,7 @@ function createEmptyState() {
     currentDeckKey: loadSelectedDeck(),
     selectedLevelNumber: loadSelectedLevel(),
     currentLevelNumber: loadSelectedLevel(),
+    runDebugLog: loadRunDebugLog(),
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),

@@ -1,6 +1,7 @@
 const POWER_CHOICE_LOCK_MS = 500;
 const ENABLE_GAME_OVER_EFFECTS = true;
 const ENABLE_VICTORY_EFFECTS = true;
+const RUN_DEBUG_LOG_LIMIT = 150;
 
 function buildRunFromControls(forceRandom = false) {
   const seedInput = document.getElementById("run-seed-input");
@@ -188,6 +189,56 @@ function setCurrentCardFeedback(effect) {
   }, 520);
 }
 
+function describeCardForDebug(card) {
+  if (!card) return null;
+
+  return {
+    id: card.id,
+    rank: card.rank,
+    suit: card.suit,
+    value: card.value,
+  };
+}
+
+function getNextComparisonValueForGuess(nextCard = peekNext()) {
+  if (!nextCard) return null;
+  return clampCardValue(nextCard.value + (state.nextCardValueModifier || 0));
+}
+
+function appendRunDebugLog(type, details = {}) {
+  const nextCard = peekNext();
+  const entry = {
+    timestamp: new Date().toISOString(),
+    type,
+    turn: Number(state.index) || 0,
+    runSeed: state.runSeed || "",
+    runMode: state.runMode || "standard",
+    deck: normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue"),
+    level: normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || DEFAULT_LEVEL_NUMBER),
+    currentCard: describeCardForDebug(state.current),
+    nextCard: describeCardForDebug(nextCard),
+    currentValueModifier: state.currentValueModifier || 0,
+    nextCardValueModifier: state.nextCardValueModifier || 0,
+    currentEffectiveValue: state.current ? getCurrentEffectiveValue() : null,
+    nextCheatValue: nextCard ? getUpcomingCheatValue(1) : null,
+    nextGuessValue: getNextComparisonValueForGuess(nextCard),
+    powers: Array.isArray(state.powers) ? [...state.powers] : [],
+    ...details,
+  };
+
+  const nextLog = [...(Array.isArray(state.runDebugLog) ? state.runDebugLog : []), entry].slice(-RUN_DEBUG_LOG_LIMIT);
+  state.runDebugLog = nextLog;
+  saveRunDebugLog(nextLog);
+  return entry;
+}
+
+function exportRunDebugLog() {
+  return JSON.stringify(Array.isArray(state.runDebugLog) ? state.runDebugLog : [], null, 2);
+}
+
+window.getRunDebugLog = () => Array.isArray(state.runDebugLog) ? [...state.runDebugLog] : [];
+window.exportRunDebugLog = exportRunDebugLog;
+
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -315,6 +366,7 @@ function startRunWithPower(powerId) {
     currentDeckKey,
     selectedLevelNumber,
     currentLevelNumber,
+    runDebugLog: [],
     metaProgression: loadMetaProgression(),
     cardStats: loadCardStats(),
     cardBackStatuses: loadCardBackStatuses(),
@@ -350,6 +402,13 @@ function startRunWithPower(powerId) {
   };
 
   applyRunPowerSetup(selectedPowerId);
+  clearRunDebugLog();
+  appendRunDebugLog("run_started", {
+    selectedPowerId,
+    selectedPowerName: getPowerName(selectedPowerId),
+    activePowers,
+    dailyDateKey,
+  });
 
   if (runMode === "daily") {
     lockDailyAttempt(dailyDateKey, chosenSeed, loadPreferredPlayerName());
@@ -598,6 +657,14 @@ function useNudgeCharge(direction) {
   const effective = getCurrentEffectiveValue();
   const label = direction === "up" ? "Nudge +1" : "Nudge -1";
   state.message = `${label} used. Current card treated as ${valueToRank(effective)}.`;
+  appendRunDebugLog("nudge_used", {
+    direction,
+    label,
+    resultingEffectiveValue: effective,
+    nudgeUpCharges: state.nudgeUpCharges || 0,
+    nudgeDownCharges: state.nudgeDownCharges || 0,
+    message: state.message,
+  });
   render();
 }
 
@@ -768,6 +835,7 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(SELECTED_DECK_KEY);
   localStorage.removeItem(DECK_WINS_KEY);
   localStorage.removeItem(DECK_LEVEL_CLEARS_KEY);
+  localStorage.removeItem(RUN_DEBUG_LOG_KEY);
   sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
 
   state = createEmptyState();
@@ -860,7 +928,7 @@ function makeGuess(type) {
   if (!next) return;
 
   const currentComparisonValue = getCurrentEffectiveValue();
-  const nextComparisonValue = clampCardValue(next.value + (state.nextCardValueModifier || 0));
+  const nextComparisonValue = getNextComparisonValueForGuess(next);
   const currentWasBase = state.currentValueModifier === 0;
   const el = document.getElementById("next-info");
   if (el) el.innerText = "";
@@ -896,6 +964,19 @@ function makeGuess(type) {
       setCurrentCardFeedback("wrong");
       flashGameShell("wrong");
       const lossMessage = `Odd One Out triggered — next card was ${formatNextCardForLossMessage(next)}.`;
+      appendRunDebugLog("guess_resolved", {
+        guess: type,
+        outcome: "loss",
+        reason: "odd_one_out",
+        currentComparisonValue,
+        nextComparisonValue,
+        lucky7WasArmed,
+        fiveAliveWasArmed,
+        godSaveKingWasArmed,
+        oddOneOutWasArmed,
+        sixSevenWasArmed,
+        message: lossMessage,
+      });
       triggerGameOverEffect(lossMessage);
       state.message = `💀 ${lossMessage}`;
       state.gameOver = true;
@@ -947,6 +1028,21 @@ function makeGuess(type) {
     const lossDetail = sixSevenWasArmed
       ? `6/7 failed — ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
+    appendRunDebugLog("guess_resolved", {
+      guess: type,
+      outcome: "loss",
+      reason: sixSevenWasArmed ? "six_seven_failed" : "comparison_failed",
+      currentComparisonValue,
+      nextComparisonValue,
+      aceAutoWin,
+      match,
+      lucky7WasArmed,
+      fiveAliveWasArmed,
+      godSaveKingWasArmed,
+      oddOneOutWasArmed,
+      sixSevenWasArmed,
+      message: lossDetail,
+    });
     triggerGameOverEffect(lossDetail);
     state.message = `❌ ${lossDetail}`;
     state.gameOver = true;
@@ -972,6 +1068,20 @@ function makeGuess(type) {
   updateBestScoreIfNeeded();
 
   if (state.index >= state.deck.length - 1) {
+    appendRunDebugLog("guess_resolved", {
+      guess: type,
+      outcome: "deck_cleared",
+      reason: "final_card",
+      currentComparisonValue,
+      nextComparisonValue,
+      aceAutoWin,
+      match,
+      lucky7WasArmed,
+      fiveAliveWasArmed,
+      godSaveKingWasArmed,
+      oddOneOutWasArmed,
+      sixSevenWasArmed,
+    });
     if (state.runMode !== "daily") {
       state.deckWins = recordDeckWin(state.currentDeckKey);
       state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
@@ -993,6 +1103,33 @@ function makeGuess(type) {
   }
 
   const powerAwards = awardOnCorrectGuessPowers(type);
+
+  appendRunDebugLog("guess_resolved", {
+    guess: type,
+    outcome: "correct",
+    reason: aceAutoWin
+      ? "ace_auto_win"
+      : match
+        ? "match"
+        : lucky7WasArmed
+          ? "lucky_7"
+          : fiveAliveWasArmed
+            ? "five_alive"
+            : godSaveKingWasArmed
+              ? "god_save_the_king"
+              : oddOneOutWasArmed
+                ? "odd_one_out_safe"
+                : "comparison_correct",
+    currentComparisonValue,
+    nextComparisonValue,
+    aceAutoWin,
+    match,
+    lucky7WasArmed,
+    fiveAliveWasArmed,
+    godSaveKingWasArmed,
+    oddOneOutWasArmed,
+    sixSevenWasArmed,
+  });
 
   if (sixSevenWasArmed) {
     state.streak = 0;

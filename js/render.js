@@ -435,6 +435,12 @@ function renderCheats() {
       }
       const result = cheat.use();
       state.message = result;
+      appendRunDebugLog("cheat_used", {
+        cheatId: cheat.id,
+        cheatName: cheat.name,
+        result,
+        cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
+      });
       if (cheat.consumeOnUse) {
         const originalIndex = state.cheats.findIndex((c) => c === cheat);
         if (originalIndex >= 0) removeCheatAt(originalIndex);
