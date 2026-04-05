@@ -38,16 +38,19 @@ function renderHeaderStatus() {
   const runStatusEl = document.getElementById("header-run-status");
   const runTitleEl = document.getElementById("header-run-title");
   const runPowerEl = document.getElementById("header-run-power");
+  const hasActiveRun = !state.gameOver && !!state.current;
+  const runDeckName = getDeckName(state.currentDeckKey || state.selectedDeckKey || "blue");
+  const runPowerName = getPowerName(state.selectedStartPowerId);
 
   if (runStatusEl && runTitleEl && runPowerEl) {
-    if (!state.gameOver && state.current) {
-      runTitleEl.innerText = `${getDeckName(state.currentDeckKey)} Deck • Level ${DEFAULT_LEVEL_NUMBER}`;
-      runPowerEl.innerText = `Starting Power: ${getPowerName(state.selectedStartPowerId)}`;
-      runStatusEl.classList.remove("is-empty");
+    if (hasActiveRun) {
+      runTitleEl.innerText = `${runDeckName} Deck - Level ${DEFAULT_LEVEL_NUMBER}`;
+      runPowerEl.innerText = `Starting Power: ${runPowerName}`;
+      runStatusEl.hidden = false;
     } else {
       runTitleEl.innerText = "";
       runPowerEl.innerText = "";
-      runStatusEl.classList.add("is-empty");
+      runStatusEl.hidden = true;
     }
   }
 

@@ -219,8 +219,8 @@ a {
   padding-top: 2px;
 }
 
-.header-run-status.is-empty {
-  opacity: 0;
+.header-run-status[hidden] {
+  visibility: hidden;
 }
 
 .header-run-title {
