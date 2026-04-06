@@ -95,6 +95,7 @@ function showTooltip(titleText, bodyText, el) {
   const rect = el.getBoundingClientRect();
   const tooltipRect = tooltip.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   const edgePadding = 10;
   const halfTooltipWidth = tooltipRect.width / 2;
   const targetCenterX = rect.left + rect.width / 2;
@@ -107,7 +108,15 @@ function showTooltip(titleText, bodyText, el) {
   const safeCenterX = Math.min(Math.max(preferredCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
 
   tooltip.style.left = safeCenterX + "px";
-  tooltip.style.top = rect.top - 10 + "px";
+  const prefersBelow = rect.top < tooltipRect.height + 28;
+  tooltip.style.top = prefersBelow ? (rect.bottom + 10) + "px" : (rect.top - 10) + "px";
+  tooltip.style.transform = prefersBelow ? "translate(-50%, 0)" : "translate(-50%, -110%)";
+  const tooltipBottom = (prefersBelow ? rect.bottom + 10 + tooltipRect.height : rect.top - 10);
+  if (prefersBelow && tooltipBottom > viewportHeight - edgePadding) {
+    tooltip.style.top = Math.max(edgePadding, viewportHeight - tooltipRect.height - edgePadding) + "px";
+  }
+  tooltip.dataset.sourceId = el.id || "";
+  tooltip.dataset.sourceRole = el.dataset.tooltipRole || "";
 }
 
 function setupHeaderPowerTooltip(el, payload) {
@@ -142,6 +151,7 @@ function setupHeaderPowerTooltip(el, payload) {
   el.addEventListener("mouseleave", clearHold);
 
   el.dataset.tooltipInit = "1";
+  el.dataset.tooltipRole = "header-power";
   el.dataset.tooltipEnabled = payload?.enabled ? "1" : "0";
   el.dataset.tooltipTitle = payload?.title || "";
   el.dataset.tooltipBody = payload?.description || "";
@@ -519,6 +529,16 @@ function renderCheats() {
         cheatName: cheat.name,
         result,
         cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
+        consumeOnUse: !!cheat.consumeOnUse,
+        armedStatesAfterUse: {
+          lucky7: !!state.lucky7Armed,
+          fiveAlive: !!state.fiveAliveArmed,
+          godSaveKing: !!state.godSaveKingArmed,
+          alwaysBetBlack: !!state.alwaysBetBlackArmed,
+          oddOneOut: !!state.oddOneOutArmed,
+          sixSeven: !!state.sixSevenArmed,
+          cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
+        },
       });
       if (cheat.consumeOnUse) {
         const originalIndex = state.cheats.findIndex((c) => c === cheat);

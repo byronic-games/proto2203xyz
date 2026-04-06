@@ -1075,6 +1075,18 @@ function offerCheatChoice(reason = "") {
     state.message = "Choose 1 cheat:";
   }
 
+  appendRunDebugLog("cheat_offer_presented", {
+    awardReason: state.activeCheatAwardReason || ((state.sixSevenRewardChoicesRemaining || 0) > 0 ? "six_seven_bonus" : "streak"),
+    optionCount,
+    options: state.pendingCheatOptions.map((option) => ({
+      id: option.id,
+      name: option.name,
+      rarity: option.rarity || "common",
+    })),
+    newlyUnlockedCheatIds: newlyMetaUnlocked.map((cheat) => cheat.id),
+    message: state.message,
+  });
+
   render();
 }
 
@@ -1091,25 +1103,55 @@ function pickCheatFromChoice(index) {
     markCheatDiscovered(cheat, "random");
   }
 
+  let selectionOutcome = "already_in_hand";
+  let addedToHand = false;
+  let bankedNudgeDirection = "";
+
   if (cheat.id === "nudge_up") {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
     state.message = wasNew
       ? "Picked NEW reward: Nudge +1 charge banked."
       : "Picked reward: Nudge +1 charge banked.";
+    selectionOutcome = "banked_nudge";
+    bankedNudgeDirection = "up";
   } else if (cheat.id === "nudge_down") {
     state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 1;
     state.message = wasNew
       ? "Picked NEW reward: Nudge -1 charge banked."
       : "Picked reward: Nudge -1 charge banked.";
+    selectionOutcome = "banked_nudge";
+    bankedNudgeDirection = "down";
   } else if (canAddCheatToHand(cheat)) {
     state.cheats.push({ ...cheat });
 
     state.message = wasNew
       ? `Picked NEW cheat: ${cheat.name}`
       : `Picked: ${cheat.name}`;
+    selectionOutcome = "added_to_hand";
+    addedToHand = true;
   } else {
     state.message = `${cheat.name} already in hand.`;
   }
+
+  appendRunDebugLog("cheat_selected", {
+    awardReason: state.activeCheatAwardReason || ((state.sixSevenRewardChoicesRemaining || 0) > 0 ? "six_seven_bonus" : "streak"),
+    selectedIndex: index,
+    cheatId: cheat.id,
+    cheatName: cheat.name,
+    wasNew,
+    selectionOutcome,
+    addedToHand,
+    bankedNudgeDirection,
+    pendingOptionsBeforePick: state.pendingCheatOptions.map((option) => ({
+      id: option.id,
+      name: option.name,
+      rarity: option.rarity || "common",
+    })),
+    cheatsInHandAfterPick: state.cheats.map((heldCheat) => heldCheat.id),
+    nudgeUpCharges: state.nudgeUpCharges || 0,
+    nudgeDownCharges: state.nudgeDownCharges || 0,
+    message: state.message,
+  });
 
   state.pendingCheatOptions = [];
   state.justUnlockedCheatIds = [];
