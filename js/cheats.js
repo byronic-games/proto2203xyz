@@ -136,7 +136,10 @@ const CHEAT_DESCRIPTIONS = {
   "Run Stopper": "Checks the next five cards and reveals whether at least one Ace or King appears.",
   "Bang Average": "Reveals the exact average value of the next three face down cards.",
   "God Save The King": "Play on any face card. If the next card is a King, the run survives even if your guess is wrong.",  "Swap": "Replace the current face card with the card at the bottom of the deck.",
-  "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
+  "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
+  "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
+  "You Can Cheat A Cheater": "After your next three correct guesses, choose an extra Cheat in addition to any normal rewards.",
+  "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",  "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
 };
 
 const CHEATS = [
@@ -855,6 +858,84 @@ const CHEATS = [
       state.godSaveKingArmed = true;
       return "God Save The King armed — if the next card is a King, the run survives even on a wrong guess.";
     },
+  },
+  {
+    id: "jack_of_all_trades",
+    name: "Jack Of All Trades",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      if (currentVal !== 11) return "Jack Of All Trades can only be used on a Jack.";
+      const currentIndex = state.index;
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= state.deck.length) return "No next card.";
+
+      const oldCurrent = state.deck[currentIndex];
+      const oldNext = state.deck[nextIndex];
+      state.deck[currentIndex] = oldNext;
+      state.deck[nextIndex] = oldCurrent;
+      state.current = state.deck[currentIndex];
+      state.currentValueModifier = 0;
+      markCardSeen(state.current);
+
+      return `Jack swapped forward - current card is now ${describeCard(state.current)}.`;
+    },
+  },
+  {
+    id: "fortune_teller",
+    name: "Fortune Teller",
+    rarity: "uncommon",
+    weight: 0.9,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const upcoming = [1, 2, 3].map((offset) => getNextCardAt(offset)).filter(Boolean);
+      if (upcoming.length === 0) return "No next card.";
+      const values = upcoming.map((card, index) => formatCheatValue(getUpcomingCheatValue(index + 1)));
+      for (let i = values.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(Math.random() * (i + 1));
+        const temp = values[i];
+        values[i] = values[swapIndex];
+        values[swapIndex] = temp;
+      }
+      return `Fortunes: ${values.join(", ")}`;
+    },
+  },
+  {
+    id: "you_can_cheat_a_cheater",
+    name: "You Can Cheat A Cheater",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      state.cheatACheaterRemaining = 3;
+      return "You Can Cheat A Cheater armed - choose an extra Cheat after your next 3 correct guesses.";
+    },
+  },
+  {
+    id: "always_bet_on_the_black",
+    name: "Always Bet On The Black",
+    rarity: "rare",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      state.alwaysBetBlackArmed = true;
+      return "Always Bet On The Black armed - if the next card is a Club or Spade, the run survives even on a wrong guess.";
+    },
   },  {
     id: "tear_corner",
     name: "Tear Corner",
@@ -986,6 +1067,8 @@ function offerCheatChoice(reason = "") {
     state.message = `Choose bonus cheat ${pickNumber} of 3:`;
   } else if (state.activeCheatAwardReason === "brucie_bonus") {
     state.message = "Brucie Bonus! Choose 1 cheat:";
+  } else if (state.activeCheatAwardReason === "cheat_a_cheater") {
+    state.message = "You Can Cheat A Cheater! Choose 1 cheat:";
   } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {

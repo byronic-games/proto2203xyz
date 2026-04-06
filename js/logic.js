@@ -407,7 +407,9 @@ function startRunWithPower(powerId) {
     nudgeDownCharges: 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
+    alwaysBetBlackArmed: false,
     oddOneOutArmed: false,
+    cheatACheaterRemaining: 0,
   };
 
   applyRunPowerSetup(selectedPowerId);
@@ -946,6 +948,7 @@ function makeGuess(type) {
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
+  const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
@@ -953,6 +956,7 @@ function makeGuess(type) {
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
   state.godSaveKingArmed = false;
+  state.alwaysBetBlackArmed = false;
   state.oddOneOutArmed = false;
   state.sixSevenArmed = false;
 
@@ -961,6 +965,7 @@ function makeGuess(type) {
   let match = false;
   let cheatSpecial = false;
   let rescuedBySuitSave = false;
+  let rescuedByAlwaysBetBlack = false;
 
   // Example: Odd One Out special cheat logic
   const nextIsOddForOddOneOut = next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
@@ -984,6 +989,7 @@ function makeGuess(type) {
         lucky7WasArmed,
         fiveAliveWasArmed,
         godSaveKingWasArmed,
+        alwaysBetBlackWasArmed,
         oddOneOutWasArmed,
         sixSevenWasArmed,
         message: lossMessage,
@@ -1024,8 +1030,9 @@ function makeGuess(type) {
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && next.rank === "K";
+    rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (next.suit === SUITS[0] || next.suit === SUITS[3]);
     rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
-    correct = comparisonCorrect || rescuedByLucky7 || rescuedByFiveAlive || rescuedByGodSaveKing || rescuedBySuitSave;
+    correct = comparisonCorrect || rescuedByLucky7 || rescuedByFiveAlive || rescuedByGodSaveKing || rescuedByAlwaysBetBlack || rescuedBySuitSave;
   }
 
   if (!correct) {
@@ -1051,10 +1058,12 @@ function makeGuess(type) {
       lucky7WasArmed,
         fiveAliveWasArmed,
         godSaveKingWasArmed,
+        alwaysBetBlackWasArmed,
         oddOneOutWasArmed,
         sixSevenWasArmed,
         passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
         rescuedBySuitSave,
+        rescuedByAlwaysBetBlack,
         message: lossDetail,
       });
     triggerGameOverEffect(lossDetail);
@@ -1093,6 +1102,7 @@ function makeGuess(type) {
       lucky7WasArmed,
       fiveAliveWasArmed,
       godSaveKingWasArmed,
+      alwaysBetBlackWasArmed,
       oddOneOutWasArmed,
       sixSevenWasArmed,
     });
@@ -1118,9 +1128,18 @@ function makeGuess(type) {
 
   const powerAwards = awardOnCorrectGuessPowers(type);
   const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
+  let cheatACheaterTriggered = false;
 
   if (brucieBonusTriggered) {
     queueCheatAward("brucie_bonus");
+  }
+
+  if ((state.cheatACheaterRemaining || 0) > 0) {
+    state.cheatACheaterRemaining = Math.max(0, (state.cheatACheaterRemaining || 0) - 1);
+    if (state.cheatACheaterRemaining === 0) {
+      cheatACheaterTriggered = true;
+      queueCheatAward("cheat_a_cheater");
+    }
   }
 
   appendRunDebugLog("guess_resolved", {
@@ -1146,11 +1165,15 @@ function makeGuess(type) {
     lucky7WasArmed,
     fiveAliveWasArmed,
     godSaveKingWasArmed,
+    alwaysBetBlackWasArmed,
     oddOneOutWasArmed,
     sixSevenWasArmed,
     passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
     rescuedBySuitSave,
+    rescuedByAlwaysBetBlack,
     brucieBonusTriggered,
+    cheatACheaterTriggered,
+    cheatACheaterRemaining: state.cheatACheaterRemaining || 0,
   });
 
   if (sixSevenWasArmed) {
@@ -1203,6 +1226,19 @@ function makeGuess(type) {
     return;
   }
 
+  if (cheatACheaterTriggered) {
+    state.pauseForCheat = true;
+    state.message = "You Can Cheat A Cheater paid out - choose 1 cheat.";
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingCheatAwardQueue.shift() || "cheat_a_cheater";
+      offerCheatChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
   // --- Messaging for special cases ---
   if (cheatSpecial && powerAwards.length > 0) {
     state.message = aceAutoWin
@@ -1235,6 +1271,11 @@ function makeGuess(type) {
   }
   if (rescuedBySuitSave && passiveSuitSavePower) {
     state.message = `${passiveSuitSavePower.name} saved the run - it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+  if (rescuedByAlwaysBetBlack) {
+    state.message = `Always Bet On The Black saved the run - it was ${describeCard(next)}.`;
     render();
     return;
   }

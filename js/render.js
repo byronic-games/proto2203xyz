@@ -45,17 +45,29 @@ function renderHeaderStatus() {
   const runDeckName = getDeckName(state.currentDeckKey || state.selectedDeckKey || "blue");
   const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
   const runPowerName = getPowerName(state.selectedStartPowerId);
+  const runPowerDescription = getPowerDescription(state.selectedStartPowerId, {
+    deckKey: state.currentDeckKey || state.selectedDeckKey || "blue",
+    levelNumber: runLevelNumber,
+  });
 
   if (runStatusEl && runTitleEl && runPowerEl) {
     if (hasActiveRun) {
       runTitleEl.innerText = `${runDeckName} Deck - Level ${runLevelNumber}`;
       runPowerEl.innerText = `Starting Power: ${runPowerName}`;
       runStatusEl.hidden = false;
+      runStatusEl.classList.toggle("has-power-tooltip", !!runPowerDescription);
     } else {
       runTitleEl.innerText = "";
       runPowerEl.innerText = "";
       runStatusEl.hidden = true;
+      runStatusEl.classList.remove("has-power-tooltip");
     }
+
+    setupHeaderPowerTooltip(runStatusEl, {
+      enabled: hasActiveRun && !!runPowerDescription,
+      title: `${runDeckName} Deck - Level ${runLevelNumber} Starting Power: ${runPowerName}`,
+      description: runPowerDescription,
+    });
   }
 
   if (seedInput && !seedInput.dataset.initialized) {
@@ -66,6 +78,73 @@ function renderHeaderStatus() {
 
 function getCheatDescription(cheat) {
   return CHEAT_DESCRIPTIONS?.[cheat.name] || "No description yet.";
+}
+
+function showTooltip(titleText, bodyText, el) {
+  const tooltip = document.getElementById("cheat-tooltip");
+  const title = document.getElementById("cheat-tooltip-title");
+  const body = document.getElementById("cheat-tooltip-body");
+
+  if (!tooltip || !title || !body || !el) return;
+
+  title.innerText = titleText || "";
+  body.innerText = bodyText || "";
+
+  tooltip.classList.remove("hidden");
+
+  const rect = el.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const edgePadding = 10;
+  const halfTooltipWidth = tooltipRect.width / 2;
+  const targetCenterX = rect.left + rect.width / 2;
+  const preferredCenterX =
+    rect.left > viewportWidth * 0.58
+      ? rect.left - 12 - halfTooltipWidth
+      : targetCenterX;
+  const minCenterX = edgePadding + halfTooltipWidth;
+  const maxCenterX = viewportWidth - edgePadding - halfTooltipWidth;
+  const safeCenterX = Math.min(Math.max(preferredCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
+
+  tooltip.style.left = safeCenterX + "px";
+  tooltip.style.top = rect.top - 10 + "px";
+}
+
+function setupHeaderPowerTooltip(el, payload) {
+  if (!el || el.dataset.tooltipInit === "1") {
+    if (el) {
+      el.dataset.tooltipEnabled = payload?.enabled ? "1" : "0";
+      el.dataset.tooltipTitle = payload?.title || "";
+      el.dataset.tooltipBody = payload?.description || "";
+    }
+    return;
+  }
+
+  let holdTimer = null;
+
+  const clearHold = () => {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+    hideCheatTooltip();
+  };
+
+  el.addEventListener("pointerdown", () => {
+    if (el.dataset.tooltipEnabled !== "1") return;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+    }, 300);
+  });
+
+  el.addEventListener("pointerup", clearHold);
+  el.addEventListener("pointercancel", clearHold);
+  el.addEventListener("pointerleave", clearHold);
+  el.addEventListener("mouseleave", clearHold);
+
+  el.dataset.tooltipInit = "1";
+  el.dataset.tooltipEnabled = payload?.enabled ? "1" : "0";
+  el.dataset.tooltipTitle = payload?.title || "";
+  el.dataset.tooltipBody = payload?.description || "";
 }
 
 function getCheatIcon(name) {
@@ -454,33 +533,7 @@ function renderCheats() {
 }
 
 function showCheatTooltip(cheat, el) {
-  const tooltip = document.getElementById("cheat-tooltip");
-  const title = document.getElementById("cheat-tooltip-title");
-  const body = document.getElementById("cheat-tooltip-body");
-
-  if (!tooltip || !title || !body || !el) return;
-
-  title.innerText = cheat.name;
-  body.innerText = getCheatDescription(cheat);
-
-  tooltip.classList.remove("hidden");
-
-  const rect = el.getBoundingClientRect();
-  const tooltipRect = tooltip.getBoundingClientRect();
-  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-  const edgePadding = 10;
-  const halfTooltipWidth = tooltipRect.width / 2;
-  const targetCenterX = rect.left + rect.width / 2;
-  const preferredCenterX =
-    rect.left > viewportWidth * 0.58
-      ? rect.left - 12 - halfTooltipWidth
-      : targetCenterX;
-  const minCenterX = edgePadding + halfTooltipWidth;
-  const maxCenterX = viewportWidth - edgePadding - halfTooltipWidth;
-  const safeCenterX = Math.min(Math.max(preferredCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
-
-  tooltip.style.left = safeCenterX + "px";
-  tooltip.style.top = rect.top - 10 + "px";
+  showTooltip(cheat.name, getCheatDescription(cheat), el);
 }
 
 function hideCheatTooltip() {

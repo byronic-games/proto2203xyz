@@ -219,6 +219,10 @@ a {
   padding-top: 2px;
 }
 
+.header-run-status.has-power-tooltip {
+  cursor: help;
+}
+
 .header-run-status[hidden] {
   visibility: hidden;
 }
