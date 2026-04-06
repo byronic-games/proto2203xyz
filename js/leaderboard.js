@@ -31,7 +31,9 @@ function saveLocalHeroes(entries) {
 
 function addLocalHero(entry) {
   const heroes = getLocalHeroes();
-  if (heroes.some((h) => h.seed === entry.seed)) return { saved: false, reason: "duplicate" };
+  if (heroes.some((h) => getHeroEntryKey(h) === getHeroEntryKey(entry))) {
+    return { saved: false, reason: "duplicate" };
+  }
   heroes.push(entry);
   heroes.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   saveLocalHeroes(heroes);
@@ -61,6 +63,13 @@ function normalizeHeroPower(startingPower) {
 function normalizeHeroLevel(level = DEFAULT_LEVEL_NUMBER) {
   const value = Number(level);
   return Number.isFinite(value) && value >= 1 ? Math.floor(value) : DEFAULT_LEVEL_NUMBER;
+}
+
+function getHeroEntryKey(entry = {}) {
+  const seed = String(entry.seed || "").trim();
+  const deck = normalizeHeroDeck(entry.deck || "");
+  const deckLevel = normalizeHeroLevel(entry.deckLevel ?? entry.deck_level);
+  return `${seed}::${deck}::${deckLevel}`;
 }
 
 function normalizeHeroEntry(entry = {}) {
@@ -187,24 +196,25 @@ async function fetchHeroes(limit = 200) {
     const rows = await response.json();
     if (!Array.isArray(rows)) return localHeroes;
 
-    const mergedBySeed = new Map();
+    const mergedByEntryKey = new Map();
 
     rows
       .map((row) => normalizeHeroEntry(row))
       .forEach((hero) => {
-        mergedBySeed.set(hero.seed, hero);
+        mergedByEntryKey.set(getHeroEntryKey(hero), hero);
       });
 
     localHeroes
       .map((hero) => normalizeHeroEntry(hero))
       .forEach((hero) => {
-        const existing = mergedBySeed.get(hero.seed);
+        const heroKey = getHeroEntryKey(hero);
+        const existing = mergedByEntryKey.get(heroKey);
         if (!existing) {
-          mergedBySeed.set(hero.seed, hero);
+          mergedByEntryKey.set(heroKey, hero);
           return;
         }
 
-        mergedBySeed.set(hero.seed, {
+        mergedByEntryKey.set(heroKey, {
           ...existing,
           deck: hero.deck || existing.deck,
           deckLevel: hero.deckLevel || existing.deckLevel,
@@ -213,7 +223,7 @@ async function fetchHeroes(limit = 200) {
         });
       });
 
-    return Array.from(mergedBySeed.values()).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return Array.from(mergedByEntryKey.values()).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   } catch {
     return localHeroes;
   }
