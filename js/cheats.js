@@ -98,7 +98,7 @@ const CHEAT_DESCRIPTIONS = {
   "Above 9?": "Is the next face down card above 9?",
   "Below 5?": "Is the next face down card below 5?",
   "Between 5 and 9?": "Is the value of the next face down card a 5, 6, 7, 8 or 9?",
-  "Is it an Ace?": "Reveals whether at least one Ace appears in the next three face down cards.",
+  "Is it an Ace?": "Reveals whether the very next face down card is an Ace.",
   "Is it a King?": "Reveals whether the next face down card is a King.",
   "Ace ahead?": "Reveals whether at least one Ace appears in the next three face down cards.",
   "King ahead?": "Reveals whether at least one King appears in the next three face down cards.",
@@ -201,10 +201,9 @@ const CHEATS = [
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
-      const upcoming = [getNextCardAt(1), getNextCardAt(2), getNextCardAt(3)].filter(Boolean);
-      if (upcoming.length === 0) return "No next card.";
-      const found = upcoming.some((card) => card.rank === "A");
-      return found ? "Yes — an Ace is in the next three." : "No — no Ace in the next three.";
+      const next = getNextCardAt(1);
+      if (!next) return "No next card.";
+      return next.rank === "A" ? "Yes — the next card is an Ace." : "No — the next card is not an Ace.";
     },
   },
   {

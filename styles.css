@@ -217,6 +217,9 @@ a {
   gap: 2px;
   text-align: center;
   padding-top: 2px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .header-run-status.has-power-tooltip {
@@ -1067,6 +1070,9 @@ a {
     inset 0 0 0 2px rgba(247,125,246,0.42),
     0 0 14px rgba(247,125,246,0.12);
   scroll-snap-align: start;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .cheat-button.common .cheat-icon {
