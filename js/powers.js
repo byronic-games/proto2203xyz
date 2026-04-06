@@ -62,6 +62,51 @@ const POWERS = [
     weight: 1,
     included: true,
   },
+  {
+    id: "diamonds_are_forever",
+    name: "Diamonds Are Forever",
+    description: "Wrong guesses do not end the run while the face-up card is a Diamond.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
+  {
+    id: "all_you_need_is_love",
+    name: "All You Need Is Love",
+    description: "Wrong guesses do not end the run while the face-up card is a Heart.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
+  {
+    id: "dig_down",
+    name: "Dig Down",
+    description: "Wrong guesses do not end the run while the face-up card is a Spade.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
+  {
+    id: "club_in_baby",
+    name: "Club In Baby",
+    description: "Wrong guesses do not end the run while the face-up card is a Club.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
+  {
+    id: "brucie_bonus",
+    name: "Brucie Bonus",
+    description: "If the revealed next card matches the face-up card, immediately choose an extra Cheat.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
 ];
 
 const START_POWER_SEED_RULESET = "start-power-v1";
@@ -118,10 +163,39 @@ function getPowerIcon(powerId) {
     case "aces_wild":
       return "A";
     case "lucky_opening":
-      return "7️⃣";
+      return "7";
+    case "diamonds_are_forever":
+      return "D";
+    case "all_you_need_is_love":
+      return "H";
+    case "dig_down":
+      return "S";
+    case "club_in_baby":
+      return "C";
+    case "brucie_bonus":
+      return "B";
     default:
       return "✨";
   }
+}
+
+function getPassiveSuitSavePower(card = state?.current) {
+  if (!card?.suit) return null;
+
+  if (card.suit === SUITS[2] && runHasPower("diamonds_are_forever")) {
+    return getPowerById("diamonds_are_forever");
+  }
+  if (card.suit === SUITS[1] && runHasPower("all_you_need_is_love")) {
+    return getPowerById("all_you_need_is_love");
+  }
+  if (card.suit === SUITS[0] && runHasPower("dig_down")) {
+    return getPowerById("dig_down");
+  }
+  if (card.suit === SUITS[3] && runHasPower("club_in_baby")) {
+    return getPowerById("club_in_baby");
+  }
+
+  return null;
 }
 
 function getUnlockedPowerPool(includeAll = false) {
@@ -221,3 +295,5 @@ function awardOnCorrectGuessPowers(guessType) {
 
   return awardedNames;
 }
+
+

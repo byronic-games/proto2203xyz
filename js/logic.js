@@ -239,6 +239,13 @@ function exportRunDebugLog() {
 window.getRunDebugLog = () => Array.isArray(state.runDebugLog) ? [...state.runDebugLog] : [];
 window.exportRunDebugLog = exportRunDebugLog;
 
+function queueCheatAward(reason = "streak") {
+  if (!Array.isArray(state.pendingCheatAwardQueue)) {
+    state.pendingCheatAwardQueue = [];
+  }
+  state.pendingCheatAwardQueue.push(String(reason || "streak"));
+}
+
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -347,6 +354,7 @@ function startRunWithPower(powerId) {
     current: deck[0],
     cheats: [],
     pendingCheatOptions: [],
+    pendingCheatAwardQueue: [],
     message:
       activePowers.length > 0
         ? `Run started with seed ${chosenSeed} and power: ${activePowers
@@ -378,6 +386,7 @@ function startRunWithPower(powerId) {
     dailyCheatOfferCount: 0,
     justUnlockedCheatIds: [],
     cheatChoiceLockedUntil: 0,
+    activeCheatAwardReason: "",
     powerChoiceLockedUntil: 0,
     pauseForCheat: false,
     pendingPowerOptions: [],
@@ -939,6 +948,7 @@ function makeGuess(type) {
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
+  const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
 
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
@@ -950,6 +960,7 @@ function makeGuess(type) {
   let correct = false;
   let match = false;
   let cheatSpecial = false;
+  let rescuedBySuitSave = false;
 
   // Example: Odd One Out special cheat logic
   const nextIsOddForOddOneOut = next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
@@ -1013,7 +1024,8 @@ function makeGuess(type) {
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && next.rank === "K";
-    correct = comparisonCorrect || rescuedByLucky7 || rescuedByFiveAlive || rescuedByGodSaveKing;
+    rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
+    correct = comparisonCorrect || rescuedByLucky7 || rescuedByFiveAlive || rescuedByGodSaveKing || rescuedBySuitSave;
   }
 
   if (!correct) {
@@ -1037,12 +1049,14 @@ function makeGuess(type) {
       aceAutoWin,
       match,
       lucky7WasArmed,
-      fiveAliveWasArmed,
-      godSaveKingWasArmed,
-      oddOneOutWasArmed,
-      sixSevenWasArmed,
-      message: lossDetail,
-    });
+        fiveAliveWasArmed,
+        godSaveKingWasArmed,
+        oddOneOutWasArmed,
+        sixSevenWasArmed,
+        passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
+        rescuedBySuitSave,
+        message: lossDetail,
+      });
     triggerGameOverEffect(lossDetail);
     state.message = `❌ ${lossDetail}`;
     state.gameOver = true;
@@ -1103,6 +1117,11 @@ function makeGuess(type) {
   }
 
   const powerAwards = awardOnCorrectGuessPowers(type);
+  const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
+
+  if (brucieBonusTriggered) {
+    queueCheatAward("brucie_bonus");
+  }
 
   appendRunDebugLog("guess_resolved", {
     guess: type,
@@ -1129,6 +1148,9 @@ function makeGuess(type) {
     godSaveKingWasArmed,
     oddOneOutWasArmed,
     sixSevenWasArmed,
+    passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
+    rescuedBySuitSave,
+    brucieBonusTriggered,
   });
 
   if (sixSevenWasArmed) {
@@ -1162,7 +1184,20 @@ function makeGuess(type) {
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
-      offerCheatChoice();
+      offerCheatChoice("streak");
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (brucieBonusTriggered) {
+    state.pauseForCheat = true;
+    state.message = "Brucie Bonus! Match hit - choose 1 cheat.";
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingCheatAwardQueue.shift() || "brucie_bonus";
+      offerCheatChoice(nextReason);
       render();
     }, 1000);
     return;
@@ -1195,6 +1230,11 @@ function makeGuess(type) {
   }
   if (fiveAliveWasArmed) {
     state.message = `✅ Correct! Five Alive was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`;
+    render();
+    return;
+  }
+  if (rescuedBySuitSave && passiveSuitSavePower) {
+    state.message = `${passiveSuitSavePower.name} saved the run - it was ${describeCard(next)}.`;
     render();
     return;
   }
@@ -1255,5 +1295,7 @@ function makeGuess(type) {
 
   render();
 }
+
+
 
 

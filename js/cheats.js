@@ -963,11 +963,12 @@ function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
   return options;
 }
 
-function offerCheatChoice() {
+function offerCheatChoice(reason = "") {
   const isDailyRun = state.runMode === "daily";
   const optionCount = isDailyRun ? 3 : getCheatOfferOptionCount();
   const newlyMetaUnlocked = isDailyRun ? [] : markMetaUnlockedCheats();
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
+  state.activeCheatAwardReason = reason || "";
 
   if (isDailyRun) {
     const offerIndex = (state.dailyCheatOfferCount || 0) + 1;
@@ -983,6 +984,8 @@ function offerCheatChoice() {
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
     const pickNumber = 4 - state.sixSevenRewardChoicesRemaining;
     state.message = `Choose bonus cheat ${pickNumber} of 3:`;
+  } else if (state.activeCheatAwardReason === "brucie_bonus") {
+    state.message = "Brucie Bonus! Choose 1 cheat:";
   } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {
@@ -1028,12 +1031,18 @@ function pickCheatFromChoice(index) {
   state.pendingCheatOptions = [];
   state.justUnlockedCheatIds = [];
   state.cheatChoiceLockedUntil = 0;
+  state.activeCheatAwardReason = "";
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
     state.sixSevenRewardChoicesRemaining -= 1;
     if (state.sixSevenRewardChoicesRemaining > 0) {
       offerCheatChoice();
       return;
     }
+  }
+  if ((state.pendingCheatAwardQueue || []).length > 0) {
+    const nextReason = state.pendingCheatAwardQueue.shift();
+    offerCheatChoice(nextReason);
+    return;
   }
   render();
 }

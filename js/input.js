@@ -73,7 +73,7 @@ document.getElementById("howto-close-backdrop")?.addEventListener("click", close
 document.getElementById("settings-btn")?.addEventListener("click", () => {
   saveGameStateSnapshot(state);
   saveSettingsReturnUrl(`game.html?resume=1`);
-  window.location.href = "settings.html?v=20260405g";
+  window.location.href = "settings.html?v=20260405h";
 });
 
 document.getElementById("exit-btn")?.addEventListener("click", () => {
@@ -324,6 +324,13 @@ window.addEventListener("keydown", (e) => {
     }
 
     if (matchesKey("d", "KeyD")) {
+      if (state.pendingPowerOptions.length > 0) {
+        state.pendingPowerOptions = getUnlockedPowerPool(true);
+        state.powerChoiceLockedUntil = 0;
+        state.message = " Debug: showing all power choices.";
+        render();
+        return;
+      }
       addMissingCheatsForDebug();
       return;
     }
