@@ -220,6 +220,11 @@ function normalizeCardStatsEntry(entry = {}) {
         : Number.isFinite(entry.blueNudgedUses)
           ? entry.blueNudgedUses
           : 0,
+      blueFaceUpEnded: Number.isFinite(entry.nudgeStats?.blueFaceUpEnded)
+        ? entry.nudgeStats.blueFaceUpEnded
+        : Number.isFinite(entry.blueFaceUpEnded)
+          ? entry.blueFaceUpEnded
+          : 0,
       totalUpAmount: Number.isFinite(entry.nudgeStats?.totalUpAmount)
         ? entry.nudgeStats.totalUpAmount
         : Number.isFinite(entry.totalNudgeUpAmount)

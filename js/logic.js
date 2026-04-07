@@ -704,6 +704,9 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
     if ((state.currentValueModifier || 0) !== 0) {
       entry.nudgeStats.blueNudgedUses += 1;
     }
+    if (!wasCorrectGuess) {
+      entry.nudgeStats.blueFaceUpEnded += 1;
+    }
   }
   if (wasCorrectGuess) entry.correct += 1;
   if (guessType === "higher" || guessType === "lower") {
@@ -722,6 +725,7 @@ function recordCurrentCardNudge(card, direction) {
       down: 0,
       blueFaceUpUses: 0,
       blueNudgedUses: 0,
+      blueFaceUpEnded: 0,
       totalUpAmount: 0,
       totalDownAmount: 0,
     };

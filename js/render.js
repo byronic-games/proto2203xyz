@@ -330,11 +330,11 @@ function formatRiskPercentage(endedRuns, totalUses) {
 function getRedDeckStatItems(entry) {
   const blueFaceUpUses = entry.nudgeStats?.blueFaceUpUses || 0;
   const blueNudgedUses = entry.nudgeStats?.blueNudgedUses || 0;
+  const blueFaceUpEnded = entry.nudgeStats?.blueFaceUpEnded || 0;
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
-  const endedRunFaceUpBase = entry.endedRunFaceUpBase || 0;
 
-  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0 && endedRunFaceUpBase <= 0) {
+  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0 && blueFaceUpEnded <= 0) {
     return [];
   }
 
@@ -343,7 +343,7 @@ function getRedDeckStatItems(entry) {
     { label: "Nudged", value: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses) },
     { label: "Up", value: String(totalUpAmount) },
     { label: "Down", value: String(totalDownAmount) },
-    { label: "Ended", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
+    { label: "Ended", value: formatRiskPercentage(blueFaceUpEnded, blueFaceUpUses) },
   ];
 }
 
@@ -358,7 +358,7 @@ function getRedDeckStatsTooltipBody(entry) {
     "Nudged: percentage of those face-up uses where players nudged it at least once.",
     "Up: total upward nudge amount applied while it was face up.",
     "Down: total downward nudge amount applied while it was face up.",
-    "Runs Ended: percentage of face-up Blue uses that ended the run while this card stayed unnudged.",
+    "Ended: percentage of Blue face-up turns where the run ended while this card was the current card, whether it was nudged or not.",
   ].join("\n");
 }
 
