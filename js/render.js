@@ -343,7 +343,7 @@ function getRedDeckStatItems(entry) {
     { label: "Nudged", value: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses) },
     { label: "Up", value: String(totalUpAmount) },
     { label: "Down", value: String(totalDownAmount) },
-    { label: "Risk", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
+    { label: "Runs Ended", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
   ];
 }
 
@@ -358,7 +358,7 @@ function getRedDeckStatsTooltipBody(entry) {
     "Nudged: percentage of those face-up uses where players nudged it at least once.",
     "Up: total upward nudge amount applied while it was face up.",
     "Down: total downward nudge amount applied while it was face up.",
-    "Risk: percentage of face-up Blue uses that ended the run while this card stayed unnudged.",
+    "Runs Ended: percentage of face-up Blue uses that ended the run while this card stayed unnudged.",
   ].join("\n");
 }
 
