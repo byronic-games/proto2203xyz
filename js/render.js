@@ -334,31 +334,22 @@ function getRedDeckStatItems(entry) {
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
 
-  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0 && blueFaceUpEnded <= 0) {
-    return [];
-  }
-
   return [
     { label: "Seen", value: String(blueFaceUpUses) },
-    { label: "Nudged", value: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses) },
+    { label: "Nudged", value: String(blueNudgedUses) },
     { label: "Up", value: String(totalUpAmount) },
     { label: "Down", value: String(totalDownAmount) },
-    { label: "Ended", value: formatRiskPercentage(blueFaceUpEnded, blueFaceUpUses) },
+    { label: "Ended", value: String(blueFaceUpEnded) },
   ];
 }
 
 function getRedDeckStatsTooltipBody(entry) {
-  const statItems = getRedDeckStatItems(entry);
-  if (!statItems.length) {
-    return "No face-up Blue Deck history for this card yet.";
-  }
-
   return [
     "Seen: times this card has been face up in Blue runs.",
-    "Nudged: percentage of those face-up uses where players nudged it at least once.",
+    "Nudged: number of Blue face-up turns where players nudged this card at least once.",
     "Up: total upward nudge amount applied while it was face up.",
     "Down: total downward nudge amount applied while it was face up.",
-    "Ended: percentage of Blue face-up turns where the run ended while this card was the current card, whether it was nudged or not.",
+    "Ended: number of Blue face-up turns where the run ended while this card was the current card, whether it was nudged or not.",
   ].join("\n");
 }
 
@@ -482,23 +473,14 @@ function renderFaceDownDeck() {
 
     const statsBox = document.createElement("div");
     statsBox.className = "card-back-stats";
-    if (statItems.length) {
-      statsBox.innerHTML = statItems
-        .map((item) => `
-          <div class="card-back-stat">
-            <span class="card-back-stat-label">${item.label}</span>
-            <span class="card-back-stat-value">${item.value}</span>
-          </div>
-        `)
-        .join("");
-    } else {
-      statsBox.innerHTML = `
-        <div class="card-back-stat card-back-stat-empty">
-          <span class="card-back-stat-label">Seen</span>
-          <span class="card-back-stat-value">0</span>
+    statsBox.innerHTML = statItems
+      .map((item) => `
+        <div class="card-back-stat">
+          <span class="card-back-stat-label">${item.label}</span>
+          <span class="card-back-stat-value">${item.value}</span>
         </div>
-      `;
-    }
+      `)
+      .join("");
     deckEl.appendChild(statsBox);
     deckEl.classList.add("has-deck-stats-tooltip");
     setupDeckStatsTooltip(deckEl, {
