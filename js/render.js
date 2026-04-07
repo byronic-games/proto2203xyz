@@ -453,23 +453,26 @@ function renderFaceDownDeck() {
     : { tornCorner: false, backColor: "blue" };
 
   const backColor = normalizeDeckKey(state.currentDeckKey) === "red" ? "pink" : "blue";
+  const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
 
-  deckEl.className = `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
+  deckEl.className = shouldShowDeckStatsInline
+    ? `card-face red card-stats-face ${backStatus.tornCorner ? "torn-corner-face" : ""}`.trim()
+    : `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
   deckEl.setAttribute("data-back-color", backColor);
   deckEl.innerHTML = "";
 
-  const symbol = document.createElement("div");
-  symbol.className = "card-back-symbol";
-  symbol.innerText = "🂠";
-  deckEl.appendChild(symbol);
+  if (!shouldShowDeckStatsInline) {
+    const symbol = document.createElement("div");
+    symbol.className = "card-back-symbol";
+    symbol.innerText = "🂠";
+    deckEl.appendChild(symbol);
+  }
 
   if (backStatus.tornCorner) {
     const tear = document.createElement("div");
-    tear.className = "tear-mark";
+    tear.className = shouldShowDeckStatsInline ? "tear-mark-face" : "tear-mark";
     deckEl.appendChild(tear);
   }
-
-  const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
 
   if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);
@@ -907,5 +910,6 @@ function render() {
   renderMessage();
   renderNextInfo();
 }
+
 
 

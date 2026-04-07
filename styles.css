@@ -622,6 +622,14 @@ a {
   color: #ff9ad8;
 }
 
+.card-face.card-stats-face {
+  display: block;
+  font-size: 1rem;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .card-face.black {
   color: #f4e6ff;
 }
@@ -807,21 +815,17 @@ a {
 
 .card-back-stats {
   position: absolute;
-  inset: 10px 6px 10px;
+  inset: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: center;
   gap: 12px 8px;
-  padding: 14px 8px 12px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(67, 50, 84, 0.84), rgba(39, 27, 53, 0.92));
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,0.08),
-    inset 0 0 24px rgba(255,255,255,0.02),
-    inset 0 -10px 24px rgba(0, 0, 0, 0.16);
+  padding: 24px 18px 20px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: rgba(255,255,255,0.95);
   text-shadow: 0 1px 0 rgba(0,0,0,0.35);
-  backdrop-filter: blur(3px);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
