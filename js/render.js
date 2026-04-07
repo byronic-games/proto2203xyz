@@ -327,29 +327,34 @@ function formatRiskPercentage(endedRuns, totalUses) {
   return `${Math.round((endedRuns / totalUses) * 100)}%`;
 }
 
-function getRedDeckStatItems(entry) {
+function getRedDeckStatsSummary(entry) {
   const blueFaceUpUses = entry.nudgeStats?.blueFaceUpUses || 0;
   const blueNudgedUses = entry.nudgeStats?.blueNudgedUses || 0;
-  const blueFaceUpEnded = entry.nudgeStats?.blueFaceUpEnded || 0;
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
+  const totalDirectionalNudges = totalUpAmount + totalDownAmount;
+  const upSplitPercent = totalDirectionalNudges
+    ? Math.round((totalUpAmount / totalDirectionalNudges) * 100)
+    : 50;
 
-  return [
-    { label: "Seen", value: String(blueFaceUpUses) },
-    { label: "Nudged", value: String(blueNudgedUses) },
-    { label: "Up", value: String(totalUpAmount) },
-    { label: "Down", value: String(totalDownAmount) },
-    { label: "Ended", value: String(blueFaceUpEnded) },
-  ];
+  return {
+    seenCount: blueFaceUpUses,
+    nudgedCount: blueNudgedUses,
+    nudgedPercent: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses),
+    upTotal: totalUpAmount,
+    downTotal: totalDownAmount,
+    upSplitPercent,
+    downSplitPercent: 100 - upSplitPercent,
+  };
 }
 
 function getRedDeckStatsTooltipBody(entry) {
+  const summary = getRedDeckStatsSummary(entry);
   return [
     "Seen: times this card has been face up in Blue runs.",
-    "Nudged: number of Blue face-up turns where players nudged this card at least once.",
-    "Up: total upward nudge amount applied while it was face up.",
-    "Down: total downward nudge amount applied while it was face up.",
-    "Ended: number of Blue face-up turns where the run ended while this card was the current card, whether it was nudged or not.",
+    `Nudged: percentage of those face-up turns where players nudged it at least once (${summary.nudgedCount}/${summary.seenCount}).`,
+    "Chart: split of the total upward vs downward nudge amount applied while this card was face up.",
+    `Up / Down totals: ${summary.upTotal} up, ${summary.downTotal} down.`,
   ].join("\n");
 }
 
@@ -467,20 +472,38 @@ function renderFaceDownDeck() {
 
   if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);
-    const statItems = getRedDeckStatItems(entry);
+    const statsSummary = getRedDeckStatsSummary(entry);
     const tooltipTitle = `${describeCard(next)} Red Stats`;
     const tooltipBody = getRedDeckStatsTooltipBody(entry);
 
     const statsBox = document.createElement("div");
     statsBox.className = "card-back-stats";
-    statsBox.innerHTML = statItems
-      .map((item) => `
-        <div class="card-back-stat">
-          <span class="card-back-stat-label">${item.label}</span>
-          <span class="card-back-stat-value">${item.value}</span>
+    statsBox.innerHTML = `
+      <div class="card-back-stats-top">
+        <div class="card-back-stats-kicker">Nudged</div>
+        <div class="card-back-stats-primary">${statsSummary.nudgedPercent}</div>
+        <div class="card-back-stats-sub">${statsSummary.nudgedCount} of ${statsSummary.seenCount} seen</div>
+      </div>
+      <div class="card-back-stats-chart-wrap">
+        <div
+          class="card-back-stats-chart"
+          style="--split-angle:${statsSummary.upSplitPercent * 3.6}deg;"
+          aria-hidden="true"
+        >
+          <div class="card-back-stats-chart-hole"></div>
         </div>
-      `)
-      .join("");
+      </div>
+      <div class="card-back-stats-legend">
+        <div class="card-back-stats-legend-item">
+          <span class="card-back-stats-legend-label">Up</span>
+          <span class="card-back-stats-legend-value">${statsSummary.upTotal}</span>
+        </div>
+        <div class="card-back-stats-legend-item">
+          <span class="card-back-stats-legend-label">Down</span>
+          <span class="card-back-stats-legend-value">${statsSummary.downTotal}</span>
+        </div>
+      </div>
+    `;
     deckEl.appendChild(statsBox);
     deckEl.classList.add("has-deck-stats-tooltip");
     setupDeckStatsTooltip(deckEl, {
