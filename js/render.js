@@ -343,7 +343,7 @@ function getRedDeckStatItems(entry) {
     { label: "Nudged", value: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses) },
     { label: "Up", value: String(totalUpAmount) },
     { label: "Down", value: String(totalDownAmount) },
-    { label: "Runs Ended", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
+    { label: "Ended", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
   ];
 }
 
