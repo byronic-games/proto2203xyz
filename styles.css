@@ -807,7 +807,7 @@ a {
 
 .card-back-stats {
   position: absolute;
-  inset: 14px 10px 14px;
+  inset: 10px 6px 10px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: center;
