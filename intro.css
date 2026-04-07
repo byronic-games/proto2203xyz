@@ -241,6 +241,37 @@ h1 {
   opacity: 0.72;
 }
 
+.deck-choice-card.unlocked {
+  filter: saturate(1);
+}
+
+.deck-choice-card.locked,
+.deck-choice-card:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  color: rgba(242, 235, 255, 0.78);
+  background: linear-gradient(180deg, rgba(63, 51, 79, 0.96), rgba(34, 26, 46, 0.98));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.06),
+    0 12px 22px rgba(0, 0, 0, 0.22);
+  filter: grayscale(0.18);
+}
+
+.deck-choice-card.locked .deck-choice-label,
+.deck-choice-card:disabled .deck-choice-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.deck-choice-card.locked .deck-choice-desc,
+.deck-choice-card:disabled .deck-choice-desc {
+  color: rgba(214, 201, 236, 0.84);
+}
+
+.deck-choice-card.unlocked .deck-choice-label {
+  color: inherit;
+}
+
 .action-card-rank,
 .action-card-title,
 .action-card-sub {
@@ -624,17 +655,9 @@ h1 {
   color: #213100;
 }
 
-.level-choice-soon {
-  background: linear-gradient(180deg, rgba(96, 68, 119, 0.98), rgba(56, 39, 73, 0.98));
-  color: var(--muted);
-}
-
-.deck-choice-card.locked,
-.deck-choice-card:disabled {
-  background: linear-gradient(180deg, rgba(96, 68, 119, 0.98), rgba(56, 39, 73, 0.98));
-  color: var(--muted);
-  cursor: not-allowed;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+.level-choice-3 {
+  background: linear-gradient(180deg, #ffda8e 0%, #ffb34e 100%);
+  color: #332006;
 }
 
 .deck-choice-label {

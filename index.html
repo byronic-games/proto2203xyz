@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css?v=20260405e">
+  <link rel="stylesheet" href="intro.css?v=20260407b">
 </head>
 <body>
   <main class="intro-shell">
@@ -85,9 +85,9 @@
               <span class="deck-choice-label">Blue Deck</span>
               <span class="deck-choice-desc">Classic run with nudge rewards on correct guesses.</span>
             </button>
-            <button class="deck-choice-card deck-choice-red" id="deck-pick-red" type="button">
+            <button class="deck-choice-card deck-choice-red locked" id="deck-pick-red" type="button">
               <span class="deck-choice-label">Red Deck</span>
-              <span class="deck-choice-desc" id="deck-red-desc">Coming soon.</span>
+              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 1.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -104,13 +104,13 @@
               <span class="deck-choice-label">Level 1</span>
               <span class="deck-choice-desc" id="level-1-desc">Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers.</span>
             </button>
-            <button class="deck-choice-card level-choice-card level-choice-2" id="level-pick-2" type="button">
+            <button class="deck-choice-card level-choice-card level-choice-2 locked" id="level-pick-2" type="button">
               <span class="deck-choice-label">Level 2</span>
-              <span class="deck-choice-desc" id="level-2-desc">Cheats appear every 4 correct guesses, or every 3 with Quick Fingers.</span>
+              <span class="deck-choice-desc" id="level-2-desc">Unlock by clearing Level 1.</span>
             </button>
-            <button class="deck-choice-card level-choice-card level-choice-soon" id="level-pick-3" type="button" disabled>
+            <button class="deck-choice-card level-choice-card level-choice-3 locked" id="level-pick-3" type="button" disabled>
               <span class="deck-choice-label">Level 3</span>
-              <span class="deck-choice-desc" id="level-3-desc">Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.</span>
+              <span class="deck-choice-desc" id="level-3-desc">Unlock by clearing Level 2.</span>
             </button>
           </div>
           <button id="level-close-btn" class="deck-close-btn" type="button">Back</button>
@@ -282,12 +282,65 @@
         const clears = loadDeckLevelClears();
         clears[getDeckLevelKey("blue", 1)] = Math.max(1, clears[getDeckLevelKey("blue", 1)] || 0);
         clears[getDeckLevelKey("blue", 2)] = Math.max(1, clears[getDeckLevelKey("blue", 2)] || 0);
+        clears[getDeckLevelKey("blue", 3)] = Math.max(1, clears[getDeckLevelKey("blue", 3)] || 0);
         clears[getDeckLevelKey("red", 1)] = Math.max(1, clears[getDeckLevelKey("red", 1)] || 0);
+        clears[getDeckLevelKey("red", 2)] = Math.max(1, clears[getDeckLevelKey("red", 2)] || 0);
+        clears[getDeckLevelKey("red", 3)] = Math.max(1, clears[getDeckLevelKey("red", 3)] || 0);
         localStorage.setItem(deckLevelClearsKey, JSON.stringify(clears));
       }
 
       function isRedDeckUnlocked() {
-        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1";
+        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1" || hasClearedDeckLevel("blue", 1);
+      }
+
+      function isDeckLevelUnlocked(deckKey, levelNumber) {
+        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+        if (sessionStorage.getItem(redDeckDebugUnlockKey) === "1") return true;
+        if (normalizedDeck === "blue") {
+          if (normalizedLevel === 1) return true;
+          return hasClearedDeckLevel("blue", normalizedLevel - 1);
+        }
+
+        if (!isRedDeckUnlocked()) return false;
+        if (normalizedLevel === 1) return true;
+        return hasClearedDeckLevel("blue", normalizedLevel);
+      }
+
+      function getLevelDescription(deckKey, levelNumber) {
+        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+        if (normalizedDeck === "blue") {
+          if (normalizedLevel === 1) return "Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers.";
+          if (normalizedLevel === 2) return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers.";
+          return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.";
+        }
+
+        if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
+        if (normalizedLevel === 2) return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 2.";
+        return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 3.";
+      }
+
+      function getLevelUnlockText(deckKey, levelNumber) {
+        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+        if (normalizedDeck === "blue") {
+          if (normalizedLevel === 1) return getLevelDescription("blue", 1);
+          return `Unlock by clearing Blue Deck Level ${normalizedLevel - 1}.`;
+        }
+
+        if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
+        return `Unlock by clearing Blue Deck Level ${normalizedLevel}.`;
+      }
+
+      function setChoiceCardState(cardEl, unlocked) {
+        if (!cardEl) return;
+        cardEl.disabled = !unlocked;
+        cardEl.classList.toggle("locked", !unlocked);
+        cardEl.classList.toggle("unlocked", !!unlocked);
       }
 
       function setSelectedDeck(deckKey) {
@@ -310,11 +363,11 @@
 
       function refreshDeckOptions() {
         const redUnlocked = isRedDeckUnlocked();
-        redDeckBtn.disabled = !redUnlocked;
-        redDeckBtn.classList.toggle("locked", !redUnlocked);
+        setChoiceCardState(blueDeckBtn, true);
+        setChoiceCardState(redDeckBtn, redUnlocked);
         redDeckDesc.textContent = redUnlocked
-          ? "No nudge rewards. The next card back shows live face-up card stats."
-          : "Coming soon.";
+          ? "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history."
+          : "Unlock by clearing Blue Deck Level 1.";
       }
 
       function openDeckModal() {
@@ -330,33 +383,28 @@
 
       function openLevelModal(deckKey) {
         pendingDeckSelection = deckKey === "red" ? "red" : "blue";
-        const blueLevelTwoUnlocked = hasClearedDeckLevel("blue", 1);
-        const blueLevelThreeUnlocked = hasClearedDeckLevel("blue", 2);
         const isBlueDeck = pendingDeckSelection === "blue";
+        const levelOneUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 1);
+        const levelTwoUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 2);
+        const levelThreeUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 3);
 
         levelCopy.textContent = isBlueDeck
-          ? "Blue Deck levels tune how often Cheats appear. Level 3 keeps the tougher pacing and cuts each cheat choice down to 1 from 2."
-          : "Red Deck levels are opening up gradually. Level 1 is available now.";
+          ? "Blue progression starts at Level 1 and opens one rung at a time as you clear each level."
+          : "Red progression unlocks alongside your Blue clears. Each Red level opens once the matching Blue level has been beaten.";
 
-        levelOneDesc.textContent = isBlueDeck
-          ? "Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers."
-          : "Stats-driven run. No nudge rewards, with Red deck card-history reads active.";
+        levelOneDesc.textContent = levelOneUnlocked
+          ? getLevelDescription(pendingDeckSelection, 1)
+          : getLevelUnlockText(pendingDeckSelection, 1);
+        levelTwoDesc.textContent = levelTwoUnlocked
+          ? getLevelDescription(pendingDeckSelection, 2)
+          : getLevelUnlockText(pendingDeckSelection, 2);
+        levelThreeDesc.textContent = levelThreeUnlocked
+          ? getLevelDescription(pendingDeckSelection, 3)
+          : getLevelUnlockText(pendingDeckSelection, 3);
 
-        levelTwoBtn.disabled = !isBlueDeck || !blueLevelTwoUnlocked;
-        levelTwoBtn.classList.toggle("locked", !isBlueDeck || !blueLevelTwoUnlocked);
-        levelTwoDesc.textContent = isBlueDeck
-          ? (blueLevelTwoUnlocked
-              ? "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers."
-              : "Unlock by clearing Blue Deck Level 1.")
-          : "Coming soon.";
-
-        levelThreeBtn.disabled = !isBlueDeck || !blueLevelThreeUnlocked;
-        levelThreeBtn.classList.toggle("locked", !isBlueDeck || !blueLevelThreeUnlocked);
-        levelThreeDesc.textContent = isBlueDeck
-          ? (blueLevelThreeUnlocked
-              ? "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2."
-              : "Unlock by clearing Blue Deck Level 2.")
-          : "Coming soon.";
+        setChoiceCardState(levelOneBtn, levelOneUnlocked);
+        setChoiceCardState(levelTwoBtn, levelTwoUnlocked);
+        setChoiceCardState(levelThreeBtn, levelThreeUnlocked);
 
         deckModal.classList.add("hidden");
         deckModal.setAttribute("aria-hidden", "true");
@@ -378,9 +426,7 @@
       }
 
       function chooseLevel(levelNumber) {
-        if (pendingDeckSelection === "blue" && levelNumber === 2 && !hasClearedDeckLevel("blue", 1)) return;
-        if (pendingDeckSelection === "blue" && levelNumber === 3 && !hasClearedDeckLevel("blue", 2)) return;
-        if (pendingDeckSelection !== "blue" && levelNumber > 1) return;
+        if (!isDeckLevelUnlocked(pendingDeckSelection, levelNumber)) return;
         if (levelNumber > 3) return;
         setSelectedDeck(pendingDeckSelection);
         setSelectedLevel(levelNumber);

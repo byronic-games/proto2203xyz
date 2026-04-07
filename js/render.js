@@ -322,21 +322,87 @@ function formatNudgedPercentage(nudgedUses, totalUses) {
   return `${Math.round((nudgedUses / totalUses) * 100)}%`;
 }
 
-function getCardStatsTooltipLines(entry) {
+function formatRiskPercentage(endedRuns, totalUses) {
+  if (!totalUses) return "0%";
+  return `${Math.round((endedRuns / totalUses) * 100)}%`;
+}
+
+function getRedDeckStatItems(entry) {
   const blueFaceUpUses = entry.nudgeStats?.blueFaceUpUses || 0;
   const blueNudgedUses = entry.nudgeStats?.blueNudgedUses || 0;
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
+  const endedRunFaceUpBase = entry.endedRunFaceUpBase || 0;
 
-  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0) {
-    return ["No face-up stats yet."];
+  if (blueFaceUpUses <= 0 && totalUpAmount <= 0 && totalDownAmount <= 0 && endedRunFaceUpBase <= 0) {
+    return [];
   }
 
   return [
-    `Nudged: ${formatNudgedPercentage(blueNudgedUses, blueFaceUpUses)}`,
-    `Up Total: ${totalUpAmount}`,
-    `Down Total: ${totalDownAmount}`,
+    { label: "Seen", value: String(blueFaceUpUses) },
+    { label: "Nudged", value: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses) },
+    { label: "Up", value: String(totalUpAmount) },
+    { label: "Down", value: String(totalDownAmount) },
+    { label: "Risk", value: formatRiskPercentage(endedRunFaceUpBase, blueFaceUpUses) },
   ];
+}
+
+function getRedDeckStatsTooltipBody(entry) {
+  const statItems = getRedDeckStatItems(entry);
+  if (!statItems.length) {
+    return "No face-up Blue Deck history for this card yet.";
+  }
+
+  return [
+    "Seen: times this card has been face up in Blue runs.",
+    "Nudged: percentage of those face-up uses where players nudged it at least once.",
+    "Up: total upward nudge amount applied while it was face up.",
+    "Down: total downward nudge amount applied while it was face up.",
+    "Risk: percentage of face-up Blue uses that ended the run while this card stayed unnudged.",
+  ].join("\n");
+}
+
+function setupDeckStatsTooltip(el, payload) {
+  if (!el || el.dataset.deckStatsTooltipInit === "1") {
+    if (el) {
+      el.dataset.tooltipEnabled = payload?.enabled ? "1" : "0";
+      el.dataset.tooltipTitle = payload?.title || "";
+      el.dataset.tooltipBody = payload?.description || "";
+    }
+    return;
+  }
+
+  let holdTimer = null;
+
+  const clearHold = () => {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+    hideCheatTooltip();
+  };
+
+  el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    if (el.dataset.tooltipEnabled !== "1") return;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+    }, 300);
+  });
+
+  el.addEventListener("pointerup", clearHold);
+  el.addEventListener("pointercancel", clearHold);
+  el.addEventListener("pointerleave", clearHold);
+  el.addEventListener("mouseenter", () => {
+    if (el.dataset.tooltipEnabled !== "1") return;
+    showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+  });
+  el.addEventListener("mouseleave", clearHold);
+
+  el.dataset.deckStatsTooltipInit = "1";
+  el.dataset.tooltipRole = "deck-stats";
+  el.dataset.tooltipEnabled = payload?.enabled ? "1" : "0";
+  el.dataset.tooltipTitle = payload?.title || "";
+  el.dataset.tooltipBody = payload?.description || "";
 }
 
 function renderNudgeControls() {
@@ -407,12 +473,43 @@ function renderFaceDownDeck() {
 
   if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);
-    const statLines = getCardStatsTooltipLines(entry);
+    const statItems = getRedDeckStatItems(entry);
+    const tooltipTitle = `${describeCard(next)} Red Stats`;
+    const tooltipBody = getRedDeckStatsTooltipBody(entry);
 
     const statsBox = document.createElement("div");
     statsBox.className = "card-back-stats";
-    statsBox.innerHTML = statLines.map((line) => `<div>${line}</div>`).join("");
+    if (statItems.length) {
+      statsBox.innerHTML = statItems
+        .map((item) => `
+          <div class="card-back-stat">
+            <span class="card-back-stat-label">${item.label}</span>
+            <span class="card-back-stat-value">${item.value}</span>
+          </div>
+        `)
+        .join("");
+    } else {
+      statsBox.innerHTML = `
+        <div class="card-back-stat card-back-stat-empty">
+          <span class="card-back-stat-label">Seen</span>
+          <span class="card-back-stat-value">0</span>
+        </div>
+      `;
+    }
     deckEl.appendChild(statsBox);
+    deckEl.classList.add("has-deck-stats-tooltip");
+    setupDeckStatsTooltip(deckEl, {
+      enabled: true,
+      title: tooltipTitle,
+      description: tooltipBody,
+    });
+  } else {
+    deckEl.classList.remove("has-deck-stats-tooltip");
+    setupDeckStatsTooltip(deckEl, {
+      enabled: false,
+      title: "",
+      description: "",
+    });
   }
 
   const remainingCount = getFaceDownCount();
