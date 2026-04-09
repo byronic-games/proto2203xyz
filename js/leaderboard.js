@@ -79,6 +79,11 @@ function normalizeHeroEntry(entry = {}) {
     gameVersion: String(entry.gameVersion || entry.game_version || ""),
     deck: normalizeHeroDeck(entry.deck || ""),
     deckLevel: normalizeHeroLevel(entry.deckLevel ?? entry.deck_level),
+    hasExplicitDeckLevel: Object.prototype.hasOwnProperty.call(entry, "deckLevel")
+      ? entry.deckLevel !== undefined && entry.deckLevel !== null && entry.deckLevel !== ""
+      : Object.prototype.hasOwnProperty.call(entry, "deck_level")
+        ? entry.deck_level !== undefined && entry.deck_level !== null && entry.deck_level !== ""
+        : false,
     startingPower: normalizeHeroPower(entry.startingPower || entry.starting_power || ""),
     createdAt: String(entry.createdAt || entry.created_at || ""),
   };
@@ -91,6 +96,7 @@ function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel =
     gameVersion: GAME_VERSION,
     deck: normalizeHeroDeck(deck),
     deckLevel: normalizeHeroLevel(deckLevel),
+    hasExplicitDeckLevel: true,
     startingPower: normalizeHeroPower(startingPower),
     createdAt: new Date().toISOString(),
   };
@@ -143,7 +149,10 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       body: JSON.stringify(payloadWithLevel),
     });
 
-    if (!response.ok && response.status !== 409) {
+    const canFallbackWithoutLevel =
+      normalizeHeroLevel(entry.deckLevel) === DEFAULT_LEVEL_NUMBER;
+
+    if (!response.ok && response.status !== 409 && canFallbackWithoutLevel) {
       response = await fetch(url, {
         method: "POST",
         headers,
@@ -197,9 +206,33 @@ async function fetchHeroes(limit = 200) {
     if (!Array.isArray(rows)) return localHeroes;
 
     const mergedByEntryKey = new Map();
+    const localHeroesBySeedDeck = new Map();
+
+    localHeroes
+      .map((hero) => normalizeHeroEntry(hero))
+      .forEach((hero) => {
+        const seedDeckKey = `${String(hero.seed || "").trim()}::${normalizeHeroDeck(hero.deck || "")}`;
+        if (!localHeroesBySeedDeck.has(seedDeckKey)) {
+          localHeroesBySeedDeck.set(seedDeckKey, []);
+        }
+        localHeroesBySeedDeck.get(seedDeckKey).push(hero);
+      });
 
     rows
-      .map((row) => normalizeHeroEntry(row))
+      .map((row) => {
+        const hero = normalizeHeroEntry(row);
+        if (!hero.hasExplicitDeckLevel) {
+          const seedDeckKey = `${String(hero.seed || "").trim()}::${normalizeHeroDeck(hero.deck || "")}`;
+          const localMatches = localHeroesBySeedDeck.get(seedDeckKey) || [];
+          if (localMatches.length === 1) {
+            return {
+              ...hero,
+              deckLevel: localMatches[0].deckLevel,
+            };
+          }
+        }
+        return hero;
+      })
       .forEach((hero) => {
         mergedByEntryKey.set(getHeroEntryKey(hero), hero);
       });
