@@ -842,14 +842,23 @@ a {
   gap: 2px;
 }
 
-.card-back-stats-kicker,
-.card-back-stats-legend-label {
+.card-back-stats-kicker {
   font-size: 0.44rem;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: rgba(216, 231, 244, 0.68);
   line-height: 1.05;
+  text-align: center;
+}
+
+.card-back-stats-legend-label {
+  font-size: 0.36rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(216, 231, 244, 0.62);
+  line-height: 1;
   text-align: center;
 }
 
@@ -875,7 +884,7 @@ a {
   position: absolute;
   left: 0;
   right: 0;
-  top: 49px;
+  top: 43px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -912,7 +921,7 @@ a {
   position: absolute;
   left: 8px;
   right: 8px;
-  bottom: 8px;
+  bottom: 5px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
@@ -923,7 +932,7 @@ a {
   display: grid;
   grid-template-rows: auto auto;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
   align-content: end;
 }
@@ -932,9 +941,9 @@ a {
 .card-back-stats-legend-item:last-child .card-back-stats-legend-label::before {
   content: "";
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 5px;
+  width: 5px;
+  height: 5px;
+  margin-right: 3px;
   border-radius: 50%;
   vertical-align: middle;
 }
