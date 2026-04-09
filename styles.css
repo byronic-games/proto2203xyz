@@ -884,7 +884,7 @@ a {
 
 .card-back-stats-chart {
   position: relative;
-  width: min(48px, 100%);
+  width: min(42px, 100%);
   aspect-ratio: 1;
   border-radius: 50%;
   background:
@@ -900,7 +900,7 @@ a {
 
 .card-back-stats-chart-hole {
   position: absolute;
-  inset: 10px;
+  inset: 9px;
   border-radius: 50%;
   background: linear-gradient(180deg, rgba(44, 31, 57, 0.98), rgba(30, 21, 40, 0.98));
   box-shadow:
@@ -913,14 +913,16 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   width: 100%;
+  align-items: end;
 }
 
 .card-back-stats-legend-item {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto;
   align-items: center;
   gap: 1px;
   min-width: 0;
+  align-content: end;
 }
 
 .card-back-stats-legend-item:first-child .card-back-stats-legend-label::before,
@@ -951,6 +953,7 @@ a {
   color: rgba(255,255,255,0.98);
   line-height: 1;
   text-align: center;
+  min-height: 0.94rem;
 }
 
 #face-down-deck.has-deck-stats-tooltip {
