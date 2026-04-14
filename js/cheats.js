@@ -38,6 +38,17 @@ function formatCheatValue(value) {
   return valueToRank(value);
 }
 
+function formatCardIdentityForCheat(card, offset = 0) {
+  if (!card) return "Unknown card";
+  const value = offset > 0 ? getUpcomingCheatValue(offset) : card.value;
+  return `${valueToRank(value)}${card.suit || ""}`;
+}
+
+function getCheatDeterministicRng(label) {
+  const seedBase = normalizeSeed(state.runSeed || "") || "NO-SEED";
+  return mulberry32(stringToSeedNumber(`${GAME_VERSION}|${seedBase}|${state.index}|${label}`));
+}
+
 function getWeightedRandomIndex(items, getWeight, rng = Math.random) {
   const totalWeight = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
   if (totalWeight <= 0) return -1;
@@ -126,7 +137,8 @@ const CHEAT_DESCRIPTIONS = {
   "Nudge +2": "Increases the value of the current face card by two, stopping at King.",
   "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
   "Next Card Nudge Up": "Temporarily nudges the next face-down card up by 3 for the next guess, stopping at King.",
-  "Next Card Nudge Down": "Temporarily nudges the next face-down card down by 3 for the next guess, stopping at Ace.",  "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
+  "Next Card Nudge Down": "Temporarily nudges the next face-down card down by 3 for the next guess, stopping at Ace.",
+  "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
   "Double Trouble": "Treat the current card as double its value for the next guess, up to King.",
   "Odd One Out": "For the next card only: if it is odd, you lose. Aces count as odd even under Aces Wild. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
@@ -135,11 +147,16 @@ const CHEAT_DESCRIPTIONS = {
   "Twin Peek": "Checks the next five cards and reveals whether any of them match the face-up card's current value.",
   "Run Stopper": "Checks the next five cards and reveals whether at least one Ace or King appears.",
   "Bang Average": "Reveals the exact average value of the next three face down cards.",
-  "God Save The King": "Play on any face card. If the next card is a King, the run survives even if your guess is wrong.",  "Swap": "Replace the current face card with the card at the bottom of the deck.",
+  "God Save The King": "Play on any face card. If the next card is a King, the run survives even if your guess is wrong.",
+  "Swap": "Swap the current face-up card with the next face-down card.",
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose an extra Cheat in addition to any normal rewards.",
-  "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",  "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
+  "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",
+  "Locky 7s": "Gain 10 Nudge +1 and 10 Nudge -1 charges. From then on, any card that is or becomes a 7 locks at 7 and cannot be nudged.",
+  "Hot or Cold?": "Is the next card within 7 values of the current face card, up or down?",
+  "Corporate Icebreaker": "Hear two true value-and-suit facts and one believable lie about the next three cards.",
+  "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
 };
 
 const CHEATS = [
@@ -444,8 +461,8 @@ const CHEATS = [
       if (upcoming.length === 0) return "No next card.";
       const found = upcoming.some((card) => card.value >= 11);
       return found
-        ? "Yes — a face card is in the next three."
-        : "No — no face card in the next three.";
+        ? "Yes â€” a face card is in the next three."
+        : "No â€” no face card in the next three.";
     },
   },
   {
@@ -591,9 +608,14 @@ const CHEATS = [
     consumeOnUse: true,
     poolExcludedIfPowerOwned: "nudge_engine",
     use: () => {
-      state.currentValueModifier += 1;
-      const effective = getCurrentEffectiveValue();
-      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+      const current = getCurrentEffectiveValue();
+      if (state.lockySevensActive && current === 7) {
+        return "Locky 7s active - 7s cannot be nudged.";
+      }
+      const targetValue = getAdjustedCurrentNudgeTarget(1);
+      if (!Number.isFinite(targetValue)) return "No current card.";
+      state.currentValueModifier += targetValue - current;
+      return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
     },
   },
   {
@@ -607,9 +629,14 @@ const CHEATS = [
     consumeOnUse: true,
     poolExcludedIfPowerOwned: "nudge_engine",
     use: () => {
-      state.currentValueModifier -= 1;
-      const effective = getCurrentEffectiveValue();
-      return `Current card is now treated as ${valueToRank(effective)} for the next guess.`;
+      const current = getCurrentEffectiveValue();
+      if (state.lockySevensActive && current === 7) {
+        return "Locky 7s active - 7s cannot be nudged.";
+      }
+      const targetValue = getAdjustedCurrentNudgeTarget(-1);
+      if (!Number.isFinite(targetValue)) return "No current card.";
+      state.currentValueModifier += targetValue - current;
+      return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
     },
   },
   {
@@ -624,7 +651,11 @@ const CHEATS = [
     poolExcludedIfPowerOwned: "nudge_engine",
     use: () => {
       const current = getCurrentEffectiveValue();
-      const nextValue = clampCardValue(current + 2);
+      if (state.lockySevensActive && current === 7) {
+        return "Locky 7s active - 7s cannot be nudged.";
+      }
+      const nextValue = getAdjustedCurrentNudgeTarget(2);
+      if (!Number.isFinite(nextValue)) return "No current card.";
       state.currentValueModifier += nextValue - current;
       return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
     },
@@ -641,7 +672,11 @@ const CHEATS = [
     poolExcludedIfPowerOwned: "nudge_engine",
     use: () => {
       const current = getCurrentEffectiveValue();
-      const nextValue = clampCardValue(current - 2);
+      if (state.lockySevensActive && current === 7) {
+        return "Locky 7s active - 7s cannot be nudged.";
+      }
+      const nextValue = getAdjustedCurrentNudgeTarget(-2);
+      if (!Number.isFinite(nextValue)) return "No current card.";
       state.currentValueModifier += nextValue - current;
       return `Current card is now treated as ${valueToRank(getCurrentEffectiveValue())} for the next guess.`;
     },
@@ -658,9 +693,12 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      state.nextCardValueModifier = 3;
+      const currentValue = getUpcomingCheatValue(1);
+      const targetValue = getAdjustedNextNudgeTarget(3);
+      if (!Number.isFinite(targetValue)) return "No next card.";
+      state.nextCardValueModifier = targetValue - currentValue;
 
-      return "Next card nudged up by 3 for the next guess.";
+      return `Next card will be treated as ${valueToRank(targetValue)} for the next guess.`;
     },
   },
   {
@@ -675,9 +713,12 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      state.nextCardValueModifier = -3;
+      const currentValue = getUpcomingCheatValue(1);
+      const targetValue = getAdjustedNextNudgeTarget(-3);
+      if (!Number.isFinite(targetValue)) return "No next card.";
+      state.nextCardValueModifier = targetValue - currentValue;
 
-      return "Next card nudged down by 3 for the next guess.";
+      return `Next card will be treated as ${valueToRank(targetValue)} for the next guess.`;
     },
   },  {
     id: "halve_it",
@@ -899,8 +940,9 @@ const CHEATS = [
       const upcoming = [1, 2, 3].map((offset) => getNextCardAt(offset)).filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
       const values = upcoming.map((card, index) => formatCheatValue(getUpcomingCheatValue(index + 1)));
+      const rng = getCheatDeterministicRng("fortune_teller");
       for (let i = values.length - 1; i > 0; i -= 1) {
-        const swapIndex = Math.floor(Math.random() * (i + 1));
+        const swapIndex = Math.floor(rng() * (i + 1));
         const temp = values[i];
         values[i] = values[swapIndex];
         values[swapIndex] = temp;
@@ -935,7 +977,92 @@ const CHEATS = [
       state.alwaysBetBlackArmed = true;
       return "Always Bet On The Black armed - if the next card is a Club or Spade, the run survives even on a wrong guess.";
     },
-  },  {
+  },
+  {
+    id: "locky_7s",
+    name: "Locky 7s",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      state.lockySevensActive = true;
+      state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 10;
+      state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 10;
+
+      if (getCurrentEffectiveValue() === 7 && state.current) {
+        state.currentValueModifier = 7 - state.current.value;
+      }
+
+      const nextValue = getUpcomingCheatValue(1);
+      if (nextValue === 7) {
+        const next = peekNext();
+        if (next) {
+          state.nextCardValueModifier = 7 - next.value;
+        }
+      }
+
+      return "Locky 7s active - gained 10 Nudge +1 and 10 Nudge -1 charges. Any card that is or becomes a 7 now locks at 7.";
+    },
+  },
+  {
+    id: "hot_or_cold",
+    name: "Hot or Cold?",
+    rarity: "common",
+    weight: 1,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const next = getNextCardAt(1);
+      if (!next) return "No next card.";
+      const difference = Math.abs(getUpcomingCheatValue(1) - getCurrentEffectiveValue());
+      return difference <= 7 ? "Hot - within 7." : "Cold - more than 7 away.";
+    },
+  },
+  {
+    id: "corporate_icebreaker",
+    name: "Corporate Icebreaker",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      const upcoming = [1, 2, 3].map((offset) => getNextCardAt(offset)).filter(Boolean);
+      if (upcoming.length < 3) return "Need at least three upcoming cards.";
+
+      const remainingPool = state.deck.slice(state.index + 4);
+      if (!remainingPool.length) return "Not enough cards remaining for a believable lie.";
+
+      const rng = getCheatDeterministicRng("corporate_icebreaker");
+      const truthIndexes = [0, 1, 2];
+      for (let i = truthIndexes.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(rng() * (i + 1));
+        [truthIndexes[i], truthIndexes[swapIndex]] = [truthIndexes[swapIndex], truthIndexes[i]];
+      }
+
+      const fakeCard = remainingPool[Math.floor(rng() * remainingPool.length)];
+      const statements = [
+        formatCardIdentityForCheat(upcoming[truthIndexes[0]], truthIndexes[0] + 1),
+        formatCardIdentityForCheat(upcoming[truthIndexes[1]], truthIndexes[1] + 1),
+        formatCardIdentityForCheat(fakeCard),
+      ];
+
+      for (let i = statements.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(rng() * (i + 1));
+        [statements[i], statements[swapIndex]] = [statements[swapIndex], statements[i]];
+      }
+
+      return `Two truths and one lie: ${statements.join(" / ")}`;
+    },
+  },
+  {
     id: "tear_corner",
     name: "Tear Corner",
     rarity: "common",
@@ -962,24 +1089,24 @@ const CHEATS = [
     use: () => {
       if (!state.current) return "No current card.";
       const currentIndex = state.index;
-      const bottomIndex = state.deck.length - 1;
+      const nextIndex = currentIndex + 1;
 
-      if (bottomIndex <= currentIndex) {
-        return "No card left at bottom.";
+      if (nextIndex >= state.deck.length) {
+        return "No next card.";
       }
 
       const oldCurrent = state.deck[currentIndex];
-      const oldBottom = state.deck[bottomIndex];
+      const oldNext = state.deck[nextIndex];
 
-      state.deck[currentIndex] = oldBottom;
-      state.deck[bottomIndex] = oldCurrent;
+      state.deck[currentIndex] = oldNext;
+      state.deck[nextIndex] = oldCurrent;
 
-      state.seenCardIds.delete(oldCurrent.id);
       state.current = state.deck[currentIndex];
       state.currentValueModifier = 0;
-      state.seenCardIds.add(state.current.id);
+      state.nextCardValueModifier = 0;
+      markCardSeen(state.current);
 
-      return "Swapped with bottom card.";
+      return `Swapped with next card - current card is now ${describeCard(state.current)}.`;
     },
   },
 ];
@@ -1166,6 +1293,9 @@ function pickCheatFromChoice(index) {
   if ((state.pendingCheatAwardQueue || []).length > 0) {
     const nextReason = state.pendingCheatAwardQueue.shift();
     offerCheatChoice(nextReason);
+    return;
+  }
+  if (typeof resolvePendingRewardQueues === "function" && resolvePendingRewardQueues()) {
     return;
   }
   render();

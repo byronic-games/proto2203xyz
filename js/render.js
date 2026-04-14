@@ -744,6 +744,8 @@ function renderCheatChoice() {
 function renderPowerChoice() {
   const container = document.getElementById("power-choice-container");
   const list = document.getElementById("power-choice-list");
+  const titleEl = document.getElementById("power-choice-title");
+  const footerEl = document.getElementById("power-choice-footer");
 
   if (!container || !list) return;
 
@@ -758,6 +760,13 @@ function renderPowerChoice() {
 
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
+
+  if (titleEl) {
+    titleEl.innerText = state.activePowerAwardReason ? "Choose Your Bonus Power" : "Choose Your Power";
+  }
+  if (footerEl) {
+    footerEl.innerText = state.activePowerAwardReason ? "Pick 1 power to gain." : "Pick 1 before the run begins.";
+  }
 
   const choiceLocked = Date.now() < (state.powerChoiceLockedUntil || 0);
 
@@ -791,7 +800,7 @@ function renderPowerChoice() {
 
     const tag = document.createElement("div");
     tag.className = "choice-tag";
-    tag.innerText = "Tap to start";
+    tag.innerText = state.activePowerAwardReason ? "Tap to gain" : "Tap to start";
 
     top.appendChild(icon);
     top.appendChild(name);

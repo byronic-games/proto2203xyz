@@ -101,7 +101,7 @@ const POWERS = [
   {
     id: "brucie_bonus",
     name: "Brucie Bonus",
-    description: "If the revealed next card matches the face-up card, immediately choose an extra Cheat.",
+    description: "If the revealed next card matches the face-up card, immediately choose an extra Power.",
     rarity: "common",
     unlockAt: 0,
     weight: 1,
@@ -198,6 +198,10 @@ function getPassiveSuitSavePower(card = state?.current) {
   return null;
 }
 
+function isNudgeChargePower(powerId) {
+  return powerId === "balanced_nudges" || powerId === "updraft" || powerId === "downforce";
+}
+
 function getUnlockedPowerPool(includeAll = false) {
   return POWERS.filter((power) => {
     if (!power.included) return false;
@@ -223,8 +227,9 @@ function pickPowerOptionFromPool(pool, seeded, rng) {
   return pool.splice(idx, 1)[0] || null;
 }
 
-function getRandomPowerOptions(count = 2, seedString = "", includeAll = false) {
-  const pool = [...getUnlockedPowerPool(includeAll)];
+function getRandomPowerOptions(count = 2, seedString = "", includeAll = false, excludeIds = []) {
+  const excluded = new Set((excludeIds || []).filter(Boolean));
+  const pool = [...getUnlockedPowerPool(includeAll)].filter((power) => !excluded.has(power.id));
   const options = [];
   const seeded = !!normalizeSeed(seedString);
   const rng = seeded

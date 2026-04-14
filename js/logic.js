@@ -246,6 +246,104 @@ function queueCheatAward(reason = "streak") {
   state.pendingCheatAwardQueue.push(String(reason || "streak"));
 }
 
+function queuePowerAward(reason = "bonus") {
+  if (!Array.isArray(state.pendingPowerAwardQueue)) {
+    state.pendingPowerAwardQueue = [];
+  }
+  state.pendingPowerAwardQueue.push(String(reason || "bonus"));
+}
+
+function getDailyPowerOfferSeed(offerIndex) {
+  return `${state.runSeed}|daily-power-offer-v1|${offerIndex}`;
+}
+
+function getExcludedRunPowerIds() {
+  return Array.from(new Set((state.powers || []).filter((powerId) => powerId && powerId !== "nudge_engine")));
+}
+
+function grantPowerToCurrentRun(powerId, source = "bonus") {
+  const power = getPowerById(powerId);
+  if (!power) return false;
+  if (!Array.isArray(state.powers)) {
+    state.powers = [];
+  }
+  if (state.powers.includes(power.id)) {
+    return false;
+  }
+  state.powers.push(power.id);
+  applyRunPowerSetup(power.id);
+  appendRunDebugLog("power_selected", {
+    awardReason: source,
+    powerId: power.id,
+    powerName: power.name,
+    powersAfterPick: [...state.powers],
+    message: `Power gained: ${power.name}.`,
+  });
+  return true;
+}
+
+function getLockySevenCarryModifier(card, nextComparisonValue, nextCardModifier) {
+  if (!state.lockySevensActive || !card) return 0;
+  if (nextComparisonValue !== 7) return 0;
+  if ((nextCardModifier || 0) === 0 && card.value !== 7) return 0;
+  return 7 - card.value;
+}
+
+function offerRewardPowerChoice(reason = "bonus") {
+  const isDailyRun = state.runMode === "daily";
+  const excludeIds = getExcludedRunPowerIds();
+  const seededOfferIndex = (state.dailyPowerOfferCount || 0) + 1;
+  const seedString = isDailyRun ? getDailyPowerOfferSeed(seededOfferIndex) : "";
+  const powerOptions = getRandomPowerOptions(2, seedString, isDailyRun, excludeIds);
+
+  if (!powerOptions.length) {
+    state.activePowerAwardReason = "";
+    return false;
+  }
+
+  if (isDailyRun) {
+    state.dailyPowerOfferCount = seededOfferIndex;
+  }
+
+  state.pendingPowerOptions = powerOptions;
+  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.activePowerAwardReason = String(reason || "bonus");
+  state.message = state.activePowerAwardReason === "brucie_bonus"
+    ? "Brucie Bonus! Choose 1 power:"
+    : "Choose 1 power:";
+
+  appendRunDebugLog("power_offer_presented", {
+    awardReason: state.activePowerAwardReason,
+    optionCount: state.pendingPowerOptions.length,
+    options: state.pendingPowerOptions.map((option) => ({
+      id: option.id,
+      name: option.name,
+      rarity: option.rarity || "common",
+    })),
+    message: state.message,
+  });
+
+  render();
+  return true;
+}
+
+function resolvePendingRewardQueues() {
+  if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
+    offerCheatChoice();
+    return true;
+  }
+  if ((state.pendingCheatAwardQueue || []).length > 0) {
+    const nextReason = state.pendingCheatAwardQueue.shift();
+    offerCheatChoice(nextReason);
+    return true;
+  }
+  if ((state.pendingPowerAwardQueue || []).length > 0) {
+    const nextReason = state.pendingPowerAwardQueue.shift();
+    return offerRewardPowerChoice(nextReason);
+  }
+  return false;
+}
+
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -259,8 +357,10 @@ function openPowerChoice(forceRandom = false) {
   state.pendingDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
   state.pendingLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   state.pendingCheatOptions = [];
+  state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
@@ -281,8 +381,10 @@ function openDailyPowerChoice(dateKey = "") {
   state.pendingDeckKey = "blue";
   state.pendingLevelNumber = DEFAULT_LEVEL_NUMBER;
   state.pendingCheatOptions = [];
+  state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
@@ -302,14 +404,14 @@ function addCheatCopiesToHand(cheatId, count) {
 function applyRunPowerSetup(powerId) {
   switch (powerId) {
     case "balanced_nudges":
-      state.nudgeUpCharges = 4;
-      state.nudgeDownCharges = 4;
+      state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 4;
+      state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 4;
       break;
     case "updraft":
-      state.nudgeUpCharges = 8;
+      state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 8;
       break;
     case "downforce":
-      state.nudgeDownCharges = 8;
+      state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 8;
       break;
     case "swap_stack":
       addCheatCopiesToHand("swap", 4);
@@ -355,6 +457,7 @@ function startRunWithPower(powerId) {
     cheats: [],
     pendingCheatOptions: [],
     pendingCheatAwardQueue: [],
+    pendingPowerAwardQueue: [],
     message:
       activePowers.length > 0
         ? `Run started with seed ${chosenSeed} and power: ${activePowers
@@ -384,9 +487,11 @@ function startRunWithPower(powerId) {
     runMode,
     dailyDateKey,
     dailyCheatOfferCount: 0,
+    dailyPowerOfferCount: 0,
     justUnlockedCheatIds: [],
     cheatChoiceLockedUntil: 0,
     activeCheatAwardReason: "",
+    activePowerAwardReason: "",
     powerChoiceLockedUntil: 0,
     pauseForCheat: false,
     pendingPowerOptions: [],
@@ -408,6 +513,7 @@ function startRunWithPower(powerId) {
     lucky7Armed: false,
     fiveAliveArmed: false,
     alwaysBetBlackArmed: false,
+    lockySevensActive: false,
     oddOneOutArmed: false,
     cheatACheaterRemaining: 0,
   };
@@ -465,7 +571,28 @@ function pickPowerFromChoice(index) {
   const power = state.pendingPowerOptions[index];
   if (!power) return;
 
+  const isRewardChoice = !!state.activePowerAwardReason;
+
+  if (isRewardChoice && !state.gameOver && state.current) {
+    const gained = grantPowerToCurrentRun(power.id, state.activePowerAwardReason);
+    state.pendingPowerOptions = [];
+    state.powerChoiceLockedUntil = 0;
+    const rewardReason = state.activePowerAwardReason;
+    state.activePowerAwardReason = "";
+    state.message = gained
+      ? rewardReason === "brucie_bonus"
+        ? `Brucie Bonus! Gained power: ${power.name}.`
+        : `Power gained: ${power.name}.`
+      : `${power.name} is already active.`;
+    if (resolvePendingRewardQueues()) {
+      return;
+    }
+    render();
+    return;
+  }
+
   startRunWithPower(power.id);
+  state.activePowerAwardReason = "";
   state.message = `Power picked: ${power.name}.`;
   render();
 }
@@ -582,6 +709,32 @@ function getCurrentEffectiveValue() {
   return getEffectiveValueForModifier(state.current, state.currentValueModifier || 0);
 }
 
+function adjustValueForLockySevens(currentValue, targetValue) {
+  if (!state.lockySevensActive) return targetValue;
+  if (!Number.isFinite(currentValue) || !Number.isFinite(targetValue)) return targetValue;
+  if (currentValue === 7) return 7;
+  if ((currentValue < 7 && targetValue >= 7) || (currentValue > 7 && targetValue <= 7)) {
+    return 7;
+  }
+  return targetValue;
+}
+
+function getAdjustedCurrentNudgeTarget(modifierDelta) {
+  const currentValue = getCurrentEffectiveValue();
+  if (!Number.isFinite(currentValue)) return null;
+  const targetValue = getEffectiveValueForModifier(state.current, (state.currentValueModifier || 0) + modifierDelta);
+  return adjustValueForLockySevens(currentValue, targetValue);
+}
+
+function getAdjustedNextNudgeTarget(baseDelta) {
+  const next = peekNext();
+  if (!next) return null;
+  const currentValue = getUpcomingCheatValue(1);
+  if (!Number.isFinite(currentValue)) return null;
+  const targetValue = clampCardValue(currentValue + baseDelta);
+  return adjustValueForLockySevens(currentValue, targetValue);
+}
+
 function isAceWildAutoCorrect(currentComparisonValue, nextCard) {
   if (!runHasPower("aces_wild")) return false;
   return currentComparisonValue === 1 || nextCard?.value === 1;
@@ -614,12 +767,12 @@ function canUseNudge(direction) {
 
   if (direction === "up") {
     if ((state.nudgeUpCharges || 0) <= 0) return false;
-    const nextValue = getEffectiveValueForModifier(state.current, (state.currentValueModifier || 0) + 1);
+    const nextValue = getAdjustedCurrentNudgeTarget(1);
     return nextValue !== getCurrentEffectiveValue();
   }
   if (direction === "down") {
     if ((state.nudgeDownCharges || 0) <= 0) return false;
-    const nextValue = getEffectiveValueForModifier(state.current, (state.currentValueModifier || 0) - 1);
+    const nextValue = getAdjustedCurrentNudgeTarget(-1);
     return nextValue !== getCurrentEffectiveValue();
   }
   return false;
@@ -639,7 +792,9 @@ function useNudgeCharge(direction) {
   if (direction === "up") {
     if ((state.nudgeUpCharges || 0) <= 0) return;
     if (!canUseNudge("up")) {
-      state.message = "Cannot use Nudge +1 on a King.";
+      state.message = state.lockySevensActive && getCurrentEffectiveValue() === 7
+        ? "Locky 7s active - 7s cannot be nudged."
+        : "Cannot use Nudge +1 on a King.";
       render();
       return;
     }
@@ -648,18 +803,28 @@ function useNudgeCharge(direction) {
   if (direction === "down") {
     if ((state.nudgeDownCharges || 0) <= 0) return;
     if (!canUseNudge("down")) {
-      state.message = "Cannot use Nudge -1 on an Ace.";
+      state.message = state.lockySevensActive && getCurrentEffectiveValue() === 7
+        ? "Locky 7s active - 7s cannot be nudged."
+        : "Cannot use Nudge -1 on an Ace.";
       render();
       return;
     }
   }
 
+  const currentValue = getCurrentEffectiveValue();
+  const targetValue = direction === "up"
+    ? getAdjustedCurrentNudgeTarget(1)
+    : getAdjustedCurrentNudgeTarget(-1);
+  if (!Number.isFinite(currentValue) || !Number.isFinite(targetValue)) {
+    return;
+  }
+
   if (direction === "up") {
     state.nudgeUpCharges = Math.max(0, (state.nudgeUpCharges || 0) - 1);
-    state.currentValueModifier += 1;
+    state.currentValueModifier += targetValue - currentValue;
   } else if (direction === "down") {
     state.nudgeDownCharges = Math.max(0, (state.nudgeDownCharges || 0) - 1);
-    state.currentValueModifier -= 1;
+    state.currentValueModifier += targetValue - currentValue;
   } else {
     return;
   }
@@ -944,6 +1109,8 @@ function makeGuess(type) {
 
   const currentComparisonValue = getCurrentEffectiveValue();
   const nextComparisonValue = getNextComparisonValueForGuess(next);
+  const nextModifierBeforeGuess = state.nextCardValueModifier || 0;
+  const lockySevenCarryModifier = getLockySevenCarryModifier(next, nextComparisonValue, nextModifierBeforeGuess);
   const currentWasBase = state.currentValueModifier === 0;
   const el = document.getElementById("next-info");
   if (el) el.innerText = "";
@@ -1044,7 +1211,7 @@ function makeGuess(type) {
     recordCurrentCardGuess(state.current, type, false);
     recordFaceDownOutcome(next, true, currentWasBase);
     advanceToCard(next);
-    state.currentValueModifier = 0;
+    state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
     setCurrentCardFeedback("wrong");
     flashGameShell("wrong");
@@ -1087,7 +1254,7 @@ function makeGuess(type) {
   advanceToCard(next);
   state.correctAnswers += 1;
   recordCorrectGuessProgress(1);
-  state.currentValueModifier = 0;
+  state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
   flashGameShell("correct");
@@ -1135,7 +1302,7 @@ function makeGuess(type) {
   let cheatACheaterTriggered = false;
 
   if (brucieBonusTriggered) {
-    queueCheatAward("brucie_bonus");
+    queuePowerAward("brucie_bonus");
   }
 
   if ((state.cheatACheaterRemaining || 0) > 0) {
@@ -1219,12 +1386,12 @@ function makeGuess(type) {
 
   if (brucieBonusTriggered) {
     state.pauseForCheat = true;
-    state.message = "Brucie Bonus! Match hit - choose 1 cheat.";
+    state.message = "Brucie Bonus! Match hit - choose 1 power.";
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
-      const nextReason = state.pendingCheatAwardQueue.shift() || "brucie_bonus";
-      offerCheatChoice(nextReason);
+      const nextReason = state.pendingPowerAwardQueue.shift() || "brucie_bonus";
+      offerRewardPowerChoice(nextReason);
       render();
     }, 1000);
     return;
