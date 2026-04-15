@@ -93,7 +93,7 @@ window.CHEAT_BALANCE_OVERRIDES = {
                 },
     "swap":  {
                  "stacking":  "repeatable",
-                 "description":  "Replace the current face card with the card at the bottom of the deck.",
+                 "description":  "Swap the current face-up card with the next face-down card.",
                  "weight":  1,
                  "unlockAt":  0,
                  "name":  "Swap",

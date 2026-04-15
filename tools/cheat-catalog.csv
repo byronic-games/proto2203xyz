@@ -29,4 +29,4 @@ odd_one_out,Odd One Out,rare,30,TRUE,unique,1,,Meta progression >= 6,"For the ne
 lucky_7,Lucky 7,rare,10,TRUE,unique,1,,Meta progression >= 8 | Can only be used on a 7.,Can only be used on a 7. Your next wrong guess still counts as correct.
 five_alive,Five Alive,rare,10,TRUE,unique,1,,Meta progression >= 9 | Can only be used on a 5.,"Can only be used on a 5. If your next guess is wrong, the run still continues."
 tear_corner,Tear Corner,common,45,TRUE,unique,1,,Available from run start,Tear off the top left corner of the current face card so it can be recognised in future runs.
-swap,Swap,uncommon,0,TRUE,repeatable,1,,Available from run start,Replace the current face card with the card at the bottom of the deck.
+swap,Swap,uncommon,0,TRUE,repeatable,1,,Available from run start,Swap the current face-up card with the next face-down card.
