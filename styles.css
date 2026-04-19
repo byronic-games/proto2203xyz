@@ -1724,9 +1724,9 @@ a {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 280px;
     grid-template-areas:
-      "message message"
       "hud hud"
       "play cheats"
+      "message message"
       "memory cheats";
     align-items: start;
   }

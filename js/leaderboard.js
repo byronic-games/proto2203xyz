@@ -73,17 +73,17 @@ function getHeroEntryKey(entry = {}) {
 }
 
 function normalizeHeroEntry(entry = {}) {
+  const rawDeckLevel = entry.deckLevel ?? entry.deck_level ?? entry.level;
+  const hasExplicitDeckLevel =
+    rawDeckLevel !== undefined && rawDeckLevel !== null && rawDeckLevel !== "";
+
   return {
     playerName: sanitizeHeroName(entry.playerName || entry.player_name || "Unknown"),
     seed: String(entry.seed || ""),
     gameVersion: String(entry.gameVersion || entry.game_version || ""),
     deck: normalizeHeroDeck(entry.deck || ""),
-    deckLevel: normalizeHeroLevel(entry.deckLevel ?? entry.deck_level),
-    hasExplicitDeckLevel: Object.prototype.hasOwnProperty.call(entry, "deckLevel")
-      ? entry.deckLevel !== undefined && entry.deckLevel !== null && entry.deckLevel !== ""
-      : Object.prototype.hasOwnProperty.call(entry, "deck_level")
-        ? entry.deck_level !== undefined && entry.deck_level !== null && entry.deck_level !== ""
-        : false,
+    deckLevel: normalizeHeroLevel(rawDeckLevel),
+    hasExplicitDeckLevel,
     startingPower: normalizeHeroPower(entry.startingPower || entry.starting_power || ""),
     createdAt: String(entry.createdAt || entry.created_at || ""),
   };
@@ -135,6 +135,14 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       deck_level: entry.deckLevel,
       starting_power: entry.startingPower,
     };
+    const payloadWithLegacyLevel = {
+      player_name: entry.playerName,
+      seed: entry.seed,
+      game_version: entry.gameVersion,
+      deck: entry.deck,
+      level: entry.deckLevel,
+      starting_power: entry.startingPower,
+    };
     const payloadWithoutLevel = {
       player_name: entry.playerName,
       seed: entry.seed,
@@ -148,6 +156,14 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       headers,
       body: JSON.stringify(payloadWithLevel),
     });
+
+    if (!response.ok && response.status !== 409) {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payloadWithLegacyLevel),
+      });
+    }
 
     const canFallbackWithoutLevel =
       normalizeHeroLevel(entry.deckLevel) === DEFAULT_LEVEL_NUMBER;
@@ -189,11 +205,17 @@ async function fetchHeroes(limit = 200) {
     };
 
     let response = await fetchRemoteRows(
-      "select=player_name,seed,game_version,deck,deck_level,starting_power,created_at"
+      "select=player_name,seed,game_version,deck,deck_level,level,starting_power,created_at"
     );
 
     if (!response.ok) {
-      response = await fetchRemoteRows("select=player_name,seed,game_version,deck,starting_power,created_at");
+      response = await fetchRemoteRows("select=player_name,seed,game_version,deck,deck_level,starting_power,created_at");
+      if (!response.ok) {
+        response = await fetchRemoteRows("select=player_name,seed,game_version,deck,level,starting_power,created_at");
+      }
+      if (!response.ok) {
+        response = await fetchRemoteRows("select=player_name,seed,game_version,deck,starting_power,created_at");
+      }
       if (!response.ok) {
         response = await fetchRemoteRows("select=player_name,seed,game_version,created_at");
       }
@@ -228,6 +250,7 @@ async function fetchHeroes(limit = 200) {
             return {
               ...hero,
               deckLevel: localMatches[0].deckLevel,
+              hasExplicitDeckLevel: true,
             };
           }
         }
@@ -251,6 +274,7 @@ async function fetchHeroes(limit = 200) {
           ...existing,
           deck: hero.deck || existing.deck,
           deckLevel: hero.deckLevel || existing.deckLevel,
+          hasExplicitDeckLevel: existing.hasExplicitDeckLevel || hero.hasExplicitDeckLevel,
           startingPower: hero.startingPower || existing.startingPower,
           createdAt: hero.createdAt || existing.createdAt,
         });

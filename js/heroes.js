@@ -35,7 +35,7 @@ async function renderHeroesBoard() {
 
     const levelTd = document.createElement("td");
     levelTd.dataset.label = "Level";
-    levelTd.innerText = String(hero.deckLevel || 1);
+    levelTd.innerText = hero.hasExplicitDeckLevel ? String(hero.deckLevel || 1) : "-";
 
     const powerTd = document.createElement("td");
     powerTd.dataset.label = "Power";
