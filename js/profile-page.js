@@ -1,19 +1,5 @@
 const PROFILE_NAME_KEY = "hl_prototype_hero_name";
-const DAILY_LOCAL_ATTEMPTS_KEY = "hl_prototype_daily_attempts_local";
-
-function getCompletedDailyRunCount() {
-  try {
-    const attempts = JSON.parse(localStorage.getItem(DAILY_LOCAL_ATTEMPTS_KEY) || "{}");
-    if (!attempts || typeof attempts !== "object") return 0;
-
-    return Object.values(attempts).filter((entry) => entry?.completed === true).length;
-  } catch {
-    return 0;
-  }
-}
-
 function getProfileAchievements(stats, deckWins) {
-  const completedDailyRuns = getCompletedDailyRunCount();
   return [
     {
       label: "First Deck Cleared",
@@ -41,7 +27,7 @@ function getProfileAchievements(stats, deckWins) {
     },
     {
       label: "Daily Completed",
-      unlocked: completedDailyRuns >= 1,
+      unlocked: (stats.dailyClears || 0) >= 1,
     },
   ];
 }
@@ -65,11 +51,12 @@ function renderProfilePage() {
   const blueRunsEl = document.getElementById("profile-blue-runs");
   const redRunsEl = document.getElementById("profile-red-runs");
   const dailyAttemptsEl = document.getElementById("profile-daily-attempts");
+  const dailyClearsEl = document.getElementById("profile-daily-clears");
   const stampEl = document.getElementById("profile-stamp");
   const achievementListEl = document.getElementById("profile-achievement-list");
   const backBtn = document.getElementById("profile-back-btn");
 
-  if (!nameInput || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !blueRunsEl || !redRunsEl || !dailyAttemptsEl || !stampEl || !achievementListEl || !backBtn) {
+  if (!nameInput || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !blueRunsEl || !redRunsEl || !dailyAttemptsEl || !dailyClearsEl || !stampEl || !achievementListEl || !backBtn) {
     return;
   }
 
@@ -89,6 +76,7 @@ function renderProfilePage() {
     blueRunsEl.textContent = String(stats.blueRunsStarted || 0);
     redRunsEl.textContent = String(stats.redRunsStarted || 0);
     dailyAttemptsEl.textContent = String(stats.dailyAttempts || 0);
+    dailyClearsEl.textContent = String(stats.dailyClears || 0);
     stampEl.textContent = getProfileStampLabel(achievements);
 
     achievementListEl.innerHTML = "";

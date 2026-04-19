@@ -184,6 +184,7 @@ function normalizeProfileStats(stats = {}) {
     totalCorrectGuesses: Number.isFinite(stats.totalCorrectGuesses) ? stats.totalCorrectGuesses : 0,
     runsStarted: Number.isFinite(stats.runsStarted) ? stats.runsStarted : 0,
     dailyRunsStarted: Number.isFinite(stats.dailyRunsStarted) ? stats.dailyRunsStarted : 0,
+    dailyClears: Number.isFinite(stats.dailyClears) ? stats.dailyClears : 0,
     blueRunsStarted: Number.isFinite(stats.blueRunsStarted) ? stats.blueRunsStarted : 0,
     redRunsStarted: Number.isFinite(stats.redRunsStarted) ? stats.redRunsStarted : 0,
     totalDecksCleared: Number.isFinite(stats.totalDecksCleared) ? stats.totalDecksCleared : 0,
@@ -396,6 +397,12 @@ function recordDeckClearProgress(deckKey) {
   const normalizedDeckKey = normalizeDeckKey(deckKey);
   stats.totalDecksCleared += 1;
   stats.decksClearedByColor[normalizedDeckKey] = (stats.decksClearedByColor[normalizedDeckKey] || 0) + 1;
+  return saveProfileStats(stats);
+}
+
+function recordDailyClearProgress() {
+  const stats = loadProfileStats();
+  stats.dailyClears += 1;
   return saveProfileStats(stats);
 }
 

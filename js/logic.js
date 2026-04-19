@@ -1281,6 +1281,8 @@ function makeGuess(type) {
       state.deckWins = recordDeckWin(state.currentDeckKey);
       state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
       recordDeckClearProgress(state.currentDeckKey);
+    } else {
+      recordDailyClearProgress();
     }
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
