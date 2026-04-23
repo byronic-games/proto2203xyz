@@ -79,7 +79,7 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant.</p>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is coming soon.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
@@ -88,6 +88,10 @@
             <button class="deck-choice-card deck-choice-red locked" id="deck-pick-red" type="button">
               <span class="deck-choice-label">Red Deck</span>
               <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 1.</span>
+            </button>
+            <button class="deck-choice-card deck-choice-green locked" id="deck-pick-green" type="button" disabled>
+              <span class="deck-choice-label">Green Deck</span>
+              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Red Deck Level 1. Coming soon.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -188,6 +192,8 @@
       const blueDeckBtn = document.getElementById("deck-pick-blue");
       const redDeckBtn = document.getElementById("deck-pick-red");
       const redDeckDesc = document.getElementById("deck-red-desc");
+      const greenDeckBtn = document.getElementById("deck-pick-green");
+      const greenDeckDesc = document.getElementById("deck-green-desc");
       const levelCopy = document.getElementById("level-copy");
       const levelOneBtn = document.getElementById("level-pick-1");
       const levelTwoBtn = document.getElementById("level-pick-2");
@@ -203,7 +209,7 @@
       const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
       let pendingDeckSelection = "blue";
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !nameInput) {
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !nameInput) {
         return;
       }
 
@@ -217,7 +223,8 @@
       }
 
       function getDeckLevelKey(deckKey, levelNumber) {
-        return `${deckKey === "red" ? "red" : "blue"}|${normalizeLevelNumber(levelNumber)}`;
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
+        return `${normalizedDeck}|${normalizeLevelNumber(levelNumber)}`;
       }
 
       function normalizeDeckLevelClears(clears) {
@@ -293,6 +300,10 @@
         return sessionStorage.getItem(redDeckDebugUnlockKey) === "1" || hasClearedDeckLevel("blue", 1);
       }
 
+      function isGreenDeckPrereqMet() {
+        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1" || hasClearedDeckLevel("red", 1);
+      }
+
       function isDeckLevelUnlocked(deckKey, levelNumber) {
         const normalizedDeck = deckKey === "red" ? "red" : "blue";
         const normalizedLevel = normalizeLevelNumber(levelNumber);
@@ -350,7 +361,8 @@
       }
 
       function setSelectedDeck(deckKey) {
-        localStorage.setItem(selectedDeckKey, deckKey === "red" ? "red" : "blue");
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
+        localStorage.setItem(selectedDeckKey, normalizedDeck);
       }
 
       function setSelectedLevel(levelNumber) {
@@ -369,11 +381,16 @@
 
       function refreshDeckOptions() {
         const redUnlocked = isRedDeckUnlocked();
+        const greenPrereqMet = isGreenDeckPrereqMet();
         setChoiceCardState(blueDeckBtn, true);
         setChoiceCardState(redDeckBtn, redUnlocked);
+        setChoiceCardState(greenDeckBtn, false);
         redDeckDesc.textContent = redUnlocked
           ? "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history."
           : "Unlock by clearing Blue Deck Level 1.";
+        greenDeckDesc.textContent = greenPrereqMet
+          ? "Unlocked by progression. Deck coming soon."
+          : "Unlock by clearing Red Deck Level 1. Coming soon.";
       }
 
       function openDeckModal() {
@@ -427,6 +444,7 @@
       }
 
       function chooseDeck(deckKey) {
+        if (deckKey === "green") return;
         if (deckKey === "red" && !isRedDeckUnlocked()) return;
         openLevelModal(deckKey);
       }

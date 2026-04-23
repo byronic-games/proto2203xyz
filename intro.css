@@ -645,6 +645,11 @@ h1 {
   color: #fff5f7;
 }
 
+.deck-choice-green {
+  background: linear-gradient(180deg, #a8f48b, #63c768);
+  color: #0d2b16;
+}
+
 .level-choice-1 {
   background: linear-gradient(180deg, #74e8ff, #35c4f1);
   color: #08202c;
