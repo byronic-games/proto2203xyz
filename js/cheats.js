@@ -698,7 +698,7 @@ const CHEATS = [
       if (!Number.isFinite(targetValue)) return "No next card.";
       state.nextCardValueModifier = targetValue - currentValue;
 
-      return `Next card will be treated as ${valueToRank(targetValue)} for the next guess.`;
+      return "Next face-down card nudged up for the next guess.";
     },
   },
   {
@@ -718,7 +718,7 @@ const CHEATS = [
       if (!Number.isFinite(targetValue)) return "No next card.";
       state.nextCardValueModifier = targetValue - currentValue;
 
-      return `Next card will be treated as ${valueToRank(targetValue)} for the next guess.`;
+      return "Next face-down card nudged down for the next guess.";
     },
   },  {
     id: "halve_it",
@@ -1300,7 +1300,6 @@ function pickCheatFromChoice(index) {
   }
   render();
 }
-
 
 
 

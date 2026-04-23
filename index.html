@@ -305,7 +305,11 @@
 
         if (!isRedDeckUnlocked()) return false;
         if (normalizedLevel === 1) return true;
-        return hasClearedDeckLevel("blue", normalizedLevel);
+        if (normalizedLevel === 2) return hasClearedDeckLevel("blue", 2);
+        if (normalizedLevel === 3) {
+          return hasClearedDeckLevel("blue", 3) && hasClearedDeckLevel("red", 2);
+        }
+        return false;
       }
 
       function getLevelDescription(deckKey, levelNumber) {
@@ -320,7 +324,7 @@
 
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
         if (normalizedLevel === 2) return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 2.";
-        return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 3.";
+        return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 3 and Red Deck Level 2.";
       }
 
       function getLevelUnlockText(deckKey, levelNumber) {
@@ -333,7 +337,9 @@
         }
 
         if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
-        return `Unlock by clearing Blue Deck Level ${normalizedLevel}.`;
+        if (normalizedLevel === 2) return "Unlock by clearing Blue Deck Level 2.";
+        if (normalizedLevel === 3) return "Unlock by clearing Blue Deck Level 3 and Red Deck Level 2.";
+        return "Unlock requirements not available.";
       }
 
       function setChoiceCardState(cardEl, unlocked) {
@@ -390,7 +396,7 @@
 
         levelCopy.textContent = isBlueDeck
           ? "Blue progression starts at Level 1 and opens one rung at a time as you clear each level."
-          : "Red progression unlocks alongside your Blue clears. Each Red level opens once the matching Blue level has been beaten.";
+          : "Red progression unlocks alongside your Blue clears, with Red Level 3 requiring both Blue Level 3 and Red Level 2 clears.";
 
         levelOneDesc.textContent = levelOneUnlocked
           ? getLevelDescription(pendingDeckSelection, 1)
