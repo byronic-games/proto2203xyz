@@ -141,7 +141,10 @@ function runHasPower(powerId) {
 
 
 function getDeckName(deckKey = state?.currentDeckKey || state?.selectedDeckKey || "blue") {
-  return normalizeDeckKey(deckKey) === "red" ? "Red" : "Blue";
+  const normalizedDeck = normalizeDeckKey(deckKey);
+  if (normalizedDeck === "red") return "Red";
+  if (normalizedDeck === "green") return "Green";
+  return "Blue";
 }
 
 function getPowerRarityLabel(power) {
@@ -282,7 +285,8 @@ function getCheatRewardThreshold() {
 function awardOnCorrectGuessPowers(guessType) {
   const awardedNames = [];
 
-  if (normalizeDeckKey(state.currentDeckKey) === "red") {
+  const normalizedDeck = normalizeDeckKey(state.currentDeckKey);
+  if (normalizedDeck === "red" || normalizedDeck === "green") {
     return awardedNames;
   }
 

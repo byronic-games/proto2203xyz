@@ -1,7 +1,17 @@
+function getDeckBackColor(deckKey) {
+  const normalizedDeck = normalizeDeckKey(deckKey || "blue");
+  if (normalizedDeck === "red") return "pink";
+  if (normalizedDeck === "green") return "green";
+  return "blue";
+}
+
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
   const streakEl = document.getElementById("current-streak");
+  const activeDeckKey = normalizeDeckKey(
+    state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck()
+  );
   const bestDeckKey = state.gameOver
     ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
     : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
@@ -12,7 +22,10 @@ function renderScores() {
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
-  if (streakEl) streakEl.innerText = "";
+  if (streakEl) {
+    const showEnergy = !state.gameOver && !!state.current && activeDeckKey === "green";
+    streakEl.innerText = showEnergy ? `Energy ${Math.max(0, Number(state.energy) || 0)}` : "";
+  }
 
   const metaEl = document.getElementById("meta-progression");
   if (metaEl) {
@@ -292,7 +305,8 @@ function renderCurrentCard() {
   if (!currentCardEl || !currentValueEl) return;
 
   if (!state.current) {
-    currentCardEl.className = "card-back card-back-blue";
+    const idleBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
+    currentCardEl.className = `card-back card-back-${idleBackColor}`;
     currentCardEl.innerHTML = `<div class="card-back-symbol">🂠</div>`;
     currentValueEl.innerText = "";
     return;
@@ -435,7 +449,7 @@ function renderFaceDownDeck() {
 
   if (!state.current) {
     deckEl.innerHTML = "";
-    const idleDeckBackColor = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey) === "red" ? "pink" : "blue";
+    const idleDeckBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
     deckEl.className = `card-back card-back-${idleDeckBackColor}`;
     deckEl.removeAttribute("data-back-color");
     countEl.innerText = "";
@@ -448,7 +462,7 @@ function renderFaceDownDeck() {
     ? getCardBackStatus(next.id)
     : { tornCorner: false, backColor: "blue" };
 
-  const backColor = normalizeDeckKey(state.currentDeckKey) === "red" ? "pink" : "blue";
+  const backColor = getDeckBackColor(state.currentDeckKey);
   const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
 
   deckEl.className = shouldShowDeckStatsInline

@@ -79,7 +79,7 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is coming soon.</p>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is an energy-based prototype challenge.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
@@ -89,9 +89,9 @@
               <span class="deck-choice-label">Red Deck</span>
               <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 1.</span>
             </button>
-            <button class="deck-choice-card deck-choice-green locked" id="deck-pick-green" type="button" disabled>
+            <button class="deck-choice-card deck-choice-green locked" id="deck-pick-green" type="button">
               <span class="deck-choice-label">Green Deck</span>
-              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Red Deck Level 1. Coming soon.</span>
+              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Red Deck Level 1.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -206,7 +206,10 @@
       const selectedLevelKey = "hl_prototype_selected_level";
       const deckWinsKey = "hl_prototype_deck_wins";
       const deckLevelClearsKey = "hl_prototype_deck_level_clears";
+      const bestScoresByModeKey = "hl_prototype_best_scores_by_mode";
+      const manualLevelOneUnlocksKey = "hl_prototype_manual_level1_unlocks";
       const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
+      const debugUnlockEnabled = new URLSearchParams(window.location.search).get("debugUnlock") === "1";
       let pendingDeckSelection = "blue";
 
       if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !nameInput) {
@@ -283,48 +286,107 @@
         return (clears[getDeckLevelKey(deckKey, levelNumber)] || 0) > 0;
       }
 
-      function unlockAllDecksAndLevelsForDebug() {
-        sessionStorage.setItem(redDeckDebugUnlockKey, "1");
+      function normalizeManualLevelOneUnlocks(unlocks) {
+        return {
+          red: !!(unlocks && unlocks.red),
+          green: !!(unlocks && unlocks.green),
+        };
+      }
 
+      function loadManualLevelOneUnlocks() {
+        try {
+          return normalizeManualLevelOneUnlocks(JSON.parse(localStorage.getItem(manualLevelOneUnlocksKey) || "{}"));
+        } catch {
+          return normalizeManualLevelOneUnlocks({});
+        }
+      }
+
+      function saveManualLevelOneUnlocks(unlocks) {
+        localStorage.setItem(
+          manualLevelOneUnlocksKey,
+          JSON.stringify(normalizeManualLevelOneUnlocks(unlocks))
+        );
+      }
+
+      function isDeckManuallyLevelOneUnlocked(deckKey) {
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
+        if (normalizedDeck === "blue") return true;
+        const unlocks = loadManualLevelOneUnlocks();
+        return !!unlocks[normalizedDeck];
+      }
+
+      function unlockDeckLevelOneForTesting(deckKey) {
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
+        if (normalizedDeck === "blue") return;
+        const unlocks = loadManualLevelOneUnlocks();
+        unlocks[normalizedDeck] = true;
+        saveManualLevelOneUnlocks(unlocks);
+      }
+
+      function loadBestScoresByMode() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(bestScoresByModeKey) || "{}");
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function hasVerifiedDeckLevelClear(deckKey, levelNumber) {
+        const normalizedLevel = normalizeLevelNumber(levelNumber);
+        const bucketKey = getDeckLevelKey(deckKey, normalizedLevel);
         const clears = loadDeckLevelClears();
-        clears[getDeckLevelKey("blue", 1)] = Math.max(1, clears[getDeckLevelKey("blue", 1)] || 0);
-        clears[getDeckLevelKey("blue", 2)] = Math.max(1, clears[getDeckLevelKey("blue", 2)] || 0);
-        clears[getDeckLevelKey("blue", 3)] = Math.max(1, clears[getDeckLevelKey("blue", 3)] || 0);
-        clears[getDeckLevelKey("red", 1)] = Math.max(1, clears[getDeckLevelKey("red", 1)] || 0);
-        clears[getDeckLevelKey("red", 2)] = Math.max(1, clears[getDeckLevelKey("red", 2)] || 0);
-        clears[getDeckLevelKey("red", 3)] = Math.max(1, clears[getDeckLevelKey("red", 3)] || 0);
-        localStorage.setItem(deckLevelClearsKey, JSON.stringify(clears));
+        if ((clears[bucketKey] || 0) <= 0) return false;
+
+        // Full deck clear should also have recorded a best score at 51+ for that deck/level.
+        const bestScores = loadBestScoresByMode();
+        const bestScore = Number(bestScores[bucketKey] || 0);
+        return Number.isFinite(bestScore) && bestScore >= 51;
+      }
+
+      function hasDebugUnlock() {
+        return debugUnlockEnabled && sessionStorage.getItem(redDeckDebugUnlockKey) === "1";
+      }
+
+      function unlockAllDecksAndLevelsForDebug() {
+        if (!debugUnlockEnabled) return;
+        sessionStorage.setItem(redDeckDebugUnlockKey, "1");
       }
 
       function isRedDeckUnlocked() {
-        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1" || hasClearedDeckLevel("blue", 1);
+        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("red") || hasVerifiedDeckLevelClear("blue", 1);
       }
 
       function isGreenDeckPrereqMet() {
-        return sessionStorage.getItem(redDeckDebugUnlockKey) === "1" || hasClearedDeckLevel("red", 1);
+        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("green") || hasVerifiedDeckLevelClear("red", 1);
       }
 
       function isDeckLevelUnlocked(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
         const normalizedLevel = normalizeLevelNumber(levelNumber);
 
-        if (sessionStorage.getItem(redDeckDebugUnlockKey) === "1") return true;
+        if (hasDebugUnlock()) return true;
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return true;
-          return hasClearedDeckLevel("blue", normalizedLevel - 1);
+          return hasVerifiedDeckLevelClear("blue", normalizedLevel - 1);
+        }
+
+        if (normalizedDeck === "green") {
+          if (!isGreenDeckPrereqMet()) return false;
+          return normalizedLevel === 1;
         }
 
         if (!isRedDeckUnlocked()) return false;
         if (normalizedLevel === 1) return true;
-        if (normalizedLevel === 2) return hasClearedDeckLevel("blue", 2);
+        if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("blue", 2);
         if (normalizedLevel === 3) {
-          return hasClearedDeckLevel("blue", 3) && hasClearedDeckLevel("red", 2);
+          return hasVerifiedDeckLevelClear("blue", 3) && hasVerifiedDeckLevelClear("red", 2);
         }
         return false;
       }
 
       function getLevelDescription(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
         const normalizedLevel = normalizeLevelNumber(levelNumber);
 
         if (normalizedDeck === "blue") {
@@ -333,18 +395,28 @@
           return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.";
         }
 
+        if (normalizedDeck === "green") {
+          if (normalizedLevel === 1) return "Energy-based run. Start with 12 Energy, gain/loss based on card distance, and no Nudge rewards.";
+          return "Green Deck prototype currently supports Level 1 only.";
+        }
+
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
         if (normalizedLevel === 2) return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 2.";
         return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 3 and Red Deck Level 2.";
       }
 
       function getLevelUnlockText(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : "blue";
+        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
         const normalizedLevel = normalizeLevelNumber(levelNumber);
 
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return getLevelDescription("blue", 1);
           return `Unlock by clearing Blue Deck Level ${normalizedLevel - 1}.`;
+        }
+
+        if (normalizedDeck === "green") {
+          if (normalizedLevel === 1) return "Unlock by clearing Red Deck Level 1.";
+          return "Green Deck prototype currently supports Level 1 only.";
         }
 
         if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
@@ -381,16 +453,22 @@
 
       function refreshDeckOptions() {
         const redUnlocked = isRedDeckUnlocked();
-        const greenPrereqMet = isGreenDeckPrereqMet();
+        const greenUnlocked = isGreenDeckPrereqMet();
+        const redManual = isDeckManuallyLevelOneUnlocked("red");
+        const greenManual = isDeckManuallyLevelOneUnlocked("green");
         setChoiceCardState(blueDeckBtn, true);
         setChoiceCardState(redDeckBtn, redUnlocked);
-        setChoiceCardState(greenDeckBtn, false);
+        setChoiceCardState(greenDeckBtn, greenUnlocked);
         redDeckDesc.textContent = redUnlocked
-          ? "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history."
+          ? (redManual
+            ? "Testing unlock active. Red Level 1 is permanently unlocked on this device."
+            : "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history.")
           : "Unlock by clearing Blue Deck Level 1.";
-        greenDeckDesc.textContent = greenPrereqMet
-          ? "Unlocked by progression. Deck coming soon."
-          : "Unlock by clearing Red Deck Level 1. Coming soon.";
+        greenDeckDesc.textContent = greenUnlocked
+          ? (greenManual
+            ? "Testing unlock active. Green Level 1 is permanently unlocked on this device."
+            : "Energy-based run. Start with 12 Energy and survive by managing card-distance swings.")
+          : "Unlock by clearing Red Deck Level 1.";
       }
 
       function openDeckModal() {
@@ -405,15 +483,18 @@
       }
 
       function openLevelModal(deckKey) {
-        pendingDeckSelection = deckKey === "red" ? "red" : "blue";
+        pendingDeckSelection = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : "blue");
         const isBlueDeck = pendingDeckSelection === "blue";
+        const isGreenDeck = pendingDeckSelection === "green";
         const levelOneUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 1);
         const levelTwoUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 2);
         const levelThreeUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 3);
 
         levelCopy.textContent = isBlueDeck
           ? "Blue progression starts at Level 1 and opens one rung at a time as you clear each level."
-          : "Red progression unlocks alongside your Blue clears, with Red Level 3 requiring both Blue Level 3 and Red Level 2 clears.";
+          : (isGreenDeck
+            ? "Green is currently a Level 1 energy prototype."
+            : "Red progression unlocks alongside your Blue clears, with Red Level 3 requiring both Blue Level 3 and Red Level 2 clears.");
 
         levelOneDesc.textContent = levelOneUnlocked
           ? getLevelDescription(pendingDeckSelection, 1)
@@ -444,9 +525,44 @@
       }
 
       function chooseDeck(deckKey) {
-        if (deckKey === "green") return;
         if (deckKey === "red" && !isRedDeckUnlocked()) return;
+        if (deckKey === "green" && !isGreenDeckPrereqMet()) return;
         openLevelModal(deckKey);
+      }
+
+      function attachDeckHoldUnlock(buttonEl, deckKey) {
+        if (!buttonEl || (deckKey !== "red" && deckKey !== "green")) return;
+
+        let holdTimer = null;
+        let holdTriggered = false;
+
+        function clearHoldTimer() {
+          if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+          }
+        }
+
+        buttonEl.addEventListener("pointerdown", () => {
+          holdTriggered = false;
+          clearHoldTimer();
+          holdTimer = window.setTimeout(() => {
+            unlockDeckLevelOneForTesting(deckKey);
+            holdTriggered = true;
+            refreshDeckOptions();
+          }, 10000);
+        });
+
+        ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+          buttonEl.addEventListener(eventName, clearHoldTimer);
+        });
+
+        buttonEl.addEventListener("click", (event) => {
+          if (!holdTriggered) return;
+          holdTriggered = false;
+          event.preventDefault();
+          event.stopPropagation();
+        });
       }
 
       function chooseLevel(levelNumber) {
@@ -479,11 +595,15 @@
       levelCloseBackdrop.addEventListener("click", () => closeLevelModal(true));
       blueDeckBtn.addEventListener("click", () => chooseDeck("blue"));
       redDeckBtn.addEventListener("click", () => chooseDeck("red"));
+      greenDeckBtn.addEventListener("click", () => chooseDeck("green"));
+      attachDeckHoldUnlock(redDeckBtn, "red");
+      attachDeckHoldUnlock(greenDeckBtn, "green");
       levelOneBtn.addEventListener("click", () => chooseLevel(1));
       levelTwoBtn.addEventListener("click", () => chooseLevel(2));
       levelThreeBtn.addEventListener("click", () => chooseLevel(3));
 
       playBtn.addEventListener("pointerdown", () => {
+        if (!debugUnlockEnabled) return;
         playHoldTriggered = false;
         clearPlayHoldTimer();
         playHoldTimer = window.setTimeout(() => {

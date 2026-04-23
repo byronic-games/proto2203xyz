@@ -99,6 +99,7 @@ function createEmptyState() {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
+    energy: 0,
   };
 }
 

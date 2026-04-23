@@ -443,6 +443,7 @@ function startRunWithPower(powerId) {
   const currentDeckKey = runMode === "daily"
     ? "blue"
     : normalizeDeckKey(state.pendingDeckKey || selectedDeckKey);
+  const greenRun = runMode !== "daily" && currentDeckKey === "green";
   const currentLevelNumber = runMode === "daily"
     ? DEFAULT_LEVEL_NUMBER
     : normalizeLevelNumber(state.pendingLevelNumber || selectedLevelNumber);
@@ -510,6 +511,7 @@ function startRunWithPower(powerId) {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
+    energy: greenRun ? 12 : 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
     alwaysBetBlackArmed: false,
@@ -707,6 +709,10 @@ function getEffectiveValueForModifier(card, modifier = 0) {
 function getCurrentEffectiveValue() {
   if (!state.current) return null;
   return getEffectiveValueForModifier(state.current, state.currentValueModifier || 0);
+}
+
+function isGreenDeckRun() {
+  return normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue") === "green";
 }
 
 function adjustValueForLockySevens(currentValue, targetValue) {
@@ -1088,7 +1094,7 @@ function maybeBiasUpcomingCardForNewPlayers() {
   state.deck[chosenIndex] = temp;
 }
 
-function makeGuess(type) {
+function makeGuessLegacy(type) {
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
 
@@ -1513,3 +1519,436 @@ function makeGuess(type) {
 
 
 
+function makeGuess(type) {
+  state.restartConfirmArmed = false;
+  state.deckStatsTooltipOpen = false;
+
+  if (
+    state.gameOver ||
+    !state.current ||
+    state.pendingCheatOptions.length > 0 ||
+    state.pendingPowerOptions.length > 0
+  ) {
+    return;
+  }
+
+  maybeBiasUpcomingCardForNewPlayers();
+
+  const next = peekNext();
+  if (!next) return;
+
+  const currentComparisonValue = getCurrentEffectiveValue();
+  const nextComparisonValue = getNextComparisonValueForGuess(next);
+  const revealDistance = Math.abs(nextComparisonValue - currentComparisonValue);
+  const greenRun = isGreenDeckRun();
+  const formatEnergyFeedback = (delta) => {
+    if (!greenRun) return "";
+    if (!Number.isFinite(delta)) return "";
+    if (delta > 0) return `+${delta} Energy`;
+    if (delta < 0) return `-${Math.abs(delta)} Energy`;
+    return "0 Energy";
+  };
+  const appendEnergyFeedback = (message, delta) => {
+    const feedback = formatEnergyFeedback(delta);
+    return feedback ? `${message} (${feedback})` : message;
+  };
+
+  const nextModifierBeforeGuess = state.nextCardValueModifier || 0;
+  const lockySevenCarryModifier = getLockySevenCarryModifier(next, nextComparisonValue, nextModifierBeforeGuess);
+  const currentWasBase = state.currentValueModifier === 0;
+  const el = document.getElementById("next-info");
+  if (el) el.innerText = "";
+  state.nextCardValueModifier = 0;
+
+  const lucky7WasArmed = !!state.lucky7Armed;
+  const fiveAliveWasArmed = !!state.fiveAliveArmed;
+  const godSaveKingWasArmed = !!state.godSaveKingArmed;
+  const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
+  const oddOneOutWasArmed = !!state.oddOneOutArmed;
+  const sixSevenWasArmed = !!state.sixSevenArmed;
+  const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
+
+  state.lucky7Armed = false;
+  state.fiveAliveArmed = false;
+  state.godSaveKingArmed = false;
+  state.alwaysBetBlackArmed = false;
+  state.oddOneOutArmed = false;
+  state.sixSevenArmed = false;
+
+  let correct = false;
+  let match = false;
+  let cheatSpecial = false;
+  let rescuedBySuitSave = false;
+  let rescuedByAlwaysBetBlack = false;
+
+  const nextIsOddForOddOneOut = next.value === 1 || (next.value <= 10 && next.value % 2 === 1);
+  if (oddOneOutWasArmed) {
+    if (nextIsOddForOddOneOut) {
+      const lossCurrentCard = state.current;
+      recordCurrentCardGuess(state.current, type, false);
+      recordFaceDownOutcome(next, true, currentWasBase);
+      advanceToCard(next);
+      state.currentValueModifier = 0;
+      state.streak = 0;
+      setCurrentCardFeedback("wrong");
+      flashGameShell("wrong");
+      const lossMessage = appendEnergyFeedback(
+        `Odd One Out triggered - next card was ${formatNextCardForLossMessage(next)}.`,
+        -revealDistance
+      );
+      appendRunDebugLog("guess_resolved", {
+        guess: type,
+        outcome: "loss",
+        reason: "odd_one_out",
+        currentComparisonValue,
+        nextComparisonValue,
+        revealDistance,
+        lucky7WasArmed,
+        fiveAliveWasArmed,
+        godSaveKingWasArmed,
+        alwaysBetBlackWasArmed,
+        oddOneOutWasArmed,
+        sixSevenWasArmed,
+        message: lossMessage,
+      });
+      triggerGameOverEffect(lossMessage);
+      state.message = `💀 ${lossMessage}`;
+      state.gameOver = true;
+      updateBestScoreIfNeeded();
+      render();
+      return;
+    }
+    cheatSpecial = true;
+    correct = true;
+  }
+
+  if (!cheatSpecial && nextComparisonValue === currentComparisonValue) {
+    match = true;
+    correct = true;
+  }
+
+  const aceAutoWin =
+    !cheatSpecial &&
+    !match &&
+    isAceWildAutoCorrect(currentComparisonValue, next);
+
+  if (aceAutoWin) {
+    cheatSpecial = true;
+    correct = true;
+  }
+
+  if (!cheatSpecial && !match) {
+    const comparisonCorrect =
+      (type === "higher" && nextComparisonValue > currentComparisonValue) ||
+      (type === "lower" && nextComparisonValue < currentComparisonValue);
+    const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
+    const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
+    const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && next.rank === "K";
+    rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (next.suit === SUITS[0] || next.suit === SUITS[3]);
+    rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
+    correct = comparisonCorrect || rescuedByLucky7 || rescuedByFiveAlive || rescuedByGodSaveKing || rescuedByAlwaysBetBlack || rescuedBySuitSave;
+  }
+
+  if (!correct) {
+    const lossCurrentCard = state.current;
+    recordCurrentCardGuess(state.current, type, false);
+    recordFaceDownOutcome(next, true, currentWasBase);
+    advanceToCard(next);
+    state.currentValueModifier = lockySevenCarryModifier;
+    state.streak = 0;
+    setCurrentCardFeedback("wrong");
+    flashGameShell("wrong");
+    const lossDetail = sixSevenWasArmed
+      ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
+      : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
+
+    if (greenRun) {
+      state.energy = Math.max(0, (state.energy || 0) - revealDistance);
+    }
+    const greenOutOfEnergy = greenRun && (state.energy || 0) <= 0;
+
+    appendRunDebugLog("guess_resolved", {
+      guess: type,
+      outcome: greenRun && !greenOutOfEnergy ? "wrong_survived_green" : "loss",
+      reason: greenRun
+        ? (greenOutOfEnergy ? "green_energy_depleted" : "green_energy_penalty")
+        : (sixSevenWasArmed ? "six_seven_failed" : "comparison_failed"),
+      currentComparisonValue,
+      nextComparisonValue,
+      revealDistance,
+      aceAutoWin,
+      match,
+      lucky7WasArmed,
+      fiveAliveWasArmed,
+      godSaveKingWasArmed,
+      alwaysBetBlackWasArmed,
+      oddOneOutWasArmed,
+      sixSevenWasArmed,
+      passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
+      rescuedBySuitSave,
+      rescuedByAlwaysBetBlack,
+      energyAfter: state.energy || 0,
+      message: lossDetail,
+    });
+
+    if (!greenRun || greenOutOfEnergy) {
+      const gameOverMessage = greenRun
+        ? appendEnergyFeedback(`❌ ${lossDetail} Energy depleted.`, -revealDistance)
+        : `❌ ${lossDetail}`;
+      triggerGameOverEffect(gameOverMessage);
+      state.message = gameOverMessage;
+      state.gameOver = true;
+      updateBestScoreIfNeeded();
+      render();
+      handleRunFinished(state.correctAnswers);
+      return;
+    }
+
+    if (state.index >= state.deck.length - 1) {
+      if (state.runMode !== "daily") {
+        state.deckWins = recordDeckWin(state.currentDeckKey);
+        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+        recordDeckClearProgress(state.currentDeckKey);
+      } else {
+        recordDailyClearProgress();
+      }
+      state.message = appendEnergyFeedback(" YOU CLEARED THE DECK!", -revealDistance);
+      state.gameOver = true;
+      render();
+      triggerVictoryEffect();
+      handleRunFinished(state.correctAnswers);
+      if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+        if (state.runMode === "daily") return;
+        state.victoryPromptShown = true;
+        window.setTimeout(() => {
+          window.promptHeroNameForVictory();
+        }, 900);
+      }
+      return;
+    }
+
+    state.message = appendEnergyFeedback(`❌ ${lossDetail}`, -revealDistance);
+    render();
+    return;
+  }
+
+  const prevCard = state.current;
+  recordCurrentCardGuess(state.current, type, true);
+  recordFaceDownOutcome(next, false, currentWasBase);
+  advanceToCard(next);
+  state.correctAnswers += 1;
+  if (greenRun) {
+    state.energy = (state.energy || 0) + revealDistance;
+  }
+  recordCorrectGuessProgress(1);
+  state.currentValueModifier = lockySevenCarryModifier;
+  state.streak = (state.streak || 0) + 1;
+  setCurrentCardFeedback("correct");
+  flashGameShell("correct");
+  addMetaProgression(1);
+  updateBestScoreIfNeeded();
+
+  if (state.index >= state.deck.length - 1) {
+    appendRunDebugLog("guess_resolved", {
+      guess: type,
+      outcome: "deck_cleared",
+      reason: "final_card",
+      currentComparisonValue,
+      nextComparisonValue,
+      revealDistance,
+      aceAutoWin,
+      match,
+      lucky7WasArmed,
+      fiveAliveWasArmed,
+      godSaveKingWasArmed,
+      alwaysBetBlackWasArmed,
+      oddOneOutWasArmed,
+      sixSevenWasArmed,
+      energyAfter: state.energy || 0,
+    });
+    if (state.runMode !== "daily") {
+      state.deckWins = recordDeckWin(state.currentDeckKey);
+      state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+      recordDeckClearProgress(state.currentDeckKey);
+    } else {
+      recordDailyClearProgress();
+    }
+    state.message = appendEnergyFeedback(" YOU CLEARED THE DECK!", revealDistance);
+    state.gameOver = true;
+    render();
+    triggerVictoryEffect();
+    handleRunFinished(state.correctAnswers);
+    if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+      if (state.runMode === "daily") return;
+      state.victoryPromptShown = true;
+      window.setTimeout(() => {
+        window.promptHeroNameForVictory();
+      }, 900);
+    }
+    return;
+  }
+
+  const powerAwards = awardOnCorrectGuessPowers(type);
+  const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
+  let cheatACheaterTriggered = false;
+
+  if (brucieBonusTriggered) {
+    queuePowerAward("brucie_bonus");
+  }
+
+  if ((state.cheatACheaterRemaining || 0) > 0) {
+    state.cheatACheaterRemaining = Math.max(0, (state.cheatACheaterRemaining || 0) - 1);
+    if (state.cheatACheaterRemaining === 0) {
+      cheatACheaterTriggered = true;
+      queueCheatAward("cheat_a_cheater");
+    }
+  }
+
+  appendRunDebugLog("guess_resolved", {
+    guess: type,
+    outcome: "correct",
+    reason: aceAutoWin
+      ? "ace_auto_win"
+      : match
+        ? "match"
+        : lucky7WasArmed
+          ? "lucky_7"
+          : fiveAliveWasArmed
+            ? "five_alive"
+            : godSaveKingWasArmed
+              ? "god_save_the_king"
+              : oddOneOutWasArmed
+                ? "odd_one_out_safe"
+                : "comparison_correct",
+    currentComparisonValue,
+    nextComparisonValue,
+    revealDistance,
+    aceAutoWin,
+    match,
+    lucky7WasArmed,
+    fiveAliveWasArmed,
+    godSaveKingWasArmed,
+    alwaysBetBlackWasArmed,
+    oddOneOutWasArmed,
+    sixSevenWasArmed,
+    passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
+    rescuedBySuitSave,
+    rescuedByAlwaysBetBlack,
+    brucieBonusTriggered,
+    cheatACheaterTriggered,
+    cheatACheaterRemaining: state.cheatACheaterRemaining || 0,
+    energyAfter: state.energy || 0,
+  });
+
+  if (sixSevenWasArmed) {
+    state.streak = 0;
+    state.sixSevenRewardChoicesRemaining = 3;
+    state.pauseForCheat = true;
+    state.message = powerAwards.length > 0
+      ? `✅ 6/7 hit! Choose 3 cheats - power gained: ${powerAwards.join(", ")}.`
+      : "✅ 6/7 hit! Choose 3 cheats.";
+    state.message = appendEnergyFeedback(state.message, revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      offerCheatChoice();
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (state.streak >= getCheatRewardThreshold()) {
+    state.streak = 0;
+    let pauseMsg = "✅ Correct!";
+    if (match) {
+      pauseMsg = `✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`;
+    } else {
+      pauseMsg = `✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)}!`;
+    }
+    state.message = appendEnergyFeedback(pauseMsg, revealDistance);
+    state.pauseForCheat = true;
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      offerCheatChoice("streak");
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (brucieBonusTriggered) {
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback("Brucie Bonus! Match hit - choose 1 power.", revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingPowerAwardQueue.shift() || "brucie_bonus";
+      offerRewardPowerChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (cheatACheaterTriggered) {
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback("You Can Cheat A Cheater paid out - choose 1 cheat.", revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingCheatAwardQueue.shift() || "cheat_a_cheater";
+      offerCheatChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (cheatSpecial && powerAwards.length > 0) {
+    state.message = aceAutoWin
+      ? `✅ Correct! Ace counts high and low - power gained: ${powerAwards.join(", ")}.`
+      : `✅ Odd One Out! Safe card - power gained: ${powerAwards.join(", ")}.`;
+    state.message = appendEnergyFeedback(state.message, revealDistance);
+    render();
+    return;
+  }
+  if (cheatSpecial) {
+    state.message = aceAutoWin
+      ? `✅ Correct! Ace counts high and low - it was ${describeCard(next)}.`
+      : `✅ Odd One Out! Safe card - it was ${describeCard(next)}.`;
+    state.message = appendEnergyFeedback(state.message, revealDistance);
+    render();
+    return;
+  }
+  if (match) {
+    state.message = appendEnergyFeedback(`✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`, revealDistance);
+    render();
+    return;
+  }
+  if (lucky7WasArmed) {
+    state.message = appendEnergyFeedback(`✅ Correct! Lucky 7 was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`, revealDistance);
+    render();
+    return;
+  }
+  if (fiveAliveWasArmed) {
+    state.message = appendEnergyFeedback(`✅ Correct! Five Alive was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`, revealDistance);
+    render();
+    return;
+  }
+  if (rescuedBySuitSave && passiveSuitSavePower) {
+    state.message = appendEnergyFeedback(`${passiveSuitSavePower.name} saved the run - it was ${describeCard(next)}.`, revealDistance);
+    render();
+    return;
+  }
+  if (rescuedByAlwaysBetBlack) {
+    state.message = appendEnergyFeedback(`Always Bet On The Black saved the run - it was ${describeCard(next)}.`, revealDistance);
+    render();
+    return;
+  }
+  if (godSaveKingWasArmed) {
+    state.message = appendEnergyFeedback(`✅ Correct! God Save The King was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`, revealDistance);
+    render();
+    return;
+  }
+
+  state.message = appendEnergyFeedback(`✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)}!`, revealDistance);
+  render();
+}

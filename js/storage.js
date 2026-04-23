@@ -169,13 +169,17 @@ function normalizeGuessBucket(bucket = {}) {
 }
 
 function normalizeDeckKey(deckKey = "blue") {
-  return String(deckKey || "").trim().toLowerCase() === "red" ? "red" : "blue";
+  const normalized = String(deckKey || "").trim().toLowerCase();
+  if (normalized === "red") return "red";
+  if (normalized === "green") return "green";
+  return "blue";
 }
 
 function normalizeDeckWins(wins = {}) {
   return {
     blue: Number.isFinite(wins.blue) ? wins.blue : 0,
     red: Number.isFinite(wins.red) ? wins.red : 0,
+    green: Number.isFinite(wins.green) ? wins.green : 0,
   };
 }
 
@@ -187,6 +191,7 @@ function normalizeProfileStats(stats = {}) {
     dailyClears: Number.isFinite(stats.dailyClears) ? stats.dailyClears : 0,
     blueRunsStarted: Number.isFinite(stats.blueRunsStarted) ? stats.blueRunsStarted : 0,
     redRunsStarted: Number.isFinite(stats.redRunsStarted) ? stats.redRunsStarted : 0,
+    greenRunsStarted: Number.isFinite(stats.greenRunsStarted) ? stats.greenRunsStarted : 0,
     totalDecksCleared: Number.isFinite(stats.totalDecksCleared) ? stats.totalDecksCleared : 0,
     decksClearedByColor: normalizeDeckWins(stats.decksClearedByColor),
     dailyAttempts: Number.isFinite(stats.dailyAttempts) ? stats.dailyAttempts : 0,
@@ -379,6 +384,8 @@ function recordRunStarted(deckKey, runMode = "standard") {
     const normalizedDeckKey = normalizeDeckKey(deckKey);
     if (normalizedDeckKey === "red") {
       stats.redRunsStarted += 1;
+    } else if (normalizedDeckKey === "green") {
+      stats.greenRunsStarted += 1;
     } else {
       stats.blueRunsStarted += 1;
     }
