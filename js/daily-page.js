@@ -37,7 +37,7 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
 
   bodyEl.innerHTML = "";
   if (scoreHeading) {
-    scoreHeading.innerText = showScores ? "Score" : "Result";
+    scoreHeading.innerText = showScores ? "Cards Cleared" : "Result";
   }
 
   if (!entries.length) {
@@ -75,7 +75,7 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
     }
 
     const scoreTd = document.createElement("td");
-    scoreTd.dataset.label = showScores ? "Score" : "Result";
+    scoreTd.dataset.label = showScores ? "Cards Cleared" : "Result";
     scoreTd.className = "score";
     scoreTd.innerText = showScores ? String(entry.score ?? 0) : "Hidden";
 

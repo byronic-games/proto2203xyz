@@ -344,43 +344,81 @@ td.score {
     grid-template-columns: 1fr;
   }
 
-  table,
-  thead,
-  tbody,
-  tr,
-  th,
-  td {
-    display: block;
+  .table-wrap {
+    overflow-x: hidden;
+  }
+
+  table {
+    table-layout: fixed;
   }
 
   thead {
-    display: none;
+    display: table-header-group;
   }
 
-  tbody {
-    padding: 6px;
-  }
-
-  tr {
-    border-radius: 12px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.02);
-  }
-
+  th,
   td {
+    display: table-cell;
     border: 0;
-    padding: 6px 0;
+    padding: 10px 8px;
+    vertical-align: middle;
   }
 
-  td::before {
-    content: attr(data-label);
-    display: inline-block;
-    min-width: 64px;
-    color: var(--cyan);
-    font-size: 0.66rem;
+  th {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    background: rgba(22, 15, 31, 0.98);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 18%;
+    text-align: center;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 57%;
+    text-align: left;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 25%;
+    text-align: right;
+  }
+
+  tbody tr {
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  tbody td:nth-child(1) {
     font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    color: #f0e8ff;
+  }
+
+  tbody td:nth-child(2) {
+    font-size: 0.98rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  tbody td.score {
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+
+  .crown-badges {
+    margin-left: 0.22em;
+    gap: 0.12em;
+  }
+
+  .crown-icon {
+    font-size: 0.82em;
   }
 }
