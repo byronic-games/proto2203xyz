@@ -11,6 +11,24 @@ function formatDailyDateLabel(dateKey) {
   });
 }
 
+function getDailyUnlockRunsStarted() {
+  if (typeof loadProfileStats === "function") {
+    const stats = loadProfileStats();
+    return Number(stats?.runsStarted || 0);
+  }
+
+  const profileStatsKey = typeof PROFILE_STATS_KEY === "string"
+    ? PROFILE_STATS_KEY
+    : "hl_prototype_profile_stats";
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem(profileStatsKey) || "{}");
+    return Number(parsed?.runsStarted || 0);
+  } catch {
+    return 0;
+  }
+}
+
 function renderDailyRows(entries, currentPlayerId, showScores = false) {
   const bodyEl = document.getElementById("daily-table-body");
   const countEl = document.getElementById("daily-board-count");
@@ -74,8 +92,7 @@ function navigateToDailyDate(dateKey) {
 async function refreshDailyPageForDate(activeDateKey) {
   const todayKey = getCurrentDailyDateKey();
   const currentPlayerId = getOrCreateDailyPlayerId();
-  const profileStats = loadProfileStats();
-  const dailyUnlocked = Number(profileStats.runsStarted || 0) >= 1;
+  const dailyUnlocked = getDailyUnlockRunsStarted() >= 1;
   const currentAttempt = getLocalDailyAttempt(activeDateKey);
   const hasCompletedAttempt =
     !!currentAttempt &&
