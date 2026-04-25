@@ -897,18 +897,19 @@ function renderMessage() {
     !!String(gameOverDetailEl.innerText || "").trim();
 
   if (usingBoardGameOverMessage) {
-    el.style.display = "flex";
     el.innerText = "";
+    el.classList.remove("has-message");
     return;
   }
 
   if (!state.message) {
-    el.style.display = "none";
+    el.innerText = "";
+    el.classList.remove("has-message");
     return;
   }
 
-  el.style.display = "flex";
   el.innerText = state.message;
+  el.classList.add("has-message");
 }
 
 function renderNextInfo() {

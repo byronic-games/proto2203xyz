@@ -1,4 +1,5 @@
 :root {
+  --app-height: 100dvh;
   --bg-0: #120b1a;
   --bg-1: #181021;
   --bg-2: #22142d;
@@ -29,7 +30,7 @@
 
 html,
 body {
-  min-height: 100%;
+  height: 100%;
   margin: 0;
 }
 
@@ -41,6 +42,12 @@ body {
     radial-gradient(circle at 82% 24%, rgba(0, 232, 255, 0.08), transparent 22%),
     linear-gradient(180deg, var(--bg-0) 0%, #100915 45%, #1a0f22 100%);
   overflow-x: hidden;
+}
+
+body.game-page {
+  height: var(--app-height);
+  min-height: var(--app-height);
+  overflow: hidden;
 }
 
 body.modal-open {
@@ -70,9 +77,11 @@ a {
 }
 
 #game-shell {
-  min-height: 100vh;
+  height: var(--app-height);
+  min-height: var(--app-height);
   padding: 12px;
   position: relative;
+  overflow: hidden;
 }
 
 .bg-orb {
@@ -101,7 +110,8 @@ a {
 
 #game {
   width: min(100%, 390px);
-  min-height: calc(100vh - 24px);
+  height: calc(var(--app-height) - 24px);
+  min-height: calc(var(--app-height) - 24px);
   margin: 0 auto;
   padding: 12px;
   border-radius: 18px;
@@ -115,6 +125,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 
 #game::after {
@@ -332,11 +343,13 @@ a {
   gap: 8px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 #message-bar {
-  display: none;
+  display: flex;
   min-height: calc(1.25em * 2 + 10px);
+  max-height: calc(1.25em * 3 + 10px);
   padding: 5px 12px;
   border-radius: 12px;
   background: rgba(255, 124, 245, 0.08);
@@ -348,6 +361,17 @@ a {
   text-align: center;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: normal;
+  word-break: break-word;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#message-bar.has-message {
+  visibility: visible;
+  pointer-events: auto;
 }
 
 #hud-row {
@@ -439,6 +463,7 @@ a {
   padding: 2px 0 0;
   position: relative;
   transform-origin: center top;
+  flex: 0 0 auto;
 }
 
 #game.game-over-effect #play-area {
@@ -1312,18 +1337,18 @@ a {
 }
 
 #memory-panel {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 210px;
+  min-height: 164px;
   order: 5;
 }
 
 #seen-grid-wrap {
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 0;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(102, 123, 50, 0.16), rgba(116, 137, 58, 0.26));
   box-shadow: inset 0 0 0 1px rgba(0,232,255,0.14);
@@ -1880,6 +1905,7 @@ a {
 
   #game {
     min-height: unset;
+    height: auto;
   }
 
   #seed-console {
@@ -1931,7 +1957,8 @@ a {
 
   #game {
     width: 100%;
-    min-height: calc(100vh - 16px);
+    min-height: calc(var(--app-height) - 16px);
+    height: calc(var(--app-height) - 16px);
     padding: 10px;
   }
 
@@ -2090,7 +2117,8 @@ a {
 
   #game {
     width: min(100%, 390px) !important;
-    min-height: calc(100vh - 24px) !important;
+    min-height: calc(var(--app-height) - 24px) !important;
+    height: calc(var(--app-height) - 24px) !important;
     padding: 12px !important;
     gap: 12px !important;
   }
@@ -2138,5 +2166,252 @@ a {
   #cheat-choice-list,
   #power-choice-list {
     grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-height: 860px) {
+  :root {
+    --card-width: 98px;
+    --card-height: 136px;
+  }
+
+  #game-shell {
+    padding: 8px;
+  }
+
+  #game {
+    gap: 8px;
+    padding: 9px;
+  }
+
+  #app-header {
+    gap: 8px;
+  }
+
+  .brand-lockup h1 {
+    font-size: 2.6rem;
+  }
+
+  #best-score {
+    font-size: 1.3rem;
+  }
+
+  .hud-card {
+    min-height: 58px;
+    padding: 8px 10px 7px;
+  }
+
+  #score,
+  #cards-remaining-value {
+    font-size: 1.78rem;
+  }
+
+  #card-row {
+    gap: 12px;
+  }
+
+  .current-card-wrap {
+    grid-template-columns: minmax(0, 1fr) 46px;
+    gap: 6px;
+  }
+
+  .nudge-arrow {
+    width: 44px;
+    height: 48px;
+  }
+
+  .nudge-symbol {
+    font-size: 0.85rem;
+  }
+
+  .nudge-count {
+    font-size: 0.78rem;
+  }
+
+  #controls {
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  #higher-btn,
+  #lower-btn {
+    min-height: 44px;
+    font-size: 1.18rem;
+  }
+
+  .cheat-button {
+    min-height: 74px;
+    width: 94px;
+    min-width: 94px;
+    max-width: 94px;
+    padding: 7px 5px;
+  }
+
+  #memory-panel {
+    min-height: 132px;
+  }
+
+  #seen-grid-wrap {
+    padding: 6px;
+  }
+
+  .grid-header,
+  .grid-suit,
+  .grid-cell {
+    min-height: 14px;
+    font-size: 0.38rem;
+  }
+
+  #message-bar {
+    min-height: calc(1.15em * 2 + 8px);
+    max-height: calc(1.15em * 3 + 8px);
+    padding: 4px 9px;
+    font-size: 0.74rem;
+  }
+
+  #bottom-bar {
+    gap: 7px;
+    padding-top: 8px;
+  }
+
+  .nav-action {
+    min-height: 48px;
+  }
+}
+
+@media (max-height: 740px) {
+  :root {
+    --card-width: 88px;
+    --card-height: 124px;
+  }
+
+  #game-shell {
+    padding: 6px;
+  }
+
+  #game {
+    height: calc(var(--app-height) - 12px);
+    min-height: calc(var(--app-height) - 12px);
+    padding: 7px;
+    gap: 6px;
+  }
+
+  .brand-lockup h1 {
+    font-size: 2.25rem;
+  }
+
+  .header-run-status {
+    min-height: 30px;
+  }
+
+  .header-run-title {
+    font-size: 0.58rem;
+  }
+
+  .header-run-power {
+    font-size: 0.57rem;
+  }
+
+  .hud-card {
+    min-height: 54px;
+    padding: 7px 8px 6px;
+  }
+
+  #score,
+  #cards-remaining-value {
+    font-size: 1.56rem;
+  }
+
+  .pile-label,
+  .section-title,
+  .section-scroll-hint,
+  .nav-label {
+    font-size: 0.52rem;
+  }
+
+  #current-effective-value,
+  #next-info {
+    font-size: 0.64rem;
+    min-height: 0.55em;
+  }
+
+  #higher-btn,
+  #lower-btn {
+    min-height: 40px;
+    font-size: 1.02rem;
+  }
+
+  #controls {
+    gap: 6px;
+  }
+
+  #cheats-panel,
+  #memory-panel,
+  .utility-panel {
+    padding: 7px 8px;
+  }
+
+  .section-bar {
+    margin-bottom: 5px;
+  }
+
+  .cheat-button {
+    min-height: 66px;
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
+    padding: 6px 4px;
+  }
+
+  .cheat-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+
+  .cheat-name {
+    font-size: 0.54rem;
+  }
+
+  #memory-panel {
+    min-height: 108px;
+  }
+
+  #seen-grid-wrap {
+    padding: 5px;
+  }
+
+  .grid-header,
+  .grid-suit,
+  .grid-cell {
+    min-height: 12px;
+    border-radius: 2px;
+    font-size: 0.33rem;
+  }
+
+  .seen-grid-note {
+    margin-top: 5px;
+    font-size: 0.58rem;
+  }
+
+  #message-bar {
+    min-height: calc(1.1em * 2 + 7px);
+    max-height: calc(1.1em * 3 + 7px);
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+
+  #bottom-bar {
+    gap: 6px;
+    padding-top: 6px;
+  }
+
+  .nav-action {
+    min-height: 42px;
+    gap: 3px;
+  }
+
+  .nav-icon {
+    font-size: 0.85rem;
   }
 }
