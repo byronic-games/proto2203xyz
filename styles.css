@@ -1460,6 +1460,11 @@ a {
   padding: 16px;
 }
 
+#power-choice-container {
+  align-items: flex-start;
+  padding-top: clamp(40px, 9vh, 96px);
+}
+
 #game-howto-modal.hidden,
 #victory-modal.hidden,
 #cheat-choice-container.hidden,
@@ -2074,5 +2079,64 @@ a {
 
   #bottom-bar {
     grid-template-columns: 1.1fr 1fr 1fr 0.9fr;
+  }
+}
+
+/* Force phone-style layout on desktop until dedicated desktop UI is fixed. */
+@media (min-width: 760px) {
+  #game-shell {
+    padding: 12px !important;
+  }
+
+  #game {
+    width: min(100%, 390px) !important;
+    min-height: calc(100vh - 24px) !important;
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+
+  #main-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  #hud-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  #play-area {
+    padding: 2px 0 0 !important;
+  }
+
+  #card-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 18px !important;
+  }
+
+  #cheats-panel,
+  #memory-panel {
+    align-self: stretch !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+
+  #cheat-list {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  #bottom-bar {
+    grid-template-columns: 1.2fr 1fr 1fr 0.86fr !important;
+  }
+
+  #cheat-choice-list,
+  #power-choice-list {
+    grid-template-columns: 1fr !important;
   }
 }
