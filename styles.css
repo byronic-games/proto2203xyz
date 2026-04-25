@@ -1490,6 +1490,11 @@ a {
   padding-top: clamp(40px, 9vh, 96px);
 }
 
+#cheat-choice-container {
+  align-items: stretch;
+  padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+}
+
 #game-howto-modal.hidden,
 #victory-modal.hidden,
 #cheat-choice-container.hidden,
@@ -1768,8 +1773,9 @@ a {
 }
 
 #cheat-choice-container .choice-modal {
-  width: min(94vw, 520px);
-  max-height: calc(100dvh - 20px);
+  width: min(96vw, 540px);
+  min-height: calc(100dvh - 14px);
+  max-height: calc(100dvh - 14px);
   padding: 12px 12px 10px;
   overflow: hidden;
   display: flex;
@@ -1819,7 +1825,7 @@ a {
 
 #cheat-choice-container .choice-desc {
   margin-top: 6px;
-  font-size: clamp(0.74rem, 3.2vw, 0.9rem);
+  font-size: clamp(0.76rem, 3.3vw, 0.94rem);
   line-height: 1.22;
 }
 
@@ -2480,7 +2486,8 @@ a {
 
   #cheat-choice-container .choice-modal {
     padding: 10px 10px 8px;
-    max-height: calc(100dvh - 14px);
+    min-height: calc(100dvh - 10px);
+    max-height: calc(100dvh - 10px);
   }
 
   #cheat-choice-container .choice-title {
