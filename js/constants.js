@@ -48,6 +48,8 @@ const GAME_STATE_SNAPSHOT_KEY = "hl_prototype_game_state_snapshot";
     };
 
 const CHEAT_UNLOCKS_KEY = "hl_prototype_cheat_unlocks";;
+const TUTORIAL_COMPLETED_KEY = "hl_prototype_tutorial_completed_v1";
+const TUTORIAL_FORCE_REPLAY_KEY = "hl_prototype_tutorial_force_replay_v1";
 
 function mulberry32(a) {
       return function () {

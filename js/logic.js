@@ -543,6 +543,9 @@ function startRunWithPower(powerId) {
     saveLastRunSeed(chosenSeed);
   }
   render();
+  if (typeof window.maybeStartFirstRunTutorial === "function") {
+    window.maybeStartFirstRunTutorial();
+  }
 }
 
 function handleRunFinished(finalScore) {

@@ -7,6 +7,8 @@ const settingsStatus = document.getElementById("settings-status");
 const exportLogBtn = document.getElementById("export-log-btn");
 const shareLogBtn = document.getElementById("share-log-btn");
 const logExportStatus = document.getElementById("log-export-status");
+const replayTutorialBtn = document.getElementById("replay-tutorial-btn");
+const tutorialReplayStatus = document.getElementById("tutorial-replay-status");
 const closeSettingsBtn = document.getElementById("settings-close-btn");
 
 let holdStartedAt = 0;
@@ -233,6 +235,17 @@ function closeSettings() {
   window.location.href = "game.html";
 }
 
+function replayTutorialFromSettings() {
+  localStorage.removeItem(TUTORIAL_COMPLETED_KEY);
+  sessionStorage.setItem(TUTORIAL_FORCE_REPLAY_KEY, "1");
+  if (tutorialReplayStatus) {
+    tutorialReplayStatus.innerText = "Tutorial queued. Returning to game...";
+  }
+  window.setTimeout(() => {
+    closeSettings();
+  }, 220);
+}
+
 exportLogBtn?.addEventListener("click", downloadLatestRunLog);
 shareLogBtn?.addEventListener("click", shareLatestRunLog);
 
@@ -246,5 +259,6 @@ resetDeckBtn?.addEventListener("pointerleave", cancelResetHold);
 resetDeckBtn?.addEventListener("pointercancel", cancelResetHold);
 
 closeSettingsBtn?.addEventListener("click", closeSettings);
+replayTutorialBtn?.addEventListener("click", replayTutorialFromSettings);
 
 refreshRunLogExportState();

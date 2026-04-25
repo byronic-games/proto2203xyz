@@ -1449,7 +1449,8 @@ a {
 #game-howto-modal,
 #victory-modal,
 #cheat-choice-container,
-#power-choice-container {
+#power-choice-container,
+#tutorial-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -1463,6 +1464,7 @@ a {
 #victory-modal.hidden,
 #cheat-choice-container.hidden,
 #power-choice-container.hidden,
+#tutorial-overlay.hidden,
 #cheat-tooltip.hidden,
 .dev-hidden {
   display: none !important;
@@ -1470,11 +1472,96 @@ a {
 
 .help-backdrop,
 .victory-backdrop,
-.choice-backdrop {
+.choice-backdrop,
+.tutorial-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(5, 4, 10, 0.76);
   backdrop-filter: blur(10px);
+}
+
+#tutorial-overlay {
+  z-index: 1300;
+}
+
+.tutorial-highlight {
+  position: fixed;
+  z-index: 1301;
+  border-radius: 16px;
+  border: 2px solid rgba(109, 228, 255, 0.95);
+  box-shadow:
+    0 0 0 9999px rgba(5, 4, 10, 0.74),
+    0 0 18px rgba(109, 228, 255, 0.42);
+  pointer-events: none;
+}
+
+.tutorial-dialog {
+  position: fixed;
+  z-index: 1302;
+  left: 16px;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(180deg, rgba(47,31,61,0.98), rgba(25,17,34,0.98));
+  box-shadow: var(--shadow), var(--glow-blue);
+}
+
+.tutorial-progress {
+  margin-bottom: 4px;
+  color: var(--cyan);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tutorial-dialog h2 {
+  margin: 0 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+#tutorial-copy {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.tutorial-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tutorial-btn {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.tutorial-btn-primary {
+  background: linear-gradient(180deg, #7fe8ff, #52c3ef);
+  color: #0f2a3e;
+}
+
+.tutorial-btn-secondary {
+  background: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+
+.tutorial-focus-target {
+  position: relative;
+  z-index: 1303 !important;
 }
 
 .help-dialog,

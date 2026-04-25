@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260425b">
+  <link rel="stylesheet" href="styles.css?v=20260425c">
 </head>
 <body>
   <div id="game-shell">
@@ -248,6 +248,20 @@
         </div>
       </div>
 
+      <div id="tutorial-overlay" class="hidden" aria-hidden="true">
+        <div class="tutorial-backdrop"></div>
+        <div id="tutorial-highlight" class="tutorial-highlight" aria-hidden="true"></div>
+        <article class="tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+          <div id="tutorial-progress" class="tutorial-progress"></div>
+          <h2 id="tutorial-title">Quick Tutorial</h2>
+          <p id="tutorial-copy"></p>
+          <div class="tutorial-actions">
+            <button id="tutorial-skip-btn" type="button" class="tutorial-btn tutorial-btn-secondary">Skip</button>
+            <button id="tutorial-next-btn" type="button" class="tutorial-btn tutorial-btn-primary">Next</button>
+          </div>
+        </article>
+      </div>
+
       <div id="cheat-tooltip" class="hidden" aria-hidden="true">
         <div id="cheat-tooltip-title"></div>
         <div id="cheat-tooltip-body"></div>
@@ -276,7 +290,7 @@
     </div>
   </div>
 
-  <script src="js/constants.js?v=20260414a"></script>
+  <script src="js/constants.js?v=20260425b"></script>
   <script src="js/storage.js?v=20260423a"></script>
   <script src="js/state.js?v=20260423a"></script>
   <script src="js/powers.js?v=20260425a"></script>
@@ -285,9 +299,9 @@
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260419a"></script>
   <script src="js/daily.js?v=20260414a"></script>
-  <script src="js/logic.js?v=20260425b"></script>
+  <script src="js/logic.js?v=20260425c"></script>
   <script src="js/render.js?v=20260425a"></script>
-  <script src="js/input.js?v=20260414a"></script>
+  <script src="js/input.js?v=20260425b"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>
