@@ -1272,6 +1272,7 @@ function pickCheatFromChoice(index) {
   let selectionOutcome = "already_in_hand";
   let addedToHand = false;
   let bankedNudgeDirection = "";
+  let bankedEnergyAmount = 0;
 
   if (cheat.id === "nudge_up") {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
@@ -1287,6 +1288,13 @@ function pickCheatFromChoice(index) {
       : "Picked reward: Nudge -1 charge banked.";
     selectionOutcome = "banked_nudge";
     bankedNudgeDirection = "down";
+  } else if (cheat.id === "green_energy_boost") {
+    state.energy = Math.max(0, (state.energy || 0) + 5);
+    state.message = wasNew
+      ? `Picked NEW reward: +5 Energy applied. Energy is now ${state.energy}.`
+      : `Picked reward: +5 Energy applied. Energy is now ${state.energy}.`;
+    selectionOutcome = "banked_energy";
+    bankedEnergyAmount = 5;
   } else if (canAddCheatToHand(cheat)) {
     state.cheats.push({ ...cheat });
 
@@ -1308,6 +1316,7 @@ function pickCheatFromChoice(index) {
     selectionOutcome,
     addedToHand,
     bankedNudgeDirection,
+    bankedEnergyAmount,
     pendingOptionsBeforePick: state.pendingCheatOptions.map((option) => ({
       id: option.id,
       name: option.name,
