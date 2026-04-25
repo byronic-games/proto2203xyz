@@ -23,7 +23,7 @@ function renderScores() {
   if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   if (streakEl) {
-    const showEnergy = !state.gameOver && !!state.current && activeDeckKey === "green";
+    const showEnergy = activeDeckKey === "green";
     streakEl.innerText = showEnergy ? `Energy ${Math.max(0, Number(state.energy) || 0)}` : "";
   }
 
@@ -49,6 +49,44 @@ function setAnimatedText(el, value) {
   el.dataset.renderValue = nextValue;
 }
 
+function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
+  const selectedPowerId = state.selectedStartPowerId;
+  const selectedPowerName = getPowerName(selectedPowerId || "none");
+  const selectedPowerDescription = selectedPowerId
+    ? getPowerDescription(selectedPowerId, { deckKey, levelNumber })
+    : "";
+
+  const activePowerIds = Array.isArray(state.powers)
+    ? state.powers.filter(Boolean)
+    : [];
+  const activePowerLines = activePowerIds.map((powerId) => {
+    const powerName = getPowerName(powerId);
+    const description = getPowerDescription(powerId, { deckKey, levelNumber });
+    return description
+      ? `- ${powerName}: ${description}`
+      : `- ${powerName}`;
+  });
+
+  const bodyLines = [];
+  if (selectedPowerDescription) {
+    bodyLines.push(`Starting Power: ${selectedPowerName}`);
+    bodyLines.push(selectedPowerDescription);
+  } else {
+    bodyLines.push(`Starting Power: ${selectedPowerName}`);
+  }
+
+  if (activePowerLines.length) {
+    bodyLines.push("");
+    bodyLines.push(`Current Powers In Play (${activePowerLines.length}):`);
+    bodyLines.push(...activePowerLines);
+  } else {
+    bodyLines.push("");
+    bodyLines.push("Current Powers In Play: none");
+  }
+
+  return bodyLines.join("\n");
+}
+
 function renderHeaderStatus() {
   const seedInput = document.getElementById("run-seed-input");
   const runStatusEl = document.getElementById("header-run-status");
@@ -58,17 +96,15 @@ function renderHeaderStatus() {
   const runDeckName = getDeckName(state.currentDeckKey || state.selectedDeckKey || "blue");
   const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
   const runPowerName = getPowerName(state.selectedStartPowerId);
-  const runPowerDescription = getPowerDescription(state.selectedStartPowerId, {
-    deckKey: state.currentDeckKey || state.selectedDeckKey || "blue",
-    levelNumber: runLevelNumber,
-  });
+  const runDeckKey = state.currentDeckKey || state.selectedDeckKey || "blue";
+  const runPowerTooltipBody = buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber);
 
   if (runStatusEl && runTitleEl && runPowerEl) {
     if (hasActiveRun) {
       runTitleEl.innerText = `${runDeckName} Deck - Level ${runLevelNumber}`;
       runPowerEl.innerText = `Starting Power: ${runPowerName}`;
       runStatusEl.hidden = false;
-      runStatusEl.classList.toggle("has-power-tooltip", !!runPowerDescription);
+      runStatusEl.classList.toggle("has-power-tooltip", !!runPowerTooltipBody);
     } else {
       runTitleEl.innerText = "";
       runPowerEl.innerText = "";
@@ -77,9 +113,9 @@ function renderHeaderStatus() {
     }
 
     setupHeaderPowerTooltip(runStatusEl, {
-      enabled: hasActiveRun && !!runPowerDescription,
+      enabled: hasActiveRun && !!runPowerTooltipBody,
       title: `${runDeckName} Deck - Level ${runLevelNumber} Starting Power: ${runPowerName}`,
-      description: runPowerDescription,
+      description: runPowerTooltipBody,
     });
   }
 

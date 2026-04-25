@@ -1340,7 +1340,7 @@ a {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 164px;
+  min-height: 176px;
   order: 5;
 }
 
@@ -1366,7 +1366,7 @@ a {
 .grid-header,
 .grid-suit,
 .grid-cell {
-  min-height: 16px;
+  min-height: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1844,6 +1844,9 @@ a {
   box-shadow: var(--shadow);
   transform: translate(-50%, -110%);
   pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #cheat-tooltip-title {
@@ -2248,7 +2251,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 132px;
+    min-height: 142px;
   }
 
   #seen-grid-wrap {
@@ -2258,7 +2261,7 @@ a {
   .grid-header,
   .grid-suit,
   .grid-cell {
-    min-height: 14px;
+    min-height: 15px;
     font-size: 0.38rem;
   }
 
@@ -2374,7 +2377,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 108px;
+    min-height: 116px;
   }
 
   #seen-grid-wrap {
@@ -2384,7 +2387,7 @@ a {
   .grid-header,
   .grid-suit,
   .grid-cell {
-    min-height: 12px;
+    min-height: 13px;
     border-radius: 2px;
     font-size: 0.33rem;
   }
