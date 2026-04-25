@@ -1767,6 +1767,67 @@ a {
   padding-bottom: 4px;
 }
 
+#cheat-choice-container .choice-modal {
+  width: min(94vw, 520px);
+  max-height: calc(100dvh - 20px);
+  padding: 12px 12px 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#cheat-choice-container .choice-title {
+  margin-bottom: 10px;
+}
+
+#cheat-choice-container #cheat-choice-list {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+#cheat-choice-container .choice-card {
+  min-height: 0;
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+#cheat-choice-container .choice-top {
+  gap: 3px;
+}
+
+#cheat-choice-container .choice-icon {
+  font-size: 1.55rem;
+}
+
+#cheat-choice-container .choice-name {
+  font-size: clamp(1rem, 4vw, 1.18rem);
+}
+
+#cheat-choice-container .choice-rarity,
+#cheat-choice-container .choice-tag {
+  font-size: 0.66rem;
+}
+
+#cheat-choice-container .choice-desc {
+  margin-top: 6px;
+  font-size: clamp(0.74rem, 3.2vw, 0.9rem);
+  line-height: 1.22;
+}
+
+#cheat-choice-container .choice-footer {
+  margin-top: 8px;
+  font-size: 0.72rem;
+}
+
 .choice-card {
   border: 0;
   border-radius: 16px;
@@ -2415,5 +2476,48 @@ a {
 
   .nav-icon {
     font-size: 0.85rem;
+  }
+
+  #cheat-choice-container .choice-modal {
+    padding: 10px 10px 8px;
+    max-height: calc(100dvh - 14px);
+  }
+
+  #cheat-choice-container .choice-title {
+    margin-bottom: 8px;
+    font-size: 1.18rem;
+  }
+
+  #cheat-choice-container #cheat-choice-list {
+    gap: 6px;
+  }
+
+  #cheat-choice-container .choice-card {
+    padding: 8px 8px;
+    gap: 4px;
+  }
+
+  #cheat-choice-container .choice-icon {
+    font-size: 1.3rem;
+  }
+
+  #cheat-choice-container .choice-name {
+    font-size: 0.98rem;
+  }
+
+  #cheat-choice-container .choice-rarity,
+  #cheat-choice-container .choice-tag {
+    font-size: 0.58rem;
+  }
+
+  #cheat-choice-container .choice-desc {
+    margin-top: 4px;
+    font-size: 0.7rem;
+    line-height: 1.16;
+  }
+
+  #cheat-choice-container .choice-footer {
+    margin-top: 6px;
+    font-size: 0.64rem;
   }
 }
