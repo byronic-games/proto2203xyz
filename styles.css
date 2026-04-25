@@ -1762,10 +1762,8 @@ a {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  overflow: visible;
+  touch-action: auto;
   padding-bottom: 4px;
 }
 
@@ -1777,6 +1775,7 @@ a {
   text-align: center;
   color: #fff;
   background: linear-gradient(180deg, #bb8030, #8f5f22);
+  touch-action: pan-y;
 }
 
 .choice-card.choice-intro {
