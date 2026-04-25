@@ -164,6 +164,15 @@ h1 {
   color: var(--text);
 }
 
+.profile-crown-strip {
+  margin-top: 8px;
+  min-height: 1.2em;
+  color: #ffe7a3;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

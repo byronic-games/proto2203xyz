@@ -88,6 +88,17 @@ function saveLocalDailyAttempts(attempts) {
 }
 
 function normalizeDailyEntry(entry) {
+  const crownSnapshot = typeof getEntryCrownSnapshot === "function"
+    ? getEntryCrownSnapshot(entry || {})
+    : {
+      blueCleared: false,
+      greenCleared: false,
+      redCleared: false,
+      dailyCleared: false,
+      dailyClears: 0,
+      summary: "",
+    };
+
   return {
     dateKey: String(entry?.dateKey || ""),
     seed: String(entry?.seed || ""),
@@ -97,6 +108,12 @@ function normalizeDailyEntry(entry) {
     completed: entry?.completed !== false,
     createdAt: String(entry?.createdAt || new Date().toISOString()),
     source: String(entry?.source || "local"),
+    blueCleared: crownSnapshot.blueCleared,
+    greenCleared: crownSnapshot.greenCleared,
+    redCleared: crownSnapshot.redCleared,
+    dailyCleared: crownSnapshot.dailyCleared,
+    dailyClears: crownSnapshot.dailyClears,
+    crownSummary: crownSnapshot.summary,
   };
 }
 
@@ -118,7 +135,33 @@ function hasPlayedDaily(dateKey) {
   return !!attempt && attempt.completed === true;
 }
 
-function buildDailyEntry({ dateKey, seed, playerName, playerId, score, completed = true, createdAt, source = "local" }) {
+function buildDailyEntry({
+  dateKey,
+  seed,
+  playerName,
+  playerId,
+  score,
+  completed = true,
+  createdAt,
+  source = "local",
+  blueCleared,
+  greenCleared,
+  redCleared,
+  dailyCleared,
+  dailyClears,
+  crownSummary,
+}) {
+  const localCrowns = typeof getLocalCrownSnapshot === "function"
+    ? getLocalCrownSnapshot()
+    : {
+      blueCleared: false,
+      greenCleared: false,
+      redCleared: false,
+      dailyCleared: false,
+      dailyClears: 0,
+      summary: "",
+    };
+
   return normalizeDailyEntry({
     dateKey,
     seed,
@@ -128,6 +171,12 @@ function buildDailyEntry({ dateKey, seed, playerName, playerId, score, completed
     completed,
     createdAt: createdAt || new Date().toISOString(),
     source,
+    blueCleared: blueCleared ?? localCrowns.blueCleared,
+    greenCleared: greenCleared ?? localCrowns.greenCleared,
+    redCleared: redCleared ?? localCrowns.redCleared,
+    dailyClears: dailyClears ?? localCrowns.dailyClears,
+    dailyCleared: dailyCleared ?? localCrowns.dailyCleared,
+    crownSummary: crownSummary ?? localCrowns.summary,
   });
 }
 
@@ -155,7 +204,7 @@ async function submitDailyResult(entry) {
   const config = getDailyLeaderboardConfig();
 
   try {
-    const response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
+    let response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
       method: "POST",
       headers: {
         apikey: config.supabaseAnonKey,
@@ -170,8 +219,33 @@ async function submitDailyResult(entry) {
         player_id: normalized.playerId,
         score: normalized.score,
         game_version: GAME_VERSION,
+        blue_cleared: normalized.blueCleared,
+        green_cleared: normalized.greenCleared,
+        red_cleared: normalized.redCleared,
+        daily_clears: normalized.dailyClears,
+        crown_summary: normalized.crownSummary,
       }),
     });
+
+    if (!response.ok && response.status !== 409) {
+      response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
+        method: "POST",
+        headers: {
+          apikey: config.supabaseAnonKey,
+          Authorization: `Bearer ${config.supabaseAnonKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          date_key: normalized.dateKey,
+          seed: normalized.seed,
+          player_name: normalized.playerName,
+          player_id: normalized.playerId,
+          score: normalized.score,
+          game_version: GAME_VERSION,
+        }),
+      });
+    }
 
     if (response.ok) {
       return { ok: true, message: "Daily result saved.", entry: { ...normalized, completed: true } };
@@ -193,17 +267,31 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
   const config = getDailyLeaderboardConfig();
 
   try {
-    const query =
-      `select=date_key,seed,player_name,player_id,score,created_at` +
+    const queryPrimary =
+      `select=date_key,seed,player_name,player_id,score,blue_cleared,green_cleared,red_cleared,daily_clears,crown_summary,created_at` +
       `&date_key=eq.${encodeURIComponent(dateKey)}` +
       `&order=score.desc,created_at.asc&limit=${Math.max(1, limit)}`;
-    const url = `${config.supabaseUrl}/rest/v1/${config.table}?${query}`;
-    const response = await fetchWithTimeout(url, {
+    const primaryUrl = `${config.supabaseUrl}/rest/v1/${config.table}?${queryPrimary}`;
+    let response = await fetchWithTimeout(primaryUrl, {
       headers: {
         apikey: config.supabaseAnonKey,
         Authorization: `Bearer ${config.supabaseAnonKey}`,
       },
     });
+
+    if (!response.ok) {
+      const queryFallback =
+        `select=date_key,seed,player_name,player_id,score,created_at` +
+        `&date_key=eq.${encodeURIComponent(dateKey)}` +
+        `&order=score.desc,created_at.asc&limit=${Math.max(1, limit)}`;
+      const fallbackUrl = `${config.supabaseUrl}/rest/v1/${config.table}?${queryFallback}`;
+      response = await fetchWithTimeout(fallbackUrl, {
+        headers: {
+          apikey: config.supabaseAnonKey,
+          Authorization: `Bearer ${config.supabaseAnonKey}`,
+        },
+      });
+    }
 
     if (!response.ok) {
       return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_http");
@@ -223,6 +311,11 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
         score: row.score,
         createdAt: row.created_at,
         source: "remote",
+        blueCleared: row.blue_cleared,
+        greenCleared: row.green_cleared,
+        redCleared: row.red_cleared,
+        dailyClears: row.daily_clears,
+        crownSummary: row.crown_summary,
       })
     );
 

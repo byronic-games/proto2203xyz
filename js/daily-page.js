@@ -68,7 +68,9 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
 
     const nameTd = document.createElement("td");
     nameTd.dataset.label = "Name";
-    nameTd.innerText = entry.playerName || "Unknown";
+    nameTd.innerText = typeof formatNameWithCrowns === "function"
+      ? formatNameWithCrowns(entry.playerName || "Unknown", entry)
+      : (entry.playerName || "Unknown");
 
     const scoreTd = document.createElement("td");
     scoreTd.dataset.label = showScores ? "Score" : "Result";

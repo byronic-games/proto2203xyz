@@ -7,6 +7,11 @@ const LEADERBOARD_CONFIG = {
   table: "heroes_52",
 };
 
+const CROWN_BLUE = "🔵👑";
+const CROWN_GREEN = "🟢👑";
+const CROWN_RED = "🔴👑";
+const CROWN_DAILY = "🟡👑";
+
 function leaderboardRemoteEnabled() {
   return !!LEADERBOARD_CONFIG.supabaseUrl && !!LEADERBOARD_CONFIG.supabaseAnonKey;
 }
@@ -65,6 +70,91 @@ function normalizeHeroLevel(level = DEFAULT_LEVEL_NUMBER) {
   return Number.isFinite(value) && value >= 1 ? Math.floor(value) : DEFAULT_LEVEL_NUMBER;
 }
 
+function normalizeCrownBoolean(value) {
+  if (value === true || value === false) return value;
+  if (typeof value === "number") return value > 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "t" || normalized === "1" || normalized === "yes") return true;
+    if (normalized === "false" || normalized === "f" || normalized === "0" || normalized === "no") return false;
+  }
+  return false;
+}
+
+function buildCrownSummary(snapshot = {}) {
+  const parts = [];
+  if (snapshot.blueCleared) parts.push(CROWN_BLUE);
+  if (snapshot.greenCleared) parts.push(CROWN_GREEN);
+  if (snapshot.redCleared) parts.push(CROWN_RED);
+  if (snapshot.dailyCleared) parts.push(CROWN_DAILY);
+  return parts.join(" ");
+}
+
+function getLocalCrownSnapshot() {
+  let deckWins = {};
+  let profileStats = {};
+
+  try {
+    deckWins = typeof loadDeckWins === "function"
+      ? loadDeckWins()
+      : (JSON.parse(localStorage.getItem(typeof DECK_WINS_KEY === "string" ? DECK_WINS_KEY : "hl_prototype_deck_wins") || "{}") || {});
+  } catch {
+    deckWins = {};
+  }
+
+  try {
+    profileStats = typeof loadProfileStats === "function"
+      ? loadProfileStats()
+      : (JSON.parse(localStorage.getItem(typeof PROFILE_STATS_KEY === "string" ? PROFILE_STATS_KEY : "hl_prototype_profile_stats") || "{}") || {});
+  } catch {
+    profileStats = {};
+  }
+
+  const snapshot = {
+    blueCleared: normalizeCrownBoolean(deckWins.blue),
+    greenCleared: normalizeCrownBoolean(deckWins.green),
+    redCleared: normalizeCrownBoolean(deckWins.red),
+    dailyCleared: Number(profileStats.dailyClears || 0) > 0,
+  };
+
+  return {
+    ...snapshot,
+    dailyClears: Math.max(0, Number(profileStats.dailyClears || 0)),
+    summary: buildCrownSummary(snapshot),
+  };
+}
+
+function getEntryCrownSnapshot(entry = {}) {
+  const blueCleared = normalizeCrownBoolean(entry.blueCleared ?? entry.blue_cleared);
+  const greenCleared = normalizeCrownBoolean(entry.greenCleared ?? entry.green_cleared);
+  const redCleared = normalizeCrownBoolean(entry.redCleared ?? entry.red_cleared);
+  const dailyClearedFromBool = normalizeCrownBoolean(entry.dailyCleared ?? entry.daily_cleared);
+  const dailyClears = Math.max(0, Number(entry.dailyClears ?? entry.daily_clears ?? 0));
+  const dailyCleared = dailyClearedFromBool || dailyClears > 0;
+  const summary = String(entry.crownSummary ?? entry.crown_summary ?? "").trim();
+  const computedSummary = buildCrownSummary({ blueCleared, greenCleared, redCleared, dailyCleared });
+
+  return {
+    blueCleared,
+    greenCleared,
+    redCleared,
+    dailyCleared,
+    dailyClears,
+    summary: summary || computedSummary,
+  };
+}
+
+function getCrownSummaryForEntry(entry = {}) {
+  const snapshot = getEntryCrownSnapshot(entry);
+  return String(snapshot.summary || "").trim();
+}
+
+function formatNameWithCrowns(name, entry = {}) {
+  const displayName = sanitizeHeroName(name) || "Unknown";
+  const crowns = getCrownSummaryForEntry(entry);
+  return crowns ? `${displayName} ${crowns}` : displayName;
+}
+
 function getHeroEntryKey(entry = {}) {
   const seed = String(entry.seed || "").trim();
   const deck = normalizeHeroDeck(entry.deck || "");
@@ -76,6 +166,7 @@ function normalizeHeroEntry(entry = {}) {
   const rawDeckLevel = entry.deckLevel ?? entry.deck_level ?? entry.level;
   const hasExplicitDeckLevel =
     rawDeckLevel !== undefined && rawDeckLevel !== null && rawDeckLevel !== "";
+  const crownSnapshot = getEntryCrownSnapshot(entry);
 
   return {
     playerName: sanitizeHeroName(entry.playerName || entry.player_name || "Unknown"),
@@ -86,10 +177,13 @@ function normalizeHeroEntry(entry = {}) {
     hasExplicitDeckLevel,
     startingPower: normalizeHeroPower(entry.startingPower || entry.starting_power || ""),
     createdAt: String(entry.createdAt || entry.created_at || ""),
+    ...crownSnapshot,
+    crownSummary: crownSnapshot.summary,
   };
 }
 
 function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel = DEFAULT_LEVEL_NUMBER) {
+  const crownSnapshot = getLocalCrownSnapshot();
   return {
     playerName: sanitizeHeroName(name),
     seed: String(seed || "").trim(),
@@ -99,6 +193,12 @@ function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel =
     hasExplicitDeckLevel: true,
     startingPower: normalizeHeroPower(startingPower),
     createdAt: new Date().toISOString(),
+    blueCleared: crownSnapshot.blueCleared,
+    greenCleared: crownSnapshot.greenCleared,
+    redCleared: crownSnapshot.redCleared,
+    dailyCleared: crownSnapshot.dailyCleared,
+    dailyClears: crownSnapshot.dailyClears,
+    crownSummary: crownSnapshot.summary,
   };
 }
 
@@ -134,6 +234,11 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       deck: entry.deck,
       deck_level: entry.deckLevel,
       starting_power: entry.startingPower,
+      blue_cleared: entry.blueCleared,
+      green_cleared: entry.greenCleared,
+      red_cleared: entry.redCleared,
+      daily_clears: entry.dailyClears,
+      crown_summary: entry.crownSummary,
     };
     const payloadWithLegacyLevel = {
       player_name: entry.playerName,
@@ -142,6 +247,11 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       deck: entry.deck,
       level: entry.deckLevel,
       starting_power: entry.startingPower,
+      blue_cleared: entry.blueCleared,
+      green_cleared: entry.greenCleared,
+      red_cleared: entry.redCleared,
+      daily_clears: entry.dailyClears,
+      crown_summary: entry.crownSummary,
     };
     const payloadWithoutLevel = {
       player_name: entry.playerName,
@@ -149,6 +259,11 @@ async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAUL
       game_version: entry.gameVersion,
       deck: entry.deck,
       starting_power: entry.startingPower,
+      blue_cleared: entry.blueCleared,
+      green_cleared: entry.greenCleared,
+      red_cleared: entry.redCleared,
+      daily_clears: entry.dailyClears,
+      crown_summary: entry.crownSummary,
     };
 
     let response = await fetch(url, {
@@ -205,7 +320,7 @@ async function fetchHeroes(limit = 200) {
     };
 
     let response = await fetchRemoteRows(
-      "select=player_name,seed,game_version,deck,deck_level,level,starting_power,created_at"
+      "select=player_name,seed,game_version,deck,deck_level,level,starting_power,blue_cleared,green_cleared,red_cleared,daily_clears,crown_summary,created_at"
     );
 
     if (!response.ok) {
@@ -277,6 +392,12 @@ async function fetchHeroes(limit = 200) {
           hasExplicitDeckLevel: existing.hasExplicitDeckLevel || hero.hasExplicitDeckLevel,
           startingPower: hero.startingPower || existing.startingPower,
           createdAt: hero.createdAt || existing.createdAt,
+          blueCleared: existing.blueCleared || hero.blueCleared,
+          greenCleared: existing.greenCleared || hero.greenCleared,
+          redCleared: existing.redCleared || hero.redCleared,
+          dailyCleared: existing.dailyCleared || hero.dailyCleared,
+          dailyClears: Math.max(existing.dailyClears || 0, hero.dailyClears || 0),
+          crownSummary: existing.crownSummary || hero.crownSummary || existing.summary || hero.summary || "",
         });
       });
 

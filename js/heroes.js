@@ -19,7 +19,9 @@ async function renderHeroesBoard() {
 
     const nameTd = document.createElement("td");
     nameTd.dataset.label = "Name";
-    nameTd.innerText = hero.playerName || "Unknown";
+    nameTd.innerText = typeof formatNameWithCrowns === "function"
+      ? formatNameWithCrowns(hero.playerName || "Unknown", hero)
+      : (hero.playerName || "Unknown");
 
     const seedTd = document.createElement("td");
     seedTd.dataset.label = "Seed";

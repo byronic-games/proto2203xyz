@@ -46,6 +46,7 @@ function getProfileStampLabel(achievements) {
 
 function renderProfilePage() {
   const nameInput = document.getElementById("profile-name-input");
+  const crownStripEl = document.getElementById("profile-crown-strip");
   const bestRunEl = document.getElementById("profile-best-run");
   const totalCorrectEl = document.getElementById("profile-total-correct");
   const decksBeatenEl = document.getElementById("profile-decks-beaten");
@@ -62,7 +63,7 @@ function renderProfilePage() {
   const achievementListEl = document.getElementById("profile-achievement-list");
   const backBtn = document.getElementById("profile-back-btn");
 
-  if (!nameInput || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !greenClearsEl || !blueRunsEl || !redRunsEl || !greenRunsEl || !dailyAttemptsEl || !dailyClearsEl || !stampEl || !achievementListEl || !backBtn) {
+  if (!nameInput || !crownStripEl || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !greenClearsEl || !blueRunsEl || !redRunsEl || !greenRunsEl || !dailyAttemptsEl || !dailyClearsEl || !stampEl || !achievementListEl || !backBtn) {
     return;
   }
 
@@ -71,8 +72,12 @@ function renderProfilePage() {
     const stats = loadProfileStats();
     const bestRun = loadBestScore();
     const achievements = getProfileAchievements(stats, deckWins);
+    const crowns = typeof getLocalCrownSnapshot === "function"
+      ? getLocalCrownSnapshot()
+      : { summary: "", blueCleared: false, greenCleared: false, redCleared: false, dailyCleared: false };
 
     nameInput.value = loadPreferredHeroName();
+    crownStripEl.textContent = crowns.summary || "No crowns yet. Clear Blue, Green, Red, and a Daily to earn all 4.";
     bestRunEl.textContent = String(bestRun || 0);
     totalCorrectEl.textContent = String(stats.totalCorrectGuesses || 0);
     decksBeatenEl.textContent = String(stats.totalDecksCleared || 0);
