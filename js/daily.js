@@ -130,6 +130,60 @@ function saveLocalDailyAttempt(entry) {
   return attempts[entry.dateKey];
 }
 
+function normalizeDailyNameKey(name) {
+  return String(name || "").trim().toLowerCase();
+}
+
+async function fetchDailyClearedNameSet(config, limit = 5000) {
+  const clearedNames = new Set();
+  const safeLimit = Math.max(1, Number(limit) || 5000);
+  const headers = {
+    apikey: config.supabaseAnonKey,
+    Authorization: `Bearer ${config.supabaseAnonKey}`,
+  };
+
+  const collectNames = (rows) => {
+    if (!Array.isArray(rows)) return;
+    rows.forEach((row) => {
+      const key = normalizeDailyNameKey(row?.player_name);
+      if (key) {
+        clearedNames.add(key);
+      }
+    });
+  };
+
+  try {
+    const byDailyClearsQuery =
+      `select=player_name` +
+      `&daily_clears=gt.0` +
+      `&limit=${safeLimit}`;
+    const byDailyClearsUrl = `${config.supabaseUrl}/rest/v1/${config.table}?${byDailyClearsQuery}`;
+    let response = await fetchWithTimeout(byDailyClearsUrl, { headers });
+
+    if (response.ok) {
+      collectNames(await response.json());
+    } else {
+      response = null;
+    }
+
+    const byScoreQuery =
+      `select=player_name` +
+      `&score=gte.52` +
+      `&limit=${safeLimit}`;
+    const byScoreUrl = `${config.supabaseUrl}/rest/v1/${config.table}?${byScoreQuery}`;
+    const scoreResponse = await fetchWithTimeout(byScoreUrl, { headers });
+    if (scoreResponse.ok) {
+      collectNames(await scoreResponse.json());
+    } else if (!response) {
+      return clearedNames;
+    }
+  } catch {
+    return clearedNames;
+  }
+
+  return clearedNames;
+}
+
 function hasPlayedDaily(dateKey) {
   const attempt = getLocalDailyAttempt(dateKey);
   return !!attempt && attempt.completed === true;
@@ -328,6 +382,24 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
         crownSummary: row.crown_summary,
       })
     );
+
+    const clearedNameSet = await fetchDailyClearedNameSet(config);
+    if (clearedNameSet.size) {
+      mapped.forEach((entry) => {
+        const nameKey = normalizeDailyNameKey(entry.playerName);
+        if (!nameKey || !clearedNameSet.has(nameKey)) return;
+        entry.dailyCleared = true;
+        entry.dailyClears = Math.max(1, Number(entry.dailyClears || 0));
+        if (typeof buildCrownSummary === "function") {
+          entry.crownSummary = buildCrownSummary({
+            blueCleared: !!entry.blueCleared,
+            greenCleared: !!entry.greenCleared,
+            redCleared: !!entry.redCleared,
+            dailyCleared: true,
+          });
+        }
+      });
+    }
 
     mapped.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
