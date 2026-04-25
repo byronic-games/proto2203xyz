@@ -68,9 +68,11 @@ function renderDailyRows(entries, currentPlayerId, showScores = false) {
 
     const nameTd = document.createElement("td");
     nameTd.dataset.label = "Name";
-    nameTd.innerText = typeof formatNameWithCrowns === "function"
-      ? formatNameWithCrowns(entry.playerName || "Unknown", entry)
-      : (entry.playerName || "Unknown");
+    if (typeof formatNameWithCrownsHtml === "function") {
+      nameTd.innerHTML = formatNameWithCrownsHtml(entry.playerName || "Unknown", entry);
+    } else {
+      nameTd.innerText = entry.playerName || "Unknown";
+    }
 
     const scoreTd = document.createElement("td");
     scoreTd.dataset.label = showScores ? "Score" : "Result";

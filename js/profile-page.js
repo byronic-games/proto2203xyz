@@ -77,7 +77,12 @@ function renderProfilePage() {
       : { summary: "", blueCleared: false, greenCleared: false, redCleared: false, dailyCleared: false };
 
     nameInput.value = loadPreferredHeroName();
-    crownStripEl.textContent = crowns.summary || "No crowns yet. Clear Blue, Green, Red, and a Daily to earn all 4.";
+    if (typeof getCrownBadgesHtml === "function") {
+      const badgesHtml = getCrownBadgesHtml(crowns);
+      crownStripEl.innerHTML = badgesHtml || "No crowns yet. Clear Blue, Green, Red, and a Daily to earn all 4.";
+    } else {
+      crownStripEl.textContent = crowns.summary || "No crowns yet. Clear Blue, Green, Red, and a Daily to earn all 4.";
+    }
     bestRunEl.textContent = String(bestRun || 0);
     totalCorrectEl.textContent = String(stats.totalCorrectGuesses || 0);
     decksBeatenEl.textContent = String(stats.totalDecksCleared || 0);

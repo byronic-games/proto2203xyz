@@ -290,6 +290,44 @@ td.score {
   font-weight: 800;
 }
 
+.crown-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.16em;
+  margin-left: 0.34em;
+  vertical-align: middle;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.crown-icon {
+  display: inline-block;
+  font-size: 0.9em;
+  line-height: 1;
+  font-weight: 900;
+  text-shadow: 0 0 7px rgba(0, 0, 0, 0.45);
+}
+
+.crown-blue {
+  color: #55d6ff;
+  text-shadow: 0 0 8px rgba(85, 214, 255, 0.38);
+}
+
+.crown-green {
+  color: #8cff66;
+  text-shadow: 0 0 8px rgba(140, 255, 102, 0.38);
+}
+
+.crown-red {
+  color: #ff6894;
+  text-shadow: 0 0 8px rgba(255, 104, 148, 0.36);
+}
+
+.crown-gold {
+  color: #ffd25d;
+  text-shadow: 0 0 8px rgba(255, 210, 93, 0.42);
+}
+
 @media (max-width: 640px) {
   .daily-shell {
     padding: 8px;

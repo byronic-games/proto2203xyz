@@ -11,6 +11,7 @@ const CROWN_BLUE = "🔵👑";
 const CROWN_GREEN = "🟢👑";
 const CROWN_RED = "🔴👑";
 const CROWN_DAILY = "🟡👑";
+const CROWN_GLYPH = "♛";
 
 function leaderboardRemoteEnabled() {
   return !!LEADERBOARD_CONFIG.supabaseUrl && !!LEADERBOARD_CONFIG.supabaseAnonKey;
@@ -125,13 +126,19 @@ function getLocalCrownSnapshot() {
 }
 
 function getEntryCrownSnapshot(entry = {}) {
-  const blueCleared = normalizeCrownBoolean(entry.blueCleared ?? entry.blue_cleared);
-  const greenCleared = normalizeCrownBoolean(entry.greenCleared ?? entry.green_cleared);
-  const redCleared = normalizeCrownBoolean(entry.redCleared ?? entry.red_cleared);
+  const legacySummary = String(entry.crownSummary ?? entry.crown_summary ?? "").trim();
+  const legacyBlue = legacySummary.includes("🔵");
+  const legacyGreen = legacySummary.includes("🟢");
+  const legacyRed = legacySummary.includes("🔴");
+  const legacyDaily = legacySummary.includes("🟡") || legacySummary.includes("🥇");
+
+  const blueCleared = normalizeCrownBoolean(entry.blueCleared ?? entry.blue_cleared) || legacyBlue;
+  const greenCleared = normalizeCrownBoolean(entry.greenCleared ?? entry.green_cleared) || legacyGreen;
+  const redCleared = normalizeCrownBoolean(entry.redCleared ?? entry.red_cleared) || legacyRed;
   const dailyClearedFromBool = normalizeCrownBoolean(entry.dailyCleared ?? entry.daily_cleared);
   const dailyClears = Math.max(0, Number(entry.dailyClears ?? entry.daily_clears ?? 0));
-  const dailyCleared = dailyClearedFromBool || dailyClears > 0;
-  const summary = String(entry.crownSummary ?? entry.crown_summary ?? "").trim();
+  const dailyCleared = dailyClearedFromBool || dailyClears > 0 || legacyDaily;
+  const summary = legacySummary;
   const computedSummary = buildCrownSummary({ blueCleared, greenCleared, redCleared, dailyCleared });
 
   return {
@@ -147,6 +154,41 @@ function getEntryCrownSnapshot(entry = {}) {
 function getCrownSummaryForEntry(entry = {}) {
   const snapshot = getEntryCrownSnapshot(entry);
   return String(snapshot.summary || "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getCrownBadgesHtml(entry = {}) {
+  const snapshot = getEntryCrownSnapshot(entry);
+  const badges = [];
+  if (snapshot.blueCleared) {
+    badges.push(`<span class="crown-icon crown-blue" title="Blue Deck cleared">${CROWN_GLYPH}</span>`);
+  }
+  if (snapshot.greenCleared) {
+    badges.push(`<span class="crown-icon crown-green" title="Green Deck cleared">${CROWN_GLYPH}</span>`);
+  }
+  if (snapshot.redCleared) {
+    badges.push(`<span class="crown-icon crown-red" title="Red Deck cleared">${CROWN_GLYPH}</span>`);
+  }
+  if (snapshot.dailyCleared) {
+    badges.push(`<span class="crown-icon crown-gold" title="Daily cleared">${CROWN_GLYPH}</span>`);
+  }
+  return badges.length ? `<span class="crown-badges">${badges.join("")}</span>` : "";
+}
+
+function formatNameWithCrownsHtml(name, entry = {}) {
+  const displayName = sanitizeHeroName(name) || "Unknown";
+  const badgesHtml = getCrownBadgesHtml(entry);
+  return badgesHtml
+    ? `${escapeHtml(displayName)} ${badgesHtml}`
+    : escapeHtml(displayName);
 }
 
 function formatNameWithCrowns(name, entry = {}) {

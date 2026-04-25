@@ -19,9 +19,11 @@ async function renderHeroesBoard() {
 
     const nameTd = document.createElement("td");
     nameTd.dataset.label = "Name";
-    nameTd.innerText = typeof formatNameWithCrowns === "function"
-      ? formatNameWithCrowns(hero.playerName || "Unknown", hero)
-      : (hero.playerName || "Unknown");
+    if (typeof formatNameWithCrownsHtml === "function") {
+      nameTd.innerHTML = formatNameWithCrownsHtml(hero.playerName || "Unknown", hero);
+    } else {
+      nameTd.innerText = hero.playerName || "Unknown";
+    }
 
     const seedTd = document.createElement("td");
     seedTd.dataset.label = "Seed";
