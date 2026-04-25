@@ -179,6 +179,7 @@ function getCheatIcon(name) {
   if (name.includes("swap")) return "🃏";
   if (name.includes("tear")) return "✂️";
   if (name.includes("nudge")) return "↕️";
+  if (name.includes("energy")) return "🔋";
   if (name.includes("chance")) return "🎲";
   if (name.includes("lucky")) return "7️⃣";
 

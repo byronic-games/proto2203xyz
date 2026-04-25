@@ -511,7 +511,7 @@ function startRunWithPower(powerId) {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
-    energy: greenRun ? 12 : 0,
+    energy: greenRun ? 10 : 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
     alwaysBetBlackArmed: false,
@@ -770,6 +770,7 @@ function canUseNudge(direction) {
     !!state.sixSevenArmed ||
     !!state.pauseForCheat;
   if (isBlocked) return false;
+  if (isGreenDeckRun() && (state.energy || 0) <= 0) return false;
 
   if (direction === "up") {
     if ((state.nudgeUpCharges || 0) <= 0) return false;
@@ -792,6 +793,12 @@ function useNudgeCharge(direction) {
     state.pendingPowerOptions.length > 0 ||
     !!state.pauseForCheat
   ) {
+    return;
+  }
+
+  if (isGreenDeckRun() && (state.energy || 0) <= 0) {
+    state.message = "No energy left - nudges are disabled.";
+    render();
     return;
   }
 
@@ -836,9 +843,14 @@ function useNudgeCharge(direction) {
   }
 
   recordCurrentCardNudge(state.current, direction);
+  if (isGreenDeckRun()) {
+    state.energy = Math.max(0, (state.energy || 0) - 1);
+  }
   const effective = getCurrentEffectiveValue();
   const label = direction === "up" ? "Nudge +1" : "Nudge -1";
-  state.message = `${label} used. Current card treated as ${valueToRank(effective)}.`;
+  state.message = isGreenDeckRun()
+    ? `${label} used. Current card treated as ${valueToRank(effective)}. Energy left: ${state.energy || 0}.`
+    : `${label} used. Current card treated as ${valueToRank(effective)}.`;
   appendRunDebugLog("nudge_used", {
     direction,
     label,
@@ -1540,13 +1552,8 @@ function makeGuess(type) {
   const currentComparisonValue = getCurrentEffectiveValue();
   const nextComparisonValue = getNextComparisonValueForGuess(next);
   const revealDistance = Math.abs(nextComparisonValue - currentComparisonValue);
-  const greenRun = isGreenDeckRun();
   const formatEnergyFeedback = (delta) => {
-    if (!greenRun) return "";
-    if (!Number.isFinite(delta)) return "";
-    if (delta > 0) return `+${delta} Energy`;
-    if (delta < 0) return `-${Math.abs(delta)} Energy`;
-    return "0 Energy";
+    return "";
   };
   const appendEnergyFeedback = (message, delta) => {
     const feedback = formatEnergyFeedback(delta);
@@ -1662,17 +1669,10 @@ function makeGuess(type) {
       ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
 
-    if (greenRun) {
-      state.energy = Math.max(0, (state.energy || 0) - revealDistance);
-    }
-    const greenOutOfEnergy = greenRun && (state.energy || 0) <= 0;
-
     appendRunDebugLog("guess_resolved", {
       guess: type,
-      outcome: greenRun && !greenOutOfEnergy ? "wrong_survived_green" : "loss",
-      reason: greenRun
-        ? (greenOutOfEnergy ? "green_energy_depleted" : "green_energy_penalty")
-        : (sixSevenWasArmed ? "six_seven_failed" : "comparison_failed"),
+      outcome: "loss",
+      reason: sixSevenWasArmed ? "six_seven_failed" : "comparison_failed",
       currentComparisonValue,
       nextComparisonValue,
       revealDistance,
@@ -1691,44 +1691,13 @@ function makeGuess(type) {
       message: lossDetail,
     });
 
-    if (!greenRun || greenOutOfEnergy) {
-      const gameOverMessage = greenRun
-        ? appendEnergyFeedback(`❌ ${lossDetail} Energy depleted.`, -revealDistance)
-        : `❌ ${lossDetail}`;
-      triggerGameOverEffect(gameOverMessage);
-      state.message = gameOverMessage;
-      state.gameOver = true;
-      updateBestScoreIfNeeded();
-      render();
-      handleRunFinished(state.correctAnswers);
-      return;
-    }
-
-    if (state.index >= state.deck.length - 1) {
-      if (state.runMode !== "daily") {
-        state.deckWins = recordDeckWin(state.currentDeckKey);
-        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
-        recordDeckClearProgress(state.currentDeckKey);
-      } else {
-        recordDailyClearProgress();
-      }
-      state.message = appendEnergyFeedback(" YOU CLEARED THE DECK!", -revealDistance);
-      state.gameOver = true;
-      render();
-      triggerVictoryEffect();
-      handleRunFinished(state.correctAnswers);
-      if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
-        if (state.runMode === "daily") return;
-        state.victoryPromptShown = true;
-        window.setTimeout(() => {
-          window.promptHeroNameForVictory();
-        }, 900);
-      }
-      return;
-    }
-
-    state.message = appendEnergyFeedback(`❌ ${lossDetail}`, -revealDistance);
+    const gameOverMessage = `❌ ${lossDetail}`;
+    triggerGameOverEffect(gameOverMessage);
+    state.message = gameOverMessage;
+    state.gameOver = true;
+    updateBestScoreIfNeeded();
     render();
+    handleRunFinished(state.correctAnswers);
     return;
   }
 
@@ -1737,9 +1706,6 @@ function makeGuess(type) {
   recordFaceDownOutcome(next, false, currentWasBase);
   advanceToCard(next);
   state.correctAnswers += 1;
-  if (greenRun) {
-    state.energy = (state.energy || 0) + revealDistance;
-  }
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;

@@ -136,6 +136,7 @@ const CHEAT_DESCRIPTIONS = {
   "Nudge -1": "Decreases the value of the current face card by one for the next guess.",
   "Nudge +2": "Increases the value of the current face card by two, stopping at King.",
   "Nudge -2": "Decreases the value of the current face card by two, stopping at Ace.",
+  "+5 Energy": "Green Deck only. Gain 5 Energy instantly.",
   "Next Card Nudge Up": "Temporarily nudges the next face-down card up by 3 for the next guess, stopping at King.",
   "Next Card Nudge Down": "Temporarily nudges the next face-down card down by 3 for the next guess, stopping at Ace.",
   "Halve It": "Can only be used on an even card. Treat the current card as half its value for the next guess.",
@@ -1109,6 +1110,22 @@ const CHEATS = [
       return `Swapped with next card - current card is now ${describeCard(state.current)}.`;
     },
   },
+  {
+    id: "green_energy_boost",
+    name: "+5 Energy",
+    rarity: "common",
+    weight: 1,
+    included: true,
+    greenOnly: true,
+    unlockAt: 0,
+    stacking: "repeatable",
+    consumeOnUse: true,
+    use: () => {
+      if (!isGreenDeckRun()) return "This cheat only works in Green Deck runs.";
+      state.energy = Math.max(0, (state.energy || 0) + 5);
+      return `+5 Energy applied. Energy is now ${state.energy}.`;
+    },
+  },
 ];
 
 function canAddCheatToHand(cheatDef) {
@@ -1121,9 +1138,12 @@ function canAddCheatToHand(cheatDef) {
 
 function getEligibleCheatPool(includeAll = false) {
   const ownedStartPowerId = state.selectedStartPowerId;
+  const greenRun = isGreenDeckRun();
 
   return CHEATS.filter((c) => {
     if (!c.included) return false;
+    if (c.id === "green_energy_boost") return false; // injected separately for controlled Green frequency
+    if (c.greenOnly && !greenRun) return false;
     if (!includeAll && (state.metaProgression ?? 0) < (c.unlockAt ?? 0)) return false;
 
     if (c.poolExcludedIfPowerOwned && c.poolExcludedIfPowerOwned === ownedStartPowerId) {
@@ -1140,6 +1160,25 @@ function getEligibleCheatPool(includeAll = false) {
 
     return true;
   }).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+}
+
+function maybeInjectGreenEnergyCheatOption(options, count, rngFn = Math.random) {
+  if (!isGreenDeckRun()) return options;
+  if ((rngFn?.() ?? Math.random()) > (2 / 3)) return options;
+
+  const energyCheat = CHEATS.find((cheat) => cheat.id === "green_energy_boost");
+  if (!energyCheat) return options;
+  if (options.some((option) => option.id === energyCheat.id)) return options;
+
+  const injected = { ...energyCheat };
+  if (options.length < count) {
+    options.push(injected);
+    return options;
+  }
+
+  const replaceIndex = Math.max(0, Math.floor((rngFn?.() ?? Math.random()) * Math.max(1, options.length)));
+  options[replaceIndex] = injected;
+  return options;
 }
 
 function getDailyCheatOfferSeed(offerIndex) {
@@ -1167,6 +1206,7 @@ function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
     options.push(pool.splice(idx, 1)[0]);
   }
 
+  maybeInjectGreenEnergyCheatOption(options, count, seeded ? rng : Math.random);
   return options;
 }
 
@@ -1300,6 +1340,3 @@ function pickCheatFromChoice(index) {
   }
   render();
 }
-
-
-

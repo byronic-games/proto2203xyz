@@ -286,7 +286,7 @@ function awardOnCorrectGuessPowers(guessType) {
   const awardedNames = [];
 
   const normalizedDeck = normalizeDeckKey(state.currentDeckKey);
-  if (normalizedDeck === "red" || normalizedDeck === "green") {
+  if (normalizedDeck === "red") {
     return awardedNames;
   }
 

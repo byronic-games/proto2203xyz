@@ -79,7 +79,7 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is an energy-based prototype challenge.</p>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is a hard mode where energy powers nudges.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
@@ -152,6 +152,7 @@
           <ul>
             <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
             <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
+            <li><strong>Green Deck Energy:</strong> Green starts at 10 Energy, each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in cheat offers.</li>
             <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
             <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
             <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
@@ -395,10 +396,10 @@
           return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.";
         }
 
-        if (normalizedDeck === "green") {
-          if (normalizedLevel === 1) return "Energy-based run. Start with 12 Energy, gain/loss based on card distance, and no Nudge rewards.";
-          return "Green Deck prototype currently supports Level 1 only.";
-        }
+          if (normalizedDeck === "green") {
+            if (normalizedLevel === 1) return "Hard mode. Start with 10 Energy, each nudge costs 1 Energy, correct guesses still award nudges, and wrong guesses end the run.";
+            return "Green Deck prototype currently supports Level 1 only.";
+          }
 
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
         if (normalizedLevel === 2) return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 2.";
@@ -467,7 +468,7 @@
         greenDeckDesc.textContent = greenUnlocked
           ? (greenManual
             ? "Testing unlock active. Green Level 1 is permanently unlocked on this device."
-            : "Energy-based run. Start with 12 Energy and survive by managing card-distance swings.")
+            : "Hard mode: start with 10 Energy, spend 1 per nudge, and hunt for +5 Energy cheats.")
           : "Unlock by clearing Red Deck Level 1.";
       }
 
