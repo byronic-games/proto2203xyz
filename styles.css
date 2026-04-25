@@ -1482,6 +1482,13 @@ a {
 
 #tutorial-overlay {
   z-index: 1300;
+  pointer-events: none;
+}
+
+.tutorial-backdrop {
+  background: rgba(5, 4, 10, 0.24);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
 }
 
 .tutorial-highlight {
@@ -1490,8 +1497,8 @@ a {
   border-radius: 16px;
   border: 2px solid rgba(109, 228, 255, 0.95);
   box-shadow:
-    0 0 0 9999px rgba(5, 4, 10, 0.74),
     0 0 18px rgba(109, 228, 255, 0.42);
+  background: rgba(80, 215, 255, 0.04);
   pointer-events: none;
 }
 
@@ -1507,6 +1514,7 @@ a {
   padding: 14px 14px 12px;
   background: linear-gradient(180deg, rgba(47,31,61,0.98), rgba(25,17,34,0.98));
   box-shadow: var(--shadow), var(--glow-blue);
+  pointer-events: auto;
 }
 
 .tutorial-progress {

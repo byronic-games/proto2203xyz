@@ -34,10 +34,11 @@ function createTutorialController() {
 
   const profileStats = loadProfileStats();
   const shouldRunByProgress = Number(profileStats.runsStarted || 0) <= 1;
-  const completed = localStorage.getItem(TUTORIAL_COMPLETED_KEY) === "1";
-  const forcedReplay = sessionStorage.getItem(TUTORIAL_FORCE_REPLAY_KEY) === "1";
+  const completedAtLoad = localStorage.getItem(TUTORIAL_COMPLETED_KEY) === "1";
+  let forcedReplay = sessionStorage.getItem(TUTORIAL_FORCE_REPLAY_KEY) === "1";
+  let tutorialEnabled = forcedReplay || (!completedAtLoad && shouldRunByProgress);
 
-  const steps = [
+  const runSteps = [
     {
       target: "#current-card",
       title: "Current Card",
@@ -66,18 +67,50 @@ function createTutorialController() {
     },
   ];
 
-  if (!overlay || !highlight || !title || !copy || !progress || !nextBtn || !skipBtn || (!forcedReplay && (!shouldRunByProgress || completed))) {
+  const powerSteps = [
+    {
+      target: "#power-choice-container .choice-modal",
+      title: "Pick A Starting Power",
+      copy: "Every run starts by choosing one power. This sets your opening advantage for the run.",
+    },
+    {
+      target: "#power-choice-list",
+      title: "Two Power Options",
+      copy: "You will usually get two options. Read both quickly and choose the one that fits your plan.",
+    },
+    {
+      target: "#power-choice-list .choice-card",
+      title: "Choose To Continue",
+      copy: "Pick either power now to begin the run.",
+      requirePowerPick: true,
+    },
+  ];
+
+  if (!overlay || !highlight || !title || !copy || !progress || !nextBtn || !skipBtn || !tutorialEnabled) {
     return {
-      maybeStart() {},
+      maybeStartRun() {},
+      maybeStartPowerChoice() {},
       isBlockingGuess() { return false; },
       handleGuessResolved() {},
+      handlePowerPicked() {},
       closeAndComplete() {},
     };
   }
 
   let active = false;
+  let phase = "run";
   let stepIndex = 0;
   let focusedTarget = null;
+
+  function getActiveSteps() {
+    return phase === "power" ? powerSteps : runSteps;
+  }
+
+  function consumeForcedReplay() {
+    if (!forcedReplay) return;
+    forcedReplay = false;
+    sessionStorage.removeItem(TUTORIAL_FORCE_REPLAY_KEY);
+  }
 
   function clearFocusTarget() {
     if (!focusedTarget) return;
@@ -106,59 +139,80 @@ function createTutorialController() {
 
   function setTutorialCompleted() {
     localStorage.setItem(TUTORIAL_COMPLETED_KEY, "1");
+    tutorialEnabled = false;
   }
 
-  function closeAndComplete() {
+  function closeOverlay({ complete = false } = {}) {
     if (!active) return;
     active = false;
     clearFocusTarget();
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     highlight.style.display = "none";
-    document.body.classList.remove("modal-open");
-    setTutorialCompleted();
+    if (complete) {
+      setTutorialCompleted();
+    }
   }
 
   function renderStep() {
     if (!active) return;
+    const steps = getActiveSteps();
     const step = steps[stepIndex];
     if (!step) {
-      closeAndComplete();
+      closeOverlay({ complete: phase === "run" });
       return;
     }
     progress.innerText = `Step ${stepIndex + 1} / ${steps.length}`;
     title.innerText = step.title;
     copy.innerText = step.copy;
-    nextBtn.innerText = step.requireGuess ? "Waiting For Guess..." : (stepIndex === steps.length - 1 ? "Finish" : "Next");
-    nextBtn.disabled = !!step.requireGuess;
+    nextBtn.innerText = step.requireGuess || step.requirePowerPick
+      ? "Waiting..."
+      : (stepIndex === steps.length - 1 ? "Finish" : "Next");
+    nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick;
     setFocusTarget(step);
   }
 
   function nextStep() {
     if (!active) return;
+    const steps = getActiveSteps();
     stepIndex += 1;
     if (stepIndex >= steps.length) {
-      closeAndComplete();
+      closeOverlay({ complete: phase === "run" });
       return;
     }
     renderStep();
   }
 
-  function maybeStart() {
-    if (active || state.runMode === "daily" || state.gameOver || !state.current) return;
-    if (forcedReplay) {
-      sessionStorage.removeItem(TUTORIAL_FORCE_REPLAY_KEY);
-    }
+  function openPhase(nextPhase) {
+    if (!tutorialEnabled || active) return;
+    consumeForcedReplay();
+    phase = nextPhase;
     active = true;
     stepIndex = 0;
     overlay.classList.remove("hidden");
     overlay.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-open");
     renderStep();
+  }
+
+  function maybeStartRun() {
+    if (!tutorialEnabled) return;
+    if (active || state.runMode === "daily" || state.gameOver || !state.current) return;
+    openPhase("run");
+  }
+
+  function maybeStartPowerChoice() {
+    if (!tutorialEnabled) return;
+    if (active) return;
+    if (state.runMode === "daily") return;
+    if (state.activePowerAwardReason) return;
+    if (!Array.isArray(state.pendingPowerOptions) || state.pendingPowerOptions.length === 0) return;
+    openPhase("power");
   }
 
   function isBlockingGuess(type) {
     if (!active) return false;
+    if (phase !== "run") return false;
+    const steps = getActiveSteps();
     const step = steps[stepIndex];
     if (!step?.requireGuess) return true;
     return type !== "higher" && type !== "lower";
@@ -166,6 +220,8 @@ function createTutorialController() {
 
   function handleGuessResolved(type, before, after) {
     if (!active) return;
+    if (phase !== "run") return;
+    const steps = getActiveSteps();
     const step = steps[stepIndex];
     if (!step?.requireGuess) return;
     const resolved =
@@ -179,14 +235,27 @@ function createTutorialController() {
     render();
   }
 
+  function handlePowerPicked(power, isRewardChoice = false) {
+    if (!active) return;
+    if (phase !== "power") return;
+    if (isRewardChoice) return;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    if (!step?.requirePowerPick) return;
+    const powerName = power?.name || "that power";
+    state.message = `Nice pick. ${powerName} is now your starting power.`;
+    closeOverlay({ complete: false });
+  }
+
   nextBtn.addEventListener("click", () => {
     if (!active) return;
+    const steps = getActiveSteps();
     const step = steps[stepIndex];
-    if (step?.requireGuess) return;
+    if (step?.requireGuess || step?.requirePowerPick) return;
     nextStep();
   });
 
-  skipBtn.addEventListener("click", closeAndComplete);
+  skipBtn.addEventListener("click", () => closeOverlay({ complete: true }));
   window.addEventListener("resize", () => {
     if (!active) return;
     renderStep();
@@ -197,17 +266,22 @@ function createTutorialController() {
   }, { passive: true });
 
   return {
-    maybeStart,
+    maybeStartRun,
+    maybeStartPowerChoice,
     isBlockingGuess,
     handleGuessResolved,
-    closeAndComplete,
+    handlePowerPicked,
+    closeAndComplete: () => closeOverlay({ complete: true }),
   };
 }
 
 window.tutorialController = createTutorialController();
-window.maybeStartFirstRunTutorial = () => window.tutorialController?.maybeStart?.();
+window.maybeStartFirstRunTutorial = () => window.tutorialController?.maybeStartRun?.();
+window.maybeStartPowerChoiceTutorial = () => window.tutorialController?.maybeStartPowerChoice?.();
 window.handleTutorialGuessResolved = (type, before, after) =>
   window.tutorialController?.handleGuessResolved?.(type, before, after);
+window.handleTutorialPowerPicked = (power, isRewardChoice) =>
+  window.tutorialController?.handlePowerPicked?.(power, isRewardChoice);
 
 document.getElementById("restart-btn").onclick = () => {
   const runIsActive = !state.gameOver && !!state.current;

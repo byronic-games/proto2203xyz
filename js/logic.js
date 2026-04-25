@@ -366,6 +366,9 @@ function openPowerChoice(forceRandom = false) {
   state.deckStatsTooltipOpen = false;
   state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck Level ${state.pendingLevelNumber} run.`;
   render();
+  if (typeof window.maybeStartPowerChoiceTutorial === "function") {
+    window.setTimeout(() => window.maybeStartPowerChoiceTutorial(), 0);
+  }
 }
 
 function openDailyPowerChoice(dateKey = "") {
@@ -579,6 +582,9 @@ function pickPowerFromChoice(index) {
   if (!power) return;
 
   const isRewardChoice = !!state.activePowerAwardReason;
+  if (typeof window.handleTutorialPowerPicked === "function") {
+    window.handleTutorialPowerPicked(power, isRewardChoice);
+  }
 
   if (isRewardChoice && !state.gameOver && state.current) {
     const gained = grantPowerToCurrentRun(power.id, state.activePowerAwardReason);
