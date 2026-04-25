@@ -185,10 +185,10 @@ async function refreshDailyPageForDate(activeDateKey) {
     ? leaderboardResponse
     : (leaderboardResponse?.entries || []);
   const remoteAvailable = Array.isArray(leaderboardResponse)
-    ? true
+    ? (leaderboardResponse._remoteAvailable !== undefined ? !!leaderboardResponse._remoteAvailable : true)
     : !!leaderboardResponse?.remoteAvailable;
   const boardStatus = Array.isArray(leaderboardResponse)
-    ? "online"
+    ? String(leaderboardResponse._status || "online")
     : (leaderboardResponse?.status || "online");
 
   if (boardStatusEl) {

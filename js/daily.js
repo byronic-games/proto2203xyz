@@ -15,6 +15,14 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DAILY_REQUEST_TIM
   }
 }
 
+function buildDailyLeaderboardResult(entries, remoteAvailable, status) {
+  const list = Array.isArray(entries) ? entries : [];
+  // Keep backward compatibility with older daily-page.js that expects an Array.
+  list._remoteAvailable = !!remoteAvailable;
+  list._status = String(status || (remoteAvailable ? "online" : "offline_network"));
+  return list;
+}
+
 function getDailyLeaderboardConfig() {
   if (typeof LEADERBOARD_CONFIG !== "undefined") {
     return {
@@ -179,11 +187,7 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
   const localAttempt = getLocalDailyAttempt(dateKey);
 
   if (!dailyRemoteEnabled()) {
-    return {
-      entries: localAttempt?.completed ? [localAttempt] : [],
-      remoteAvailable: false,
-      status: "offline_config",
-    };
+    return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_config");
   }
 
   const config = getDailyLeaderboardConfig();
@@ -202,20 +206,12 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
     });
 
     if (!response.ok) {
-      return {
-        entries: localAttempt?.completed ? [localAttempt] : [],
-        remoteAvailable: false,
-        status: "offline_http",
-      };
+      return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_http");
     }
 
     const rows = await response.json();
     if (!Array.isArray(rows)) {
-      return {
-        entries: localAttempt?.completed ? [localAttempt] : [],
-        remoteAvailable: false,
-        status: "offline_payload",
-      };
+      return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_payload");
     }
 
     const mapped = rows.map((row) =>
@@ -239,17 +235,9 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
       return String(a.createdAt).localeCompare(String(b.createdAt));
     });
 
-    return {
-      entries: mapped.slice(0, limit),
-      remoteAvailable: true,
-      status: "online",
-    };
+    return buildDailyLeaderboardResult(mapped.slice(0, limit), true, "online");
   } catch {
-    return {
-      entries: localAttempt?.completed ? [localAttempt] : [],
-      remoteAvailable: false,
-      status: "offline_network",
-    };
+    return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_network");
   }
 }
 
