@@ -151,7 +151,17 @@ function buildDailyEntry({
   dailyClears,
   crownSummary,
 }) {
-  const localCrowns = typeof getLocalCrownSnapshot === "function"
+  const normalizedSource = String(source || "local").toLowerCase();
+  const shouldUseLocalCrowns =
+    normalizedSource !== "remote" &&
+    blueCleared === undefined &&
+    greenCleared === undefined &&
+    redCleared === undefined &&
+    dailyCleared === undefined &&
+    dailyClears === undefined &&
+    crownSummary === undefined;
+
+  const localCrowns = shouldUseLocalCrowns && typeof getLocalCrownSnapshot === "function"
     ? getLocalCrownSnapshot()
     : {
       blueCleared: false,
@@ -170,7 +180,7 @@ function buildDailyEntry({
     score,
     completed,
     createdAt: createdAt || new Date().toISOString(),
-    source,
+    source: normalizedSource,
     blueCleared: blueCleared ?? localCrowns.blueCleared,
     greenCleared: greenCleared ?? localCrowns.greenCleared,
     redCleared: redCleared ?? localCrowns.redCleared,
@@ -318,10 +328,6 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
         crownSummary: row.crown_summary,
       })
     );
-
-    if (localAttempt?.completed && !mapped.some((entry) => entry.playerId === localAttempt.playerId && entry.dateKey === localAttempt.dateKey)) {
-      mapped.push(localAttempt);
-    }
 
     mapped.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
