@@ -427,6 +427,39 @@ function applyRunPowerSetup(powerId) {
   }
 }
 
+function shouldApplyTutorialAssistForStandardRun(runMode = "standard") {
+  if (runMode === "daily") return false;
+
+  const tutorialCompletedKey = typeof TUTORIAL_COMPLETED_KEY === "string"
+    ? TUTORIAL_COMPLETED_KEY
+    : "hl_prototype_tutorial_completed_v1";
+  const tutorialForceReplayKey = typeof TUTORIAL_FORCE_REPLAY_KEY === "string"
+    ? TUTORIAL_FORCE_REPLAY_KEY
+    : "hl_prototype_tutorial_force_replay_v1";
+
+  const forcedReplay = sessionStorage.getItem(tutorialForceReplayKey) === "1";
+  if (forcedReplay) return true;
+
+  const completed = localStorage.getItem(tutorialCompletedKey) === "1";
+  if (completed) return false;
+
+  const runsStarted = Number(loadProfileStats()?.runsStarted || 0);
+  return runsStarted <= 1;
+}
+
+function makeTutorialFriendlyOpeningCard(deck) {
+  if (!Array.isArray(deck) || deck.length < 2) return;
+  const first = deck[0];
+  if (!first || (first.value !== 1 && first.value !== 13)) return;
+
+  const replacementIndex = deck.findIndex((card, idx) =>
+    idx > 0 && card && card.value !== 1 && card.value !== 13
+  );
+
+  if (replacementIndex <= 0) return;
+  [deck[0], deck[replacementIndex]] = [deck[replacementIndex], deck[0]];
+}
+
 function startRunWithPower(powerId) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -453,6 +486,10 @@ function startRunWithPower(powerId) {
   const activePowers = selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
     : ["nudge_engine"];
+
+  if (shouldApplyTutorialAssistForStandardRun(runMode)) {
+    makeTutorialFriendlyOpeningCard(deck);
+  }
 
   state = {
     deck,

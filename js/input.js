@@ -1,5 +1,36 @@
+function ensureTutorialGuessWillResolveAsCorrect(type) {
+  if (!state.current || state.gameOver) return;
+  const nextIndex = (Number(state.index) || 0) + 1;
+  if (!Array.isArray(state.deck) || nextIndex >= state.deck.length) return;
+
+  const currentComparisonValue = getCurrentEffectiveValue();
+  if (!Number.isFinite(currentComparisonValue)) return;
+
+  const isSafeOutcome = (card) => {
+    const nextValue = getNextComparisonValueForGuess(card);
+    if (!Number.isFinite(nextValue)) return false;
+    return type === "higher" ? nextValue >= currentComparisonValue : nextValue <= currentComparisonValue;
+  };
+
+  if (isSafeOutcome(state.deck[nextIndex])) return;
+
+  let candidateIndex = -1;
+  for (let i = nextIndex + 1; i < state.deck.length; i += 1) {
+    if (isSafeOutcome(state.deck[i])) {
+      candidateIndex = i;
+      break;
+    }
+  }
+
+  if (candidateIndex < 0) return;
+  [state.deck[nextIndex], state.deck[candidateIndex]] = [state.deck[candidateIndex], state.deck[nextIndex]];
+}
+
 function handleGuessButtonPress(type) {
   if (window.tutorialController?.isBlockingGuess?.(type) === true) return;
+  if (window.tutorialController?.isGuidedGuessStep?.() === true) {
+    ensureTutorialGuessWillResolveAsCorrect(type);
+  }
 
   const before = {
     index: Number(state.index) || 0,
@@ -49,7 +80,7 @@ function createTutorialController() {
     {
       target: "#current-card",
       title: "Current Card",
-      copy: "This is your live card. You compare the next face-down card against this value.",
+      copy: "This is your live card. You compare the next face-down card against this value. Aces are low (1).",
     },
     {
       target: "#face-down-deck",
@@ -61,6 +92,7 @@ function createTutorialController() {
       title: "Make A Guess",
       copy: "Tap Higher or Lower now to continue the tutorial.",
       requireGuess: true,
+      clearView: true,
     },
     {
       target: ".nudge-stack",
@@ -70,7 +102,7 @@ function createTutorialController() {
     {
       target: "#cheats-panel",
       title: "Cheats",
-      copy: "Cheats appear as rewards during a run. Hold a cheat to read what it does.",
+      copy: "Cheats appear as rewards during a run. Tap a cheat to play it. Hold a cheat to read what it does.",
     },
   ];
 
@@ -90,6 +122,8 @@ function createTutorialController() {
       title: "Choose To Continue",
       copy: "Pick either power now to begin the run.",
       requirePowerPick: true,
+      showHighlight: false,
+      clearView: true,
     },
   ];
 
@@ -127,6 +161,10 @@ function createTutorialController() {
 
   function setFocusTarget(step) {
     clearFocusTarget();
+    if (step?.showHighlight === false) {
+      highlight.style.display = "none";
+      return;
+    }
     const target = step?.target ? document.querySelector(step.target) : null;
     if (!target) {
       highlight.style.display = "none";
@@ -155,6 +193,7 @@ function createTutorialController() {
     clearFocusTarget();
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove("tutorial-clear-view");
     highlight.style.display = "none";
     if (complete) {
       setTutorialCompleted();
@@ -176,6 +215,7 @@ function createTutorialController() {
       ? "Waiting..."
       : (stepIndex === steps.length - 1 ? "Finish" : "Next");
     nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick;
+    overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
     setFocusTarget(step);
   }
 
@@ -223,6 +263,13 @@ function createTutorialController() {
     const step = steps[stepIndex];
     if (!step?.requireGuess) return true;
     return type !== "higher" && type !== "lower";
+  }
+
+  function isGuidedGuessStep() {
+    if (!active || phase !== "run") return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !!step?.requireGuess;
   }
 
   function handleGuessResolved(type, before, after) {
@@ -276,6 +323,7 @@ function createTutorialController() {
     maybeStartRun,
     maybeStartPowerChoice,
     isBlockingGuess,
+    isGuidedGuessStep,
     handleGuessResolved,
     handlePowerPicked,
     closeAndComplete: () => closeOverlay({ complete: true }),

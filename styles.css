@@ -1491,6 +1491,11 @@ a {
   pointer-events: none;
 }
 
+#tutorial-overlay.tutorial-clear-view .tutorial-backdrop {
+  background: rgba(5, 4, 10, 0.08);
+  backdrop-filter: none;
+}
+
 .tutorial-highlight {
   position: fixed;
   z-index: 1301;
@@ -1500,6 +1505,18 @@ a {
     0 0 18px rgba(109, 228, 255, 0.42);
   background: rgba(80, 215, 255, 0.04);
   pointer-events: none;
+  animation: tutorial-highlight-throb 1.2s ease-in-out infinite;
+}
+
+@keyframes tutorial-highlight-throb {
+  0%, 100% {
+    border-color: rgba(109, 228, 255, 0.75);
+    box-shadow: 0 0 12px rgba(109, 228, 255, 0.3);
+  }
+  50% {
+    border-color: rgba(109, 228, 255, 1);
+    box-shadow: 0 0 24px rgba(109, 228, 255, 0.6);
+  }
 }
 
 .tutorial-dialog {
