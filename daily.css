@@ -208,6 +208,10 @@ h1 {
   min-height: 1.3em;
 }
 
+.daily-board-status {
+  margin: 0 0 10px;
+}
+
 .daily-result.hidden {
   display: none;
 }
@@ -342,4 +346,3 @@ td.score {
     text-transform: uppercase;
   }
 }
-

@@ -114,6 +114,7 @@ async function refreshDailyPageForDate(activeDateKey) {
 
   // Update status and button states
   const statusEl = document.getElementById("daily-status");
+  const boardStatusEl = document.getElementById("daily-board-status");
   const scoreEl = document.getElementById("daily-score-label");
   const resultPanel = document.getElementById("daily-result-panel");
   const startBtn = document.getElementById("daily-start-btn");
@@ -140,12 +141,12 @@ async function refreshDailyPageForDate(activeDateKey) {
     } else {
       resultPanel?.classList.add("hidden");
       if (statusEl) {
-        statusEl.innerText = "This Daily has already been started on this device.";
+        statusEl.innerText = "This Daily is in progress on this device. Resume to finish your attempt.";
       }
     }
     if (startBtn) {
-      startBtn.disabled = true;
-      startBtn.innerText = hasCompletedAttempt ? "Daily Complete" : "Daily Locked";
+      startBtn.disabled = hasCompletedAttempt ? true : (activeDateKey !== todayKey);
+      startBtn.innerText = hasCompletedAttempt ? "Daily Complete" : (activeDateKey === todayKey ? "Resume Daily" : "Archive");
     }
   } else {
       resultPanel?.classList.add("hidden");
@@ -179,7 +180,27 @@ async function refreshDailyPageForDate(activeDateKey) {
   }
 
   // Fetch and render leaderboard
-  const leaderboard = await fetchDailyLeaderboard(activeDateKey, 100);
+  const leaderboardResponse = await fetchDailyLeaderboard(activeDateKey, 100);
+  const leaderboard = Array.isArray(leaderboardResponse)
+    ? leaderboardResponse
+    : (leaderboardResponse?.entries || []);
+  const remoteAvailable = Array.isArray(leaderboardResponse)
+    ? true
+    : !!leaderboardResponse?.remoteAvailable;
+  const boardStatus = Array.isArray(leaderboardResponse)
+    ? "online"
+    : (leaderboardResponse?.status || "online");
+
+  if (boardStatusEl) {
+    if (remoteAvailable) {
+      boardStatusEl.innerText = "Online leaderboard connected.";
+    } else if (boardStatus === "offline_config") {
+      boardStatusEl.innerText = "Online leaderboard unavailable. Showing local results only.";
+    } else {
+      boardStatusEl.innerText = "Could not reach online leaderboard. Showing local fallback results.";
+    }
+  }
+
   renderDailyRows(leaderboard, currentPlayerId, showScores);
 }
 

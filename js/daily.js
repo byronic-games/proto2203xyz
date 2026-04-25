@@ -3,6 +3,17 @@ const DAILY_LOCAL_KEY = "hl_prototype_daily_attempts_local";
 const DAILY_NAME_KEY = "hl_prototype_hero_name";
 const DAILY_TABLE = "daily_52";
 const DAILY_RULESET_VERSION = "daily-v1";
+const DAILY_REQUEST_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = DAILY_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || DAILY_REQUEST_TIMEOUT_MS));
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 function getDailyLeaderboardConfig() {
   if (typeof LEADERBOARD_CONFIG !== "undefined") {
@@ -95,7 +106,8 @@ function saveLocalDailyAttempt(entry) {
 }
 
 function hasPlayedDaily(dateKey) {
-  return !!getLocalDailyAttempt(dateKey);
+  const attempt = getLocalDailyAttempt(dateKey);
+  return !!attempt && attempt.completed === true;
 }
 
 function buildDailyEntry({ dateKey, seed, playerName, playerId, score, completed = true, createdAt, source = "local" }) {
@@ -135,7 +147,7 @@ async function submitDailyResult(entry) {
   const config = getDailyLeaderboardConfig();
 
   try {
-    const response = await fetch(`${config.supabaseUrl}/rest/v1/${config.table}`, {
+    const response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
       method: "POST",
       headers: {
         apikey: config.supabaseAnonKey,
@@ -167,7 +179,11 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
   const localAttempt = getLocalDailyAttempt(dateKey);
 
   if (!dailyRemoteEnabled()) {
-    return localAttempt?.completed ? [localAttempt] : [];
+    return {
+      entries: localAttempt?.completed ? [localAttempt] : [],
+      remoteAvailable: false,
+      status: "offline_config",
+    };
   }
 
   const config = getDailyLeaderboardConfig();
@@ -178,7 +194,7 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
       `&date_key=eq.${encodeURIComponent(dateKey)}` +
       `&order=score.desc,created_at.asc&limit=${Math.max(1, limit)}`;
     const url = `${config.supabaseUrl}/rest/v1/${config.table}?${query}`;
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         apikey: config.supabaseAnonKey,
         Authorization: `Bearer ${config.supabaseAnonKey}`,
@@ -186,11 +202,21 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
     });
 
     if (!response.ok) {
-      return localAttempt?.completed ? [localAttempt] : [];
+      return {
+        entries: localAttempt?.completed ? [localAttempt] : [],
+        remoteAvailable: false,
+        status: "offline_http",
+      };
     }
 
     const rows = await response.json();
-    if (!Array.isArray(rows)) return localAttempt?.completed ? [localAttempt] : [];
+    if (!Array.isArray(rows)) {
+      return {
+        entries: localAttempt?.completed ? [localAttempt] : [],
+        remoteAvailable: false,
+        status: "offline_payload",
+      };
+    }
 
     const mapped = rows.map((row) =>
       buildDailyEntry({
@@ -213,9 +239,17 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
       return String(a.createdAt).localeCompare(String(b.createdAt));
     });
 
-    return mapped.slice(0, limit);
+    return {
+      entries: mapped.slice(0, limit),
+      remoteAvailable: true,
+      status: "online",
+    };
   } catch {
-    return localAttempt?.completed ? [localAttempt] : [];
+    return {
+      entries: localAttempt?.completed ? [localAttempt] : [],
+      remoteAvailable: false,
+      status: "offline_network",
+    };
   }
 }
 

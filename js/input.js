@@ -32,10 +32,17 @@ function createTutorialController() {
   const nextBtn = document.getElementById("tutorial-next-btn");
   const skipBtn = document.getElementById("tutorial-skip-btn");
 
+  const tutorialCompletedKey = typeof TUTORIAL_COMPLETED_KEY === "string"
+    ? TUTORIAL_COMPLETED_KEY
+    : "hl_prototype_tutorial_completed_v1";
+  const tutorialForceReplayKey = typeof TUTORIAL_FORCE_REPLAY_KEY === "string"
+    ? TUTORIAL_FORCE_REPLAY_KEY
+    : "hl_prototype_tutorial_force_replay_v1";
+
   const profileStats = loadProfileStats();
   const shouldRunByProgress = Number(profileStats.runsStarted || 0) <= 1;
-  const completedAtLoad = localStorage.getItem(TUTORIAL_COMPLETED_KEY) === "1";
-  let forcedReplay = sessionStorage.getItem(TUTORIAL_FORCE_REPLAY_KEY) === "1";
+  const completedAtLoad = localStorage.getItem(tutorialCompletedKey) === "1";
+  let forcedReplay = sessionStorage.getItem(tutorialForceReplayKey) === "1";
   let tutorialEnabled = forcedReplay || (!completedAtLoad && shouldRunByProgress);
 
   const runSteps = [
@@ -109,7 +116,7 @@ function createTutorialController() {
   function consumeForcedReplay() {
     if (!forcedReplay) return;
     forcedReplay = false;
-    sessionStorage.removeItem(TUTORIAL_FORCE_REPLAY_KEY);
+    sessionStorage.removeItem(tutorialForceReplayKey);
   }
 
   function clearFocusTarget() {
@@ -138,7 +145,7 @@ function createTutorialController() {
   }
 
   function setTutorialCompleted() {
-    localStorage.setItem(TUTORIAL_COMPLETED_KEY, "1");
+    localStorage.setItem(tutorialCompletedKey, "1");
     tutorialEnabled = false;
   }
 
