@@ -50,12 +50,36 @@ Current Blue levels:
 - `Level 2`
   Cheats every 4 correct guesses, or every 3 with `Quick Fingers`
 - `Level 3`
-  Same timing as Level 2, but normal cheat offers are `pick 1 from 2` instead of `pick 1 from 3`
+  Same timing as Level 2
+- `Level 4`
+  Cheats every 5 correct guesses, or every 4 with `Quick Fingers`
 
 Unlocks:
 - Blue Level 1 is available immediately
 - Blue Level 2 unlocks after clearing Blue Level 1
 - Blue Level 3 unlocks after clearing Blue Level 2
+- Blue Level 4 unlocks after clearing Blue Level 3
+
+### Green Deck
+
+Green is the energy-constrained variant.
+
+Identity:
+- starts with finite Energy by level
+- nudges spend Energy
+- wrong guesses still end the run
+
+Current Green levels:
+- `Level 1`: start with 10 Energy
+- `Level 2`: start with 8 Energy
+- `Level 3`: start with 6 Energy
+- `Level 4`: start with 5 Energy
+
+Unlocks:
+- Green deck unlocks after clearing Blue Level 1
+- Green Level 2 unlocks after clearing Green Level 1
+- Green Level 3 unlocks after clearing Green Level 2
+- Green Level 4 unlocks after clearing Green Level 3
 
 ### Red Deck
 
@@ -67,9 +91,14 @@ Identity:
 - that info is based on prior Blue face-up history
 
 Unlocks:
-- Red deck unlocks after clearing Blue Level 1
-- Red Level 2 unlocks after clearing Blue Level 2
-- Red Level 3 unlocks after clearing Blue Level 3
+- Red deck unlocks after clearing Blue Level 2
+- Red Level 2 unlocks after clearing Red Level 1
+- Red Level 3 unlocks after clearing Red Level 2
+- Red Level 4 unlocks after clearing Red Level 3
+
+Red timing:
+- Levels 1-3: cheats every 3 correct guesses (or every 2 with `Quick Fingers`)
+- Level 4: cheats every 4 correct guesses (or every 3 with `Quick Fingers`)
 
 Red card-back stat direction:
 - current design is centered on “how this card behaves when it is face up”
@@ -147,7 +176,7 @@ Recent and important cheats include:
 
 Design note:
 - cheat offers are deterministic in Daily
-- normal Blue L3 cheat offers are deliberately smaller than Blue L1/L2
+- cheat offers should always provide at least 2 options
 
 ## Progression And Meta
 

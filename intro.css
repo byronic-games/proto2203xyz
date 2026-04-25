@@ -758,6 +758,8 @@ h1 {
   position: relative;
   z-index: 1;
   width: min(92vw, 520px);
+  max-height: min(88vh, 760px);
+  overflow-y: auto;
   border-radius: 20px;
   padding: 18px;
   background: linear-gradient(180deg, rgba(47, 31, 61, 0.98), rgba(25, 17, 34, 0.98));
@@ -824,6 +826,11 @@ h1 {
 .level-choice-3 {
   background: linear-gradient(180deg, #ffda8e 0%, #ffb34e 100%);
   color: #332006;
+}
+
+.level-choice-4 {
+  background: linear-gradient(180deg, #ffb46f 0%, #ff8f3f 100%);
+  color: #311903;
 }
 
 .deck-choice-label {

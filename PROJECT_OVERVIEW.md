@@ -46,6 +46,9 @@ The game is no longer just a plain higher/lower toy. It now has a split identity
 - Blue Deck:
   The more classic run. Correct answers grant directional nudge charges.
 
+- Green Deck:
+  The energy-pressured variant. It still ends on a wrong guess, starts with limited Energy that varies by level, and spends Energy on nudges.
+
 - Red Deck:
   The more information-driven variant. It does not award nudges for correct answers. Instead, the next card back can show historical stats derived from prior Blue deck face-up usage.
 
@@ -54,8 +57,17 @@ The game is no longer just a plain higher/lower toy. It now has a split identity
 
 This gives the project three adjacent play modes:
 - standard Blue progression play
+- energy-constrained Green progression play
 - stats-driven Red play
 - shared Daily challenge play
+
+Current progression summary:
+- Blue Level 1 starts unlocked.
+- Daily unlocks after a player has started one run.
+- Green Level 1 unlocks after clearing Blue Level 1.
+- Red Level 1 unlocks after clearing Blue Level 2.
+- Level caps are currently 1-4 for Blue, Green, and Red.
+- For Green/Red/Blue, each higher level unlocks by clearing the previous level in that same deck.
 
 ## Core Systems
 
@@ -387,4 +399,3 @@ And from a design perspective:
 - Blue = resource-driven play via nudges
 - Red = information-driven play via card history
 - Daily = shared once-per-day challenge
-

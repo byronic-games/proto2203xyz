@@ -123,7 +123,7 @@ function getPowerDescription(powerOrId, options = {}) {
   if (power.id === "quick_fingers") {
     const deckKey = normalizeDeckKey(options.deckKey || state?.currentDeckKey || state?.selectedDeckKey || "blue");
     const levelNumber = normalizeLevelNumber(options.levelNumber || state?.currentLevelNumber || state?.selectedLevelNumber || loadSelectedLevel());
-    const baseThreshold = deckKey === "blue" && levelNumber >= 2 ? 4 : 3;
+    const baseThreshold = getBaseCheatRewardThreshold(deckKey, levelNumber);
     const boostedThreshold = Math.max(1, baseThreshold - 1);
     return `Choose a new Cheat every ${boostedThreshold} successful guesses instead of every ${baseThreshold}.`;
   }
@@ -277,9 +277,27 @@ function getRandomPowerOptions(count = 2, seedString = "", includeAll = false, e
 }
 
 function getCheatRewardThreshold() {
+  const currentDeckKey = normalizeDeckKey(state.currentDeckKey);
   const currentLevelNumber = normalizeLevelNumber(state.currentLevelNumber || DEFAULT_LEVEL_NUMBER);
-  const baseThreshold = normalizeDeckKey(state.currentDeckKey) === "blue" && currentLevelNumber >= 2 ? 4 : 3;
+  const baseThreshold = getBaseCheatRewardThreshold(currentDeckKey, currentLevelNumber);
   return runHasPower("quick_fingers") ? Math.max(1, baseThreshold - 1) : baseThreshold;
+}
+
+function getBaseCheatRewardThreshold(deckKey = "blue", levelNumber = DEFAULT_LEVEL_NUMBER) {
+  const normalizedDeck = normalizeDeckKey(deckKey);
+  const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+  if (normalizedDeck === "blue") {
+    if (normalizedLevel >= 4) return 5;
+    if (normalizedLevel >= 2) return 4;
+    return 3;
+  }
+
+  if (normalizedDeck === "red") {
+    return normalizedLevel >= 4 ? 4 : 3;
+  }
+
+  return 3;
 }
 
 function awardOnCorrectGuessPowers(guessType) {

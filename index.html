@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css?v=20260425c">
+  <link rel="stylesheet" href="intro.css?v=20260425d">
 </head>
 <body class="intro-page">
   <main class="intro-shell">
@@ -116,6 +116,10 @@
               <span class="deck-choice-label">Level 3</span>
               <span class="deck-choice-desc" id="level-3-desc">Unlock by clearing Level 2.</span>
             </button>
+            <button class="deck-choice-card level-choice-card level-choice-4 locked" id="level-pick-4" type="button" disabled>
+              <span class="deck-choice-label">Level 4</span>
+              <span class="deck-choice-desc" id="level-4-desc">Unlock by clearing Level 3.</span>
+            </button>
           </div>
           <button id="level-close-btn" class="deck-close-btn" type="button">Back</button>
         </article>
@@ -142,7 +146,7 @@
             <li>Equal values are safe, so your run continues on a match. Aces are usually low unless a power changes that.</li>
             <li>A wrong guess ends the run immediately.</li>
             <li><strong>Blue Deck</strong> can award Nudges on correct guesses. <strong>Red Deck</strong> does not award Nudges, but the next card back shows live history for that face-up card.</li>
-            <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Level 2 slows cheat rewards, and Blue Level 3 keeps that tougher pacing while cutting each cheat offer down to 1 from 2.</li>
+            <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Levels 2 and 3 slow cheat rewards, and Blue Level 4 slows them further.</li>
             <li>Unlock path: clear Blue 1 to open Green 1, clear Blue 2 to open Red 1. Green and Red higher levels unlock by clearing the previous level in that same deck.</li>
             <li>Clear the full deck to record a winning run on the heroes board.</li>
           </ul>
@@ -153,7 +157,7 @@
           <ul>
             <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
             <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
-            <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, and Level 3 starts at 6. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
+            <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, Level 3 starts at 6, and Level 4 starts at 5. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
             <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
             <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
             <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
@@ -203,9 +207,11 @@
       const levelOneBtn = document.getElementById("level-pick-1");
       const levelTwoBtn = document.getElementById("level-pick-2");
       const levelThreeBtn = document.getElementById("level-pick-3");
+      const levelFourBtn = document.getElementById("level-pick-4");
       const levelOneDesc = document.getElementById("level-1-desc");
       const levelTwoDesc = document.getElementById("level-2-desc");
       const levelThreeDesc = document.getElementById("level-3-desc");
+      const levelFourDesc = document.getElementById("level-4-desc");
       const nameKey = "hl_prototype_hero_name";
       const selectedDeckKey = "hl_prototype_selected_deck";
       const selectedLevelKey = "hl_prototype_selected_level";
@@ -218,7 +224,7 @@
       const debugUnlockEnabled = new URLSearchParams(window.location.search).get("debugUnlock") === "1";
       let pendingDeckSelection = "blue";
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !nameInput) {
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelFourBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !levelFourDesc || !nameInput) {
         return;
       }
 
@@ -404,16 +410,16 @@
         if (normalizedDeck === "green") {
           if (!isGreenDeckPrereqMet()) return false;
           if (normalizedLevel === 1) return true;
-          if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("green", 1);
-          if (normalizedLevel === 3) return hasVerifiedDeckLevelClear("green", 2);
+          if (normalizedLevel >= 2 && normalizedLevel <= 4) {
+            return hasVerifiedDeckLevelClear("green", normalizedLevel - 1);
+          }
           return false;
         }
 
         if (!isRedDeckUnlocked()) return false;
         if (normalizedLevel === 1) return true;
-        if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("red", 1);
-        if (normalizedLevel === 3) {
-          return hasVerifiedDeckLevelClear("red", 2);
+        if (normalizedLevel >= 2 && normalizedLevel <= 4) {
+          return hasVerifiedDeckLevelClear("red", normalizedLevel - 1);
         }
         return false;
       }
@@ -425,18 +431,21 @@
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return "Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers.";
           if (normalizedLevel === 2) return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers.";
-          return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.";
+          if (normalizedLevel === 3) return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers. Offers always give at least 2 choices.";
+          return "Cheats appear every 5 correct guesses, or every 4 with Quick Fingers. Offers always give at least 2 choices.";
         }
 
         if (normalizedDeck === "green") {
           if (normalizedLevel === 1) return "Hard mode. Start with 10 Energy, each nudge costs 1 Energy, correct guesses still award nudges, and wrong guesses end the run.";
           if (normalizedLevel === 2) return "Hard mode. Start with 8 Energy. Same Green rules with tighter resource pressure.";
-          return "Hard mode. Start with 6 Energy. Green's toughest resource run.";
+          if (normalizedLevel === 3) return "Hard mode. Start with 6 Energy. Green's toughest resource run before Level 4.";
+          return "Hard mode. Start with 5 Energy. Green's peak resource pressure.";
         }
 
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
         if (normalizedLevel === 2) return "Stats-driven run. Unlock by clearing Red Deck Level 1.";
-        return "Stats-driven run. Unlock by clearing Red Deck Level 2.";
+        if (normalizedLevel === 3) return "Stats-driven run. Unlock by clearing Red Deck Level 2.";
+        return "Stats-driven run. Cheats slow to every 4 correct guesses, or every 3 with Quick Fingers.";
       }
 
       function getLevelUnlockText(deckKey, levelNumber) {
@@ -452,12 +461,14 @@
           if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
           if (normalizedLevel === 2) return "Unlock by clearing Green Deck Level 1.";
           if (normalizedLevel === 3) return "Unlock by clearing Green Deck Level 2.";
+          if (normalizedLevel === 4) return "Unlock by clearing Green Deck Level 3.";
           return "Unlock requirements not available.";
         }
 
         if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 2.";
         if (normalizedLevel === 2) return "Unlock by clearing Red Deck Level 1.";
         if (normalizedLevel === 3) return "Unlock by clearing Red Deck Level 2.";
+        if (normalizedLevel === 4) return "Unlock by clearing Red Deck Level 3.";
         return "Unlock requirements not available.";
       }
 
@@ -525,11 +536,12 @@
         const levelOneUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 1);
         const levelTwoUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 2);
         const levelThreeUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 3);
+        const levelFourUnlocked = isDeckLevelUnlocked(pendingDeckSelection, 4);
 
         levelCopy.textContent = isBlueDeck
           ? "Blue progression starts at Level 1 and opens one rung at a time as you clear each level."
           : (isGreenDeck
-            ? "Green progression unlocks from Blue Level 1, then advances by clearing each Green level in order (10 → 8 → 6 starting Energy)."
+            ? "Green progression unlocks from Blue Level 1, then advances by clearing each Green level in order (10 → 8 → 6 → 5 starting Energy)."
             : "Red progression unlocks from Blue Level 2, then advances by clearing each Red level in order.");
 
         levelOneDesc.textContent = levelOneUnlocked
@@ -541,10 +553,14 @@
         levelThreeDesc.textContent = levelThreeUnlocked
           ? getLevelDescription(pendingDeckSelection, 3)
           : getLevelUnlockText(pendingDeckSelection, 3);
+        levelFourDesc.textContent = levelFourUnlocked
+          ? getLevelDescription(pendingDeckSelection, 4)
+          : getLevelUnlockText(pendingDeckSelection, 4);
 
         setChoiceCardState(levelOneBtn, levelOneUnlocked);
         setChoiceCardState(levelTwoBtn, levelTwoUnlocked);
         setChoiceCardState(levelThreeBtn, levelThreeUnlocked);
+        setChoiceCardState(levelFourBtn, levelFourUnlocked);
 
         deckModal.classList.add("hidden");
         deckModal.setAttribute("aria-hidden", "true");
@@ -603,7 +619,7 @@
 
       function chooseLevel(levelNumber) {
         if (!isDeckLevelUnlocked(pendingDeckSelection, levelNumber)) return;
-        if (levelNumber > 3) return;
+        if (levelNumber > 4) return;
         setSelectedDeck(pendingDeckSelection);
         setSelectedLevel(levelNumber);
         sessionStorage.removeItem("hl_prototype_game_state_snapshot");
@@ -642,6 +658,7 @@
       levelOneBtn.addEventListener("click", () => chooseLevel(1));
       levelTwoBtn.addEventListener("click", () => chooseLevel(2));
       levelThreeBtn.addEventListener("click", () => chooseLevel(3));
+      levelFourBtn.addEventListener("click", () => chooseLevel(4));
 
       playBtn.addEventListener("pointerdown", () => {
         if (!debugUnlockEnabled) return;

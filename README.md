@@ -34,13 +34,41 @@ The game combines a simple higher/lower loop with roguelike ideas:
 
 All current Powers are set to `Common` with `unlockAt = 0`.
 
-- `Balanced Nudges`: start with 5 `Nudge +1` and 5 `Nudge -1` charges
-- `Updraft`: start with 10 `Nudge +1` charges
-- `Downforce`: start with 10 `Nudge -1` charges
-- `Quick Fingers`: choose a Cheat every 2 successful guesses instead of every 3
+- `Balanced Nudges`: start with 4 `Nudge +1` and 4 `Nudge -1` charges
+- `Updraft`: start with 8 `Nudge +1` charges
+- `Downforce`: start with 8 `Nudge -1` charges
+- `Quick Fingers`: reduces the current level's cheat threshold by 1 correct guess
 - `Swap Stack`: start with 4 `Swap` cheats in hand
 - `Aces Wild`: base Aces count as both high and low, and can be nudged down to King or up to Two
 - `Lucky Opening`: start with 2 `Lucky 7` cheats in hand
+
+### Decks And Levels
+
+- Blue Deck starts unlocked.
+- Daily unlocks after the player has started one run.
+- Green Deck Level 1 unlocks after clearing Blue Level 1.
+- Red Deck Level 1 unlocks after clearing Blue Level 2.
+- Higher levels unlock by clearing the previous level in that same deck.
+
+Current level cap is Level 4 for Blue, Green, and Red.
+
+Blue cheat pacing:
+- Level 1: cheats every 3 correct guesses (`Quick Fingers`: every 2)
+- Level 2: cheats every 4 correct guesses (`Quick Fingers`: every 3)
+- Level 3: cheats every 4 correct guesses (`Quick Fingers`: every 3)
+- Level 4: cheats every 5 correct guesses (`Quick Fingers`: every 4)
+
+Red cheat pacing:
+- Levels 1-3: cheats every 3 correct guesses (`Quick Fingers`: every 2)
+- Level 4: cheats every 4 correct guesses (`Quick Fingers`: every 3)
+
+Cheat offers always keep at least 2 options.
+
+Green starting Energy:
+- Level 1: 10
+- Level 2: 8
+- Level 3: 6
+- Level 4: 5
 
 ### Nudge System
 

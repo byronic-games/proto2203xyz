@@ -552,7 +552,7 @@ function startRunWithPower(powerId) {
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
     energy: greenRun
-      ? (currentLevelNumber >= 3 ? 6 : (currentLevelNumber === 2 ? 8 : 10))
+      ? (currentLevelNumber >= 4 ? 5 : (currentLevelNumber >= 3 ? 6 : (currentLevelNumber === 2 ? 8 : 10)))
       : 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
