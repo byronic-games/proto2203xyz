@@ -1488,13 +1488,15 @@ a {
   padding: 18px;
   background: linear-gradient(180deg, rgba(47,31,61,0.98), rgba(25,17,34,0.98));
   box-shadow: var(--shadow), var(--glow-pink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .help-dialog,
 .victory-dialog {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  touch-action: auto;
 }
 
 .help-close-icon {
@@ -1618,6 +1620,11 @@ a {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding-bottom: 4px;
 }
 
 .choice-card {

@@ -74,6 +74,8 @@ function navigateToDailyDate(dateKey) {
 async function refreshDailyPageForDate(activeDateKey) {
   const todayKey = getCurrentDailyDateKey();
   const currentPlayerId = getOrCreateDailyPlayerId();
+  const profileStats = loadProfileStats();
+  const dailyUnlocked = Number(profileStats.runsStarted || 0) >= 1;
   const currentAttempt = getLocalDailyAttempt(activeDateKey);
   const hasCompletedAttempt =
     !!currentAttempt &&
@@ -117,7 +119,16 @@ async function refreshDailyPageForDate(activeDateKey) {
   const startBtn = document.getElementById("daily-start-btn");
   const nameInput = document.getElementById("daily-name-input");
 
-  if (currentAttempt) {
+  if (!dailyUnlocked) {
+    resultPanel?.classList.add("hidden");
+    if (statusEl) {
+      statusEl.innerText = "Daily unlocks after your first run.";
+    }
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.innerText = "Locked";
+    }
+  } else if (currentAttempt) {
     if (hasCompletedAttempt) {
       resultPanel?.classList.remove("hidden");
       if (scoreEl) scoreEl.innerText = String(currentAttempt.score ?? 0);
@@ -200,4 +211,3 @@ async function renderDailyPage() {
 }
 
 renderDailyPage();
-

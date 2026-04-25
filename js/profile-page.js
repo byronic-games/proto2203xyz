@@ -14,6 +14,10 @@ function getProfileAchievements(stats, deckWins) {
       unlocked: (deckWins.red || 0) >= 1,
     },
     {
+      label: "Green Deck Cleared",
+      unlocked: (deckWins.green || 0) >= 1,
+    },
+    {
       label: "100 Correct Guesses",
       unlocked: (stats.totalCorrectGuesses || 0) >= 100,
     },
@@ -48,15 +52,17 @@ function renderProfilePage() {
   const runsStartedEl = document.getElementById("profile-runs-started");
   const blueClearsEl = document.getElementById("profile-blue-clears");
   const redClearsEl = document.getElementById("profile-red-clears");
+  const greenClearsEl = document.getElementById("profile-green-clears");
   const blueRunsEl = document.getElementById("profile-blue-runs");
   const redRunsEl = document.getElementById("profile-red-runs");
+  const greenRunsEl = document.getElementById("profile-green-runs");
   const dailyAttemptsEl = document.getElementById("profile-daily-attempts");
   const dailyClearsEl = document.getElementById("profile-daily-clears");
   const stampEl = document.getElementById("profile-stamp");
   const achievementListEl = document.getElementById("profile-achievement-list");
   const backBtn = document.getElementById("profile-back-btn");
 
-  if (!nameInput || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !blueRunsEl || !redRunsEl || !dailyAttemptsEl || !dailyClearsEl || !stampEl || !achievementListEl || !backBtn) {
+  if (!nameInput || !bestRunEl || !totalCorrectEl || !decksBeatenEl || !runsStartedEl || !blueClearsEl || !redClearsEl || !greenClearsEl || !blueRunsEl || !redRunsEl || !greenRunsEl || !dailyAttemptsEl || !dailyClearsEl || !stampEl || !achievementListEl || !backBtn) {
     return;
   }
 
@@ -73,8 +79,10 @@ function renderProfilePage() {
     runsStartedEl.textContent = String(stats.runsStarted || 0);
     blueClearsEl.textContent = String(deckWins.blue || 0);
     redClearsEl.textContent = String(deckWins.red || 0);
+    greenClearsEl.textContent = String(deckWins.green || 0);
     blueRunsEl.textContent = String(stats.blueRunsStarted || 0);
     redRunsEl.textContent = String(stats.redRunsStarted || 0);
+    greenRunsEl.textContent = String(stats.greenRunsStarted || 0);
     dailyAttemptsEl.textContent = String(stats.dailyAttempts || 0);
     dailyClearsEl.textContent = String(stats.dailyClears || 0);
     stampEl.textContent = getProfileStampLabel(achievements);

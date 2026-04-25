@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260423a">
+  <link rel="stylesheet" href="styles.css?v=20260425b">
 </head>
 <body>
   <div id="game-shell">
@@ -173,6 +173,7 @@
               <li>A wrong guess ends the run immediately.</li>
               <li><strong>Blue Deck</strong> can award Nudges on correct guesses. <strong>Red Deck</strong> does not award Nudges, but the next card back shows live history for that face-up card.</li>
               <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Level 2 slows cheat rewards, and Blue Level 3 keeps that tougher pacing while cutting each cheat offer down to 1 from 2.</li>
+              <li>Unlock path: clear Blue 1 to open Green 1, clear Blue 2 to open Red 1. Green and Red higher levels unlock by clearing the previous level in that same deck.</li>
               <li>Clear the full deck to record a winning run on the heroes board.</li>
             </ul>
           </div>
@@ -182,11 +183,11 @@
             <ul>
               <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
               <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
-              <li><strong>Green Deck Energy:</strong> Green starts at 10 Energy, each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in cheat offers.</li>
+              <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, and Level 3 starts at 6. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
               <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
               <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
               <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
-              <li><strong>Daily:</strong> The Daily gives everyone the same seeded deck, opening powers, and cheat offers for that date, and currently always plays as Blue Deck Level 1.</li>
+              <li><strong>Daily:</strong> The Daily unlocks after your first run, gives everyone the same seeded deck and offers for the date, and currently always plays as Blue Deck Level 1.</li>
               <li><strong>Power Reminder:</strong> Hold the deck / level / starting power text in the top bar during a run to reread your active power.</li>
               <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
             </ul>
@@ -284,7 +285,7 @@
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260419a"></script>
   <script src="js/daily.js?v=20260414a"></script>
-  <script src="js/logic.js?v=20260425a"></script>
+  <script src="js/logic.js?v=20260425b"></script>
   <script src="js/render.js?v=20260425a"></script>
   <script src="js/input.js?v=20260414a"></script>
   <script src="js/main.js?v=20260414a"></script>

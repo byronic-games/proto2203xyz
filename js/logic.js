@@ -511,7 +511,9 @@ function startRunWithPower(powerId) {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
-    energy: greenRun ? 10 : 0,
+    energy: greenRun
+      ? (currentLevelNumber >= 3 ? 6 : (currentLevelNumber === 2 ? 8 : 10))
+      : 0,
     lucky7Armed: false,
     fiveAliveArmed: false,
     alwaysBetBlackArmed: false,

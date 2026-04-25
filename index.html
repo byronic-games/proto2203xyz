@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="intro.css?v=20260407b">
+  <link rel="stylesheet" href="intro.css?v=20260425b">
 </head>
 <body>
   <main class="intro-shell">
@@ -45,10 +45,10 @@
             <span class="action-card-title">Play</span>
             <span class="action-card-sub">Start Run</span>
           </button>
-          <a class="action-card action-card-daily" href="daily.html">
+          <a class="action-card action-card-daily" id="daily-launch-card" href="daily.html">
             <span class="action-card-rank">7</span>
             <span class="action-card-title">Daily</span>
-            <span class="action-card-sub">Shared Run</span>
+            <span class="action-card-sub" id="daily-launch-sub">Shared Run</span>
           </a>
           <button class="action-card action-card-howto" id="howto-open-btn" type="button">
             <span class="action-card-rank">Q</span>
@@ -79,7 +79,7 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue is the current default challenge. Red is a tougher stats-driven variant. Green is a hard mode where energy powers nudges.</p>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue starts unlocked. Clear Blue Level 1 to unlock Green, and Blue Level 2 to unlock Red.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
@@ -87,11 +87,11 @@
             </button>
             <button class="deck-choice-card deck-choice-red locked" id="deck-pick-red" type="button">
               <span class="deck-choice-label">Red Deck</span>
-              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 1.</span>
+              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 2.</span>
             </button>
             <button class="deck-choice-card deck-choice-green locked" id="deck-pick-green" type="button">
               <span class="deck-choice-label">Green Deck</span>
-              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Red Deck Level 1.</span>
+              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Blue Deck Level 1.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -143,6 +143,7 @@
             <li>A wrong guess ends the run immediately.</li>
             <li><strong>Blue Deck</strong> can award Nudges on correct guesses. <strong>Red Deck</strong> does not award Nudges, but the next card back shows live history for that face-up card.</li>
             <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Level 2 slows cheat rewards, and Blue Level 3 keeps that tougher pacing while cutting each cheat offer down to 1 from 2.</li>
+            <li>Unlock path: clear Blue 1 to open Green 1, clear Blue 2 to open Red 1. Green and Red higher levels unlock by clearing the previous level in that same deck.</li>
             <li>Clear the full deck to record a winning run on the heroes board.</li>
           </ul>
         </div>
@@ -152,11 +153,11 @@
           <ul>
             <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
             <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
-            <li><strong>Green Deck Energy:</strong> Green starts at 10 Energy, each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in cheat offers.</li>
+            <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, and Level 3 starts at 6. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
             <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
             <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
             <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
-            <li><strong>Daily:</strong> The Daily gives everyone the same seeded deck, opening powers, and cheat offers for that date, and currently always plays as Blue Deck Level 1.</li>
+            <li><strong>Daily:</strong> The Daily unlocks after your first run, gives everyone the same seeded deck and offers for the date, and currently always plays as Blue Deck Level 1.</li>
             <li><strong>Power Reminder:</strong> Hold the deck / level / starting power text in the top bar during a run to reread your active power.</li>
             <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
           </ul>
@@ -183,6 +184,8 @@
       const closeBtn = document.getElementById("howto-close-btn");
       const closeBackdrop = document.getElementById("howto-close-backdrop");
       const nameInput = document.getElementById("intro-name-input");
+      const dailyLaunchCard = document.getElementById("daily-launch-card");
+      const dailyLaunchSub = document.getElementById("daily-launch-sub");
       const playBtn = document.getElementById("play-open-btn");
       const deckModal = document.getElementById("deck-modal");
       const deckCloseBtn = document.getElementById("deck-close-btn");
@@ -210,6 +213,7 @@
       const bestScoresByModeKey = "hl_prototype_best_scores_by_mode";
       const manualLevelOneUnlocksKey = "hl_prototype_manual_level1_unlocks";
       const redDeckDebugUnlockKey = "hl_prototype_red_deck_debug_unlock";
+      const profileStatsKey = "hl_prototype_profile_stats";
       const debugUnlockEnabled = new URLSearchParams(window.location.search).get("debugUnlock") === "1";
       let pendingDeckSelection = "blue";
 
@@ -224,6 +228,30 @@
       function normalizeLevelNumber(level) {
         const value = Number(level);
         return Number.isFinite(value) && value >= 1 ? Math.floor(value) : 1;
+      }
+
+      function loadProfileStatsSummary() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(profileStatsKey) || "{}");
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function isDailyUnlocked() {
+        const stats = loadProfileStatsSummary();
+        return Number(stats.runsStarted || 0) >= 1;
+      }
+
+      function refreshDailyLaunchState() {
+        if (!dailyLaunchCard) return;
+        const unlocked = isDailyUnlocked();
+        dailyLaunchCard.classList.toggle("locked", !unlocked);
+        dailyLaunchCard.setAttribute("aria-disabled", unlocked ? "false" : "true");
+        if (dailyLaunchSub) {
+          dailyLaunchSub.innerText = unlocked ? "Shared Run" : "Play 1 Run To Unlock";
+        }
       }
 
       function getDeckLevelKey(deckKey, levelNumber) {
@@ -355,11 +383,11 @@
       }
 
       function isRedDeckUnlocked() {
-        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("red") || hasVerifiedDeckLevelClear("blue", 1);
+        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("red") || hasVerifiedDeckLevelClear("blue", 2);
       }
 
       function isGreenDeckPrereqMet() {
-        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("green") || hasVerifiedDeckLevelClear("red", 1);
+        return hasDebugUnlock() || isDeckManuallyLevelOneUnlocked("green") || hasVerifiedDeckLevelClear("blue", 1);
       }
 
       function isDeckLevelUnlocked(deckKey, levelNumber) {
@@ -374,14 +402,17 @@
 
         if (normalizedDeck === "green") {
           if (!isGreenDeckPrereqMet()) return false;
-          return normalizedLevel === 1;
+          if (normalizedLevel === 1) return true;
+          if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("green", 1);
+          if (normalizedLevel === 3) return hasVerifiedDeckLevelClear("green", 2);
+          return false;
         }
 
         if (!isRedDeckUnlocked()) return false;
         if (normalizedLevel === 1) return true;
-        if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("blue", 2);
+        if (normalizedLevel === 2) return hasVerifiedDeckLevelClear("red", 1);
         if (normalizedLevel === 3) {
-          return hasVerifiedDeckLevelClear("blue", 3) && hasVerifiedDeckLevelClear("red", 2);
+          return hasVerifiedDeckLevelClear("red", 2);
         }
         return false;
       }
@@ -396,14 +427,15 @@
           return "Cheats appear every 4 correct guesses, or every 3 with Quick Fingers, but offers drop to 1 from 2.";
         }
 
-          if (normalizedDeck === "green") {
-            if (normalizedLevel === 1) return "Hard mode. Start with 10 Energy, each nudge costs 1 Energy, correct guesses still award nudges, and wrong guesses end the run.";
-            return "Green Deck prototype currently supports Level 1 only.";
-          }
+        if (normalizedDeck === "green") {
+          if (normalizedLevel === 1) return "Hard mode. Start with 10 Energy, each nudge costs 1 Energy, correct guesses still award nudges, and wrong guesses end the run.";
+          if (normalizedLevel === 2) return "Hard mode. Start with 8 Energy. Same Green rules with tighter resource pressure.";
+          return "Hard mode. Start with 6 Energy. Green's toughest resource run.";
+        }
 
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";
-        if (normalizedLevel === 2) return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 2.";
-        return "Stats-driven run. Separate Red challenge track unlocked by clearing Blue Deck Level 3 and Red Deck Level 2.";
+        if (normalizedLevel === 2) return "Stats-driven run. Unlock by clearing Red Deck Level 1.";
+        return "Stats-driven run. Unlock by clearing Red Deck Level 2.";
       }
 
       function getLevelUnlockText(deckKey, levelNumber) {
@@ -416,13 +448,15 @@
         }
 
         if (normalizedDeck === "green") {
-          if (normalizedLevel === 1) return "Unlock by clearing Red Deck Level 1.";
-          return "Green Deck prototype currently supports Level 1 only.";
+          if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
+          if (normalizedLevel === 2) return "Unlock by clearing Green Deck Level 1.";
+          if (normalizedLevel === 3) return "Unlock by clearing Green Deck Level 2.";
+          return "Unlock requirements not available.";
         }
 
-        if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 1.";
-        if (normalizedLevel === 2) return "Unlock by clearing Blue Deck Level 2.";
-        if (normalizedLevel === 3) return "Unlock by clearing Blue Deck Level 3 and Red Deck Level 2.";
+        if (normalizedLevel === 1) return "Unlock by clearing Blue Deck Level 2.";
+        if (normalizedLevel === 2) return "Unlock by clearing Red Deck Level 1.";
+        if (normalizedLevel === 3) return "Unlock by clearing Red Deck Level 2.";
         return "Unlock requirements not available.";
       }
 
@@ -464,12 +498,12 @@
           ? (redManual
             ? "Testing unlock active. Red Level 1 is permanently unlocked on this device."
             : "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history.")
-          : "Unlock by clearing Blue Deck Level 1.";
+          : "Unlock by clearing Blue Deck Level 2.";
         greenDeckDesc.textContent = greenUnlocked
           ? (greenManual
             ? "Testing unlock active. Green Level 1 is permanently unlocked on this device."
             : "Hard mode: start with 10 Energy, spend 1 per nudge, and hunt for +5 Energy cheats.")
-          : "Unlock by clearing Red Deck Level 1.";
+          : "Unlock by clearing Blue Deck Level 1.";
       }
 
       function openDeckModal() {
@@ -494,8 +528,8 @@
         levelCopy.textContent = isBlueDeck
           ? "Blue progression starts at Level 1 and opens one rung at a time as you clear each level."
           : (isGreenDeck
-            ? "Green is currently a Level 1 energy prototype."
-            : "Red progression unlocks alongside your Blue clears, with Red Level 3 requiring both Blue Level 3 and Red Level 2 clears.");
+            ? "Green progression unlocks from Blue Level 1, then advances by clearing each Green level in order (10 → 8 → 6 starting Energy)."
+            : "Red progression unlocks from Blue Level 2, then advances by clearing each Red level in order.");
 
         levelOneDesc.textContent = levelOneUnlocked
           ? getLevelDescription(pendingDeckSelection, 1)
@@ -586,6 +620,11 @@
         }
       }
 
+      dailyLaunchCard?.addEventListener("click", (event) => {
+        if (isDailyUnlocked()) return;
+        event.preventDefault();
+      });
+
       openBtn.addEventListener("click", openModal);
       closeBtn.addEventListener("click", closeModal);
       closeBackdrop.addEventListener("click", closeModal);
@@ -633,6 +672,8 @@
       nameInput.addEventListener("input", () => {
         localStorage.setItem(nameKey, String(nameInput.value || "").trim().replace(/\s+/g, " ").slice(0, 24));
       });
+
+      refreshDailyLaunchState();
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
