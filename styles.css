@@ -348,7 +348,7 @@ a {
 
 #message-bar {
   display: flex;
-  min-height: calc(1.25em * 2 + 10px);
+  min-height: calc(1.25em * 3 + 10px);
   max-height: calc(1.25em * 3 + 10px);
   padding: 5px 12px;
   border-radius: 12px;
@@ -2444,25 +2444,25 @@ a {
   }
 
   #memory-panel {
-    min-height: 142px;
+    min-height: 176px;
   }
 
   #seen-grid-wrap {
-    padding: 6px;
+    padding: 8px;
   }
 
   .grid-header,
   .grid-suit,
   .grid-cell {
-    min-height: 15px;
-    font-size: 0.38rem;
+    min-height: 17px;
+    font-size: 0.42rem;
   }
 
   #message-bar {
-    min-height: calc(1.15em * 2 + 8px);
-    max-height: calc(1.15em * 3 + 8px);
+    min-height: calc(1.25em * 3 + 10px);
+    max-height: calc(1.25em * 3 + 10px);
     padding: 4px 9px;
-    font-size: 0.74rem;
+    font-size: 0.82rem;
   }
 
   #bottom-bar {
@@ -2570,19 +2570,19 @@ a {
   }
 
   #memory-panel {
-    min-height: 116px;
+    min-height: 164px;
   }
 
   #seen-grid-wrap {
-    padding: 5px;
+    padding: 7px;
   }
 
   .grid-header,
   .grid-suit,
   .grid-cell {
-    min-height: 13px;
+    min-height: 15px;
     border-radius: 2px;
-    font-size: 0.33rem;
+    font-size: 0.38rem;
   }
 
   .seen-grid-note {
@@ -2591,9 +2591,9 @@ a {
   }
 
   #message-bar {
-    min-height: calc(1.1em * 2 + 7px);
-    max-height: calc(1.1em * 3 + 7px);
-    font-size: 0.68rem;
+    min-height: calc(1.25em * 3 + 10px);
+    max-height: calc(1.25em * 3 + 10px);
+    font-size: 0.78rem;
     padding: 4px 8px;
   }
 

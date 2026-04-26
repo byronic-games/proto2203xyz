@@ -109,17 +109,16 @@ function createTutorialController() {
       clearView: true,
     },
     {
-      target: "#cheat-choice-container .choice-modal",
-      title: "Choose A Cheat",
-      copy: "You have unlocked a cheat offer. Pick one now.",
-      requireCheatPick: true,
+      target: "#cheats-panel",
+      title: "Plat or Preview Cheats",
+      copy: "Plat or Preview Cheats - hold a cheat to view more detail. Tap a cheat to play.",
       clearView: true,
     },
     {
       target: "#cheats-panel",
-      title: "Play Or Preview Cheats",
-      copy: "Hold a cheat to view more detail. Tap a cheat to use it.",
-      requireCheatUse: true,
+      title: "You're Ready",
+      copy: "See if you can clear the whole deck. Good luck!",
+      nextLabel: "Let's go.",
       clearView: true,
     },
   ];
@@ -251,7 +250,7 @@ function createTutorialController() {
     copy.innerText = step.copy;
     nextBtn.innerText = step.requireGuess || step.requirePowerPick || step.requireCheatPick || step.requireCheatUse
       ? "Waiting..."
-      : (stepIndex === steps.length - 1 ? "Finish" : "Next");
+      : (step.nextLabel || (stepIndex === steps.length - 1 ? "Finish" : "Next"));
     nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick || !!step.requireCheatPick || !!step.requireCheatUse;
     overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
     setFocusTarget(step);
@@ -385,6 +384,23 @@ function createTutorialController() {
 
   function waitForCheatOfferThenAdvance() {
     clearCheatOfferPoll();
+    const autoClaimTutorialCheat = () => {
+      const options = Array.isArray(state.pendingCheatOptions) ? state.pendingCheatOptions : [];
+      const picked = options[0];
+      if (picked) {
+        if (typeof canAddCheatToHand === "function" && canAddCheatToHand(picked)) {
+          state.cheats.push({ ...picked });
+          state.message = `Tutorial bonus: ${picked.name} added to your hand.`;
+        } else {
+          state.message = "Tutorial bonus added.";
+        }
+      }
+      state.pendingCheatOptions = [];
+      state.cheatChoiceLockedUntil = 0;
+      state.activeCheatAwardReason = "";
+      state.justUnlockedCheatIds = [];
+      tutorialCheatOfferHandled = true;
+    };
     const poll = () => {
       if (!active || phase !== "run") return;
       const steps = getActiveSteps();
@@ -392,7 +408,7 @@ function createTutorialController() {
       if (!step?.waitForCheatOffer) return;
 
       if (Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0) {
-        state.message = "Cheat offer unlocked. Pick one to continue.";
+        autoClaimTutorialCheat();
         nextStep();
         render();
         return;
@@ -476,7 +492,11 @@ function createTutorialController() {
     const steps = getActiveSteps();
     const step = steps[stepIndex];
     if (step?.requireGuess || step?.requirePowerPick || step?.requireCheatPick || step?.requireCheatUse) return;
+    if (phase === "run" && stepIndex === steps.length - 1) {
+      state.message = "See if you can clear the whole deck. Good luck!";
+    }
     nextStep();
+    render();
   });
 
   skipBtn.addEventListener("click", () => closeOverlay({ complete: true }));
