@@ -153,6 +153,11 @@ const CHEAT_DESCRIPTIONS = {
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
+  "Suits You, Sir": "If the next card is the same suit as the current card, gain 5 Nudge +1 and 5 Nudge -1 charges.",
+  "Cursed Shield": "Survive your next wrong guess, then lose all currently stored nudges.",
+  "The Higher The Better": "Locks this card's value. You must choose Higher on your next guess and gain Nudge +1 charges equal to the card-value difference.",
+  "The Lower The Better": "Locks this card's value. You must choose Lower on your next guess and gain Nudge -1 charges equal to the card-value difference.",
+  "Suited and Booted": "Survive your next guess regardless of outcome unless the revealed next card matches the current card's suit.",
   "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",
   "Locky 7s": "Gain 10 Nudge +1 and 10 Nudge -1 charges. From then on, any card that is or becomes a 7 locks at 7 and cannot be nudged.",
   "Hot or Cold?": "Is the next card within 7 values of the current face card, up or down?",
@@ -963,6 +968,93 @@ const CHEATS = [
     use: () => {
       state.cheatACheaterRemaining = 3;
       return "You Can Cheat A Cheater armed - choose 2 extra Cheats after your next 3 correct guesses.";
+    },
+  },
+  {
+    id: "suits_you_sir",
+    name: "Suits You, Sir",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const next = getNextCardAt(1);
+      if (!next) return "No next card.";
+      if (next.suit !== state.current.suit) {
+        return `No match - current ${state.current.suit}, next ${next.suit}.`;
+      }
+      state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 5;
+      state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 5;
+      return `Suit match! Gained 5 Nudge +1 and 5 Nudge -1 charges.`;
+    },
+  },
+  {
+    id: "cursed_shield",
+    name: "Cursed Shield",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      state.cursedShieldArmed = true;
+      return "Cursed Shield armed - your next wrong guess is survived, then all nudges are lost.";
+    },
+  },
+  {
+    id: "higher_the_better",
+    name: "The Higher The Better",
+    rarity: "rare",
+    weight: 0.7,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      if (currentVal <= 1) return "The Higher The Better cannot be used on an Ace.";
+      state.forcedNextGuess = "higher";
+      state.lockCurrentCardForForcedGuess = true;
+      return "The Higher The Better armed - card value locked and your next guess must be Higher.";
+    },
+  },
+  {
+    id: "lower_the_better",
+    name: "The Lower The Better",
+    rarity: "rare",
+    weight: 0.7,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentVal = getCurrentEffectiveValue();
+      if (currentVal >= 13) return "The Lower The Better cannot be used on a King.";
+      state.forcedNextGuess = "lower";
+      state.lockCurrentCardForForcedGuess = true;
+      return "The Lower The Better armed - card value locked and your next guess must be Lower.";
+    },
+  },
+  {
+    id: "suited_and_booted",
+    name: "Suited and Booted",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      state.suitedAndBootedArmed = true;
+      state.suitedAndBootedSuit = state.current.suit || "";
+      return `Suited and Booted armed - next guess survives unless the revealed card is ${state.suitedAndBootedSuit}.`;
     },
   },
   {
