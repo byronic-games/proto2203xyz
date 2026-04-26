@@ -28,7 +28,7 @@ function ensureTutorialGuessWillResolveAsCorrect(type) {
 
 function handleGuessButtonPress(type) {
   if (window.tutorialController?.isBlockingGuess?.(type) === true) return;
-  if (window.tutorialController?.isGuidedGuessStep?.() === true) {
+  if (window.tutorialController?.shouldForceCorrectGuess?.() === true) {
     ensureTutorialGuessWillResolveAsCorrect(type);
   }
 
@@ -97,12 +97,30 @@ function createTutorialController() {
     {
       target: ".nudge-stack",
       title: "Nudges",
-      copy: "Nudges can shift the judged value before your next guess. Save them for tricky spots.",
+      copy: "Nudges can temporarily shift the value before your next guess. You gain them during play. Save them for tricky spots.",
+    },
+    {
+      target: "#controls",
+      title: "Build Your Streak",
+      copy: "Keep guessing until you have made three correct guesses. Then you will unlock a cheat choice.",
+      requireGuess: true,
+      untilCorrectAnswers: 3,
+      waitForCheatOffer: true,
+      clearView: true,
+    },
+    {
+      target: "#cheat-choice-container .choice-modal",
+      title: "Choose A Cheat",
+      copy: "You have unlocked a cheat offer. Pick one now.",
+      requireCheatPick: true,
+      clearView: true,
     },
     {
       target: "#cheats-panel",
-      title: "Cheats",
-      copy: "Cheats appear as rewards during a run. Tap a cheat to play it. Hold a cheat to read what it does.",
+      title: "Play Or Preview Cheats",
+      copy: "Hold a cheat to view more detail. Tap a cheat to use it.",
+      requireCheatUse: true,
+      clearView: true,
     },
   ];
 
@@ -111,11 +129,13 @@ function createTutorialController() {
       target: "#power-choice-container .choice-modal",
       title: "Pick A Starting Power",
       copy: "Every run starts by choosing one power. This sets your opening advantage for the run.",
+      clearView: true,
     },
     {
       target: "#power-choice-list",
       title: "Two Power Options",
-      copy: "You will usually get two options. Read both quickly and choose the one that fits your plan.",
+      copy: "You will usually get two options. Assess both and choose the one that fits your plan.",
+      clearView: true,
     },
     {
       target: "#power-choice-list .choice-card",
@@ -132,8 +152,15 @@ function createTutorialController() {
       maybeStartRun() {},
       maybeStartPowerChoice() {},
       isBlockingGuess() { return false; },
+      isGuessButtonsDisabled() { return false; },
+      isBlockingPowerPick() { return false; },
+      isTutorialCheatOfferActive() { return false; },
+      isBlockingCheatChoice() { return false; },
+      isBlockingCheatUse() { return false; },
       handleGuessResolved() {},
       handlePowerPicked() {},
+      handleCheatPicked() {},
+      handleCheatUsed() {},
       closeAndComplete() {},
     };
   }
@@ -142,6 +169,8 @@ function createTutorialController() {
   let phase = "run";
   let stepIndex = 0;
   let focusedTarget = null;
+  let cheatOfferPollTimer = null;
+  let tutorialCheatOfferHandled = false;
 
   function getActiveSteps() {
     return phase === "power" ? powerSteps : runSteps;
@@ -157,6 +186,13 @@ function createTutorialController() {
     if (!focusedTarget) return;
     focusedTarget.classList.remove("tutorial-focus-target");
     focusedTarget = null;
+  }
+
+  function clearCheatOfferPoll() {
+    if (cheatOfferPollTimer) {
+      clearTimeout(cheatOfferPollTimer);
+      cheatOfferPollTimer = null;
+    }
   }
 
   function setFocusTarget(step) {
@@ -191,10 +227,12 @@ function createTutorialController() {
     if (!active) return;
     active = false;
     clearFocusTarget();
+    clearCheatOfferPoll();
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     overlay.classList.remove("tutorial-clear-view");
     highlight.style.display = "none";
+    syncTutorialLockedControls();
     if (complete) {
       setTutorialCompleted();
     }
@@ -211,12 +249,31 @@ function createTutorialController() {
     progress.innerText = `Step ${stepIndex + 1} / ${steps.length}`;
     title.innerText = step.title;
     copy.innerText = step.copy;
-    nextBtn.innerText = step.requireGuess || step.requirePowerPick
+    nextBtn.innerText = step.requireGuess || step.requirePowerPick || step.requireCheatPick || step.requireCheatUse
       ? "Waiting..."
       : (stepIndex === steps.length - 1 ? "Finish" : "Next");
-    nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick;
+    nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick || !!step.requireCheatPick || !!step.requireCheatUse;
     overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
     setFocusTarget(step);
+    syncTutorialLockedControls();
+  }
+
+  function syncTutorialLockedControls() {
+    if (typeof renderButtons === "function") {
+      renderButtons();
+    }
+    if (typeof renderNudgeControls === "function") {
+      renderNudgeControls();
+    }
+    if (typeof renderPowerChoice === "function") {
+      renderPowerChoice();
+    }
+    if (typeof renderCheatChoice === "function") {
+      renderCheatChoice();
+    }
+    if (typeof renderCheats === "function") {
+      renderCheats();
+    }
   }
 
   function nextStep() {
@@ -228,6 +285,7 @@ function createTutorialController() {
       return;
     }
     renderStep();
+    syncTutorialLockedControls();
   }
 
   function openPhase(nextPhase) {
@@ -236,9 +294,13 @@ function createTutorialController() {
     phase = nextPhase;
     active = true;
     stepIndex = 0;
+    if (nextPhase === "run") {
+      tutorialCheatOfferHandled = false;
+    }
     overlay.classList.remove("hidden");
     overlay.setAttribute("aria-hidden", "false");
     renderStep();
+    syncTutorialLockedControls();
   }
 
   function maybeStartRun() {
@@ -265,11 +327,81 @@ function createTutorialController() {
     return type !== "higher" && type !== "lower";
   }
 
+  function isGuessButtonsDisabled() {
+    if (!active) return false;
+    if (phase !== "run") return true;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !step?.requireGuess;
+  }
+
   function isGuidedGuessStep() {
     if (!active || phase !== "run") return false;
     const steps = getActiveSteps();
     const step = steps[stepIndex];
     return !!step?.requireGuess;
+  }
+
+  function shouldForceCorrectGuess() {
+    if (!active || phase !== "run") return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !!step?.requireGuess;
+  }
+
+  function isBlockingNudge() {
+    if (!active) return false;
+    return phase === "run";
+  }
+
+  function isBlockingPowerPick() {
+    if (!active) return false;
+    if (phase !== "power") return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !step?.requirePowerPick;
+  }
+
+  function isTutorialCheatOfferActive() {
+    if (!active || phase !== "run" || tutorialCheatOfferHandled) return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !!(step?.waitForCheatOffer || step?.requireCheatPick);
+  }
+
+  function isBlockingCheatChoice() {
+    if (!active || phase !== "run") return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !step?.requireCheatPick;
+  }
+
+  function isBlockingCheatUse() {
+    if (!active || phase !== "run") return false;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    return !step?.requireCheatUse;
+  }
+
+  function waitForCheatOfferThenAdvance() {
+    clearCheatOfferPoll();
+    const poll = () => {
+      if (!active || phase !== "run") return;
+      const steps = getActiveSteps();
+      const step = steps[stepIndex];
+      if (!step?.waitForCheatOffer) return;
+
+      if (Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0) {
+        state.message = "Cheat offer unlocked. Pick one to continue.";
+        nextStep();
+        render();
+        return;
+      }
+
+      cheatOfferPollTimer = setTimeout(poll, 120);
+    };
+
+    cheatOfferPollTimer = setTimeout(poll, 120);
   }
 
   function handleGuessResolved(type, before, after) {
@@ -284,6 +416,23 @@ function createTutorialController() {
       after.gameOver !== before.gameOver;
     if (!resolved) return;
 
+    const requiredCorrectAnswers = Number(step.untilCorrectAnswers) || 0;
+    if (requiredCorrectAnswers > 0 && after.correctAnswers < requiredCorrectAnswers) {
+      state.message = `Nice. Keep going - ${requiredCorrectAnswers - after.correctAnswers} more correct guess${requiredCorrectAnswers - after.correctAnswers === 1 ? "" : "es"} to unlock a cheat choice.`;
+      render();
+      return;
+    }
+
+    if (step.waitForCheatOffer) {
+      if (!Array.isArray(state.pendingCheatOptions) || state.pendingCheatOptions.length === 0) {
+        state.message = "Nice streak. Waiting for your cheat offer...";
+        render();
+        waitForCheatOfferThenAdvance();
+        return;
+      }
+    }
+
+    clearCheatOfferPoll();
     state.message = `Nice. You picked ${type.toUpperCase()} and resolved a card.`;
     nextStep();
     render();
@@ -301,11 +450,32 @@ function createTutorialController() {
     closeOverlay({ complete: false });
   }
 
+  function handleCheatPicked(cheat) {
+    if (!active || phase !== "run") return;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    if (!step?.requireCheatPick) return;
+    tutorialCheatOfferHandled = true;
+    state.message = `Nice pick. ${cheat?.name || "That cheat"} is in hand.`;
+    nextStep();
+    render();
+  }
+
+  function handleCheatUsed() {
+    if (!active || phase !== "run") return;
+    const steps = getActiveSteps();
+    const step = steps[stepIndex];
+    if (!step?.requireCheatUse) return;
+    state.message = "See if you can clear the whole deck. Good luck!";
+    closeOverlay({ complete: true });
+    render();
+  }
+
   nextBtn.addEventListener("click", () => {
     if (!active) return;
     const steps = getActiveSteps();
     const step = steps[stepIndex];
-    if (step?.requireGuess || step?.requirePowerPick) return;
+    if (step?.requireGuess || step?.requirePowerPick || step?.requireCheatPick || step?.requireCheatUse) return;
     nextStep();
   });
 
@@ -323,9 +493,18 @@ function createTutorialController() {
     maybeStartRun,
     maybeStartPowerChoice,
     isBlockingGuess,
+    isGuessButtonsDisabled,
     isGuidedGuessStep,
+    shouldForceCorrectGuess,
+    isBlockingNudge,
+    isBlockingPowerPick,
+    isTutorialCheatOfferActive,
+    isBlockingCheatChoice,
+    isBlockingCheatUse,
     handleGuessResolved,
     handlePowerPicked,
+    handleCheatPicked,
+    handleCheatUsed,
     closeAndComplete: () => closeOverlay({ complete: true }),
   };
 }
@@ -337,6 +516,24 @@ window.handleTutorialGuessResolved = (type, before, after) =>
   window.tutorialController?.handleGuessResolved?.(type, before, after);
 window.handleTutorialPowerPicked = (power, isRewardChoice) =>
   window.tutorialController?.handlePowerPicked?.(power, isRewardChoice);
+window.isTutorialBlockingNudge = () =>
+  window.tutorialController?.isBlockingNudge?.() || false;
+window.isTutorialGuessButtonsDisabled = () =>
+  window.tutorialController?.isGuessButtonsDisabled?.() || false;
+window.shouldTutorialForceCorrectGuess = () =>
+  window.tutorialController?.shouldForceCorrectGuess?.() || false;
+window.isTutorialBlockingPowerPick = () =>
+  window.tutorialController?.isBlockingPowerPick?.() || false;
+window.isTutorialCheatOfferActive = () =>
+  window.tutorialController?.isTutorialCheatOfferActive?.() || false;
+window.isTutorialBlockingCheatChoice = () =>
+  window.tutorialController?.isBlockingCheatChoice?.() || false;
+window.isTutorialBlockingCheatUse = () =>
+  window.tutorialController?.isBlockingCheatUse?.() || false;
+window.handleTutorialCheatPicked = (cheat) =>
+  window.tutorialController?.handleCheatPicked?.(cheat);
+window.handleTutorialCheatUsed = (cheat, result) =>
+  window.tutorialController?.handleCheatUsed?.(cheat, result);
 
 document.getElementById("restart-btn").onclick = () => {
   const runIsActive = !state.gameOver && !!state.current;
@@ -420,10 +617,20 @@ document.getElementById("exit-btn")?.addEventListener("click", () => {
 });
 
 document.getElementById("nudge-up-btn")?.addEventListener("click", () => {
+  if (typeof window.isTutorialBlockingNudge === "function" && window.isTutorialBlockingNudge()) {
+    state.message = "Nudges unlock once the tutorial ends.";
+    renderMessage();
+    return;
+  }
   useNudgeCharge("up");
 });
 
 document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
+  if (typeof window.isTutorialBlockingNudge === "function" && window.isTutorialBlockingNudge()) {
+    state.message = "Nudges unlock once the tutorial ends.";
+    renderMessage();
+    return;
+  }
   useNudgeCharge("down");
 });
 

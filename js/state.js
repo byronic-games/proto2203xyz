@@ -95,6 +95,7 @@ function createEmptyState() {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    pendingRevealAnimation: null,
     cheatChoiceIntroToken: 0,
     recentlySeenCardId: "",
     nudgeUpCharges: 0,

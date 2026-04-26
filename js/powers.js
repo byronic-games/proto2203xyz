@@ -276,6 +276,38 @@ function getRandomPowerOptions(count = 2, seedString = "", includeAll = false, e
   return options;
 }
 
+function getTutorialNudgePowerOptions(count = 2, seedString = "") {
+  const pool = getUnlockedPowerPool(false).filter(isNudgeStartingPower);
+  if (!pool.length) {
+    return getRandomPowerOptions(count, seedString, false);
+  }
+
+  const options = [];
+  const seeded = !!normalizeSeed(seedString);
+  const rng = seeded
+    ? mulberry32(stringToSeedNumber(getStartPowerOfferSeed(`${seedString}|tutorial-nudge-only`)))
+    : null;
+  const workingPool = [...pool];
+
+  while (options.length < count && workingPool.length > 0) {
+    const picked = pickPowerOptionFromPool(workingPool, seeded, rng);
+    if (!picked) break;
+    options.push(picked);
+  }
+
+  if (options.length < count) {
+    const fallback = getRandomPowerOptions(count, seedString, false);
+    for (const power of fallback) {
+      if (options.length >= count) break;
+      if (!options.some((opt) => opt.id === power.id)) {
+        options.push(power);
+      }
+    }
+  }
+
+  return options;
+}
+
 function getCheatRewardThreshold() {
   const currentDeckKey = normalizeDeckKey(state.currentDeckKey);
   const currentLevelNumber = normalizeLevelNumber(state.currentLevelNumber || DEFAULT_LEVEL_NUMBER);

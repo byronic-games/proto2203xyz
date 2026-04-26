@@ -1210,14 +1210,40 @@ function getRandomCheatOptions(count = 3, seedString = "", includeAll = false) {
   return options;
 }
 
+function getTutorialCheatOptions(count = 2, seedString = "", includeAll = false) {
+  const disallowed = new Set(["nudge_up", "nudge_down", "green_energy_boost"]);
+  const pool = [...getEligibleCheatPool(includeAll)].filter((cheat) => !disallowed.has(cheat.id));
+  const options = [];
+  const seeded = !!normalizeSeed(seedString);
+  const rng = seeded
+    ? mulberry32(stringToSeedNumber(`${GAME_VERSION}|${seedString}`))
+    : null;
+
+  while (options.length < count && pool.length > 0) {
+    const idx = getWeightedRandomIndex(pool, getCheatWeight, seeded ? rng : Math.random);
+    if (idx < 0) break;
+    options.push(pool.splice(idx, 1)[0]);
+  }
+
+  return options;
+}
+
 function offerCheatChoice(reason = "") {
   const isDailyRun = state.runMode === "daily";
-  const optionCount = isDailyRun ? 3 : getCheatOfferOptionCount();
+  const tutorialOfferActive = typeof window.isTutorialCheatOfferActive === "function" && window.isTutorialCheatOfferActive();
+  const optionCount = tutorialOfferActive ? 2 : (isDailyRun ? 3 : getCheatOfferOptionCount());
   const newlyMetaUnlocked = isDailyRun ? [] : markMetaUnlockedCheats();
   state.pauseForCheat = false; // Ensure pause is cleared before showing cheat selection
   state.activeCheatAwardReason = reason || "";
 
-  if (isDailyRun) {
+  if (tutorialOfferActive) {
+    const offerIndex = (state.dailyCheatOfferCount || 0) + 1;
+    const tutorialSeed = isDailyRun ? getDailyCheatOfferSeed(offerIndex) : "";
+    state.pendingCheatOptions = getTutorialCheatOptions(optionCount, tutorialSeed, isDailyRun);
+    if (isDailyRun) {
+      state.dailyCheatOfferCount = offerIndex;
+    }
+  } else if (isDailyRun) {
     const offerIndex = (state.dailyCheatOfferCount || 0) + 1;
     state.pendingCheatOptions = getRandomCheatOptions(optionCount, getDailyCheatOfferSeed(offerIndex), true);
     state.dailyCheatOfferCount = offerIndex;
@@ -1258,6 +1284,11 @@ function offerCheatChoice(reason = "") {
 
 function pickCheatFromChoice(index) {
   if (Date.now() < (state.cheatChoiceLockedUntil || 0)) return;
+  if (typeof window.isTutorialBlockingCheatChoice === "function" && window.isTutorialBlockingCheatChoice()) {
+    state.message = "Choose a cheat when the tutorial asks you to.";
+    render();
+    return;
+  }
 
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
@@ -1332,6 +1363,9 @@ function pickCheatFromChoice(index) {
   state.justUnlockedCheatIds = [];
   state.cheatChoiceLockedUntil = 0;
   state.activeCheatAwardReason = "";
+  if (typeof window.handleTutorialCheatPicked === "function") {
+    window.handleTutorialCheatPicked(cheat);
+  }
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
     state.sixSevenRewardChoicesRemaining -= 1;
     if (state.sixSevenRewardChoicesRemaining > 0) {

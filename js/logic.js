@@ -44,6 +44,89 @@ let currentCardFeedbackTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
 let victoryEffectTimer = null;
+let cardRevealAnimationToken = null;
+const revealEffectRules = [];
+
+function getComparisonDirection(currentValue, nextValue) {
+  if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) return "unknown";
+  if (nextValue === currentValue) return "match";
+  return nextValue > currentValue ? "higher" : "lower";
+}
+
+function buildRevealEffectContext({
+  outcome = "correct",
+  guessType = "higher",
+  currentComparisonValue = null,
+  nextComparisonValue = null,
+  revealCard = null,
+  match = false,
+  aceAutoWin = false,
+  cheatSpecial = false,
+} = {}) {
+  return {
+    outcome: outcome === "wrong" ? "wrong" : "correct",
+    guessType,
+    currentComparisonValue,
+    nextComparisonValue,
+    comparisonDirection: getComparisonDirection(currentComparisonValue, nextComparisonValue),
+    revealCard,
+    revealRank: revealCard?.rank || "",
+    revealSuit: revealCard?.suit || "",
+    revealActualValue: revealCard?.value ?? null,
+    revealEffectiveValue: nextComparisonValue,
+    isMatch: !!match,
+    aceAutoWin: !!aceAutoWin,
+    cheatSpecial: !!cheatSpecial,
+  };
+}
+
+function registerRevealEffectRule(effectId, matcher) {
+  if (!effectId || typeof matcher !== "function") return;
+  revealEffectRules.push({ effectId: String(effectId), matcher });
+}
+
+function resolveRevealEffectId(context) {
+  for (const rule of revealEffectRules) {
+    try {
+      if (rule.matcher(context)) return rule.effectId;
+    } catch (_) {
+      // Ignore bad custom rule and continue.
+    }
+  }
+  return "";
+}
+
+window.registerRevealEffectRule = registerRevealEffectRule;
+
+function queueCardRevealAnimation(options = {}) {
+  cardRevealAnimationToken = (cardRevealAnimationToken || 0) + 1;
+  const normalizedOutcome = options.outcome === "wrong" ? "wrong" : "correct";
+  const revealCard = options.revealCard || null;
+  const revealEffectiveValue = Number.isFinite(options.revealEffectiveValue)
+    ? options.revealEffectiveValue
+    : revealCard?.value ?? null;
+  const revealIsTemp = !!revealCard && Number.isFinite(revealEffectiveValue) && revealEffectiveValue !== revealCard.value;
+  const fromCard = options.fromCard || null;
+  const fromEffectiveValue = Number.isFinite(options.fromEffectiveValue)
+    ? options.fromEffectiveValue
+    : fromCard?.value ?? null;
+  const fromIsTemp = !!fromCard && Number.isFinite(fromEffectiveValue) && fromEffectiveValue !== fromCard.value;
+
+  state.pendingRevealAnimation = {
+    id: cardRevealAnimationToken,
+    outcome: normalizedOutcome,
+    phase: "revealing",
+    revealCard,
+    revealEffectiveValue,
+    revealIsTemp,
+    fromCard,
+    fromEffectiveValue,
+    fromIsTemp,
+    effectId: String(options.effectId || ""),
+    triggerGameOver: !!options.triggerGameOver,
+    gameOverDetail: String(options.gameOverDetail || ""),
+  };
+}
 
 function clearGameOverEffects() {
   const gameEl = document.getElementById("game");
@@ -351,7 +434,10 @@ function openPowerChoice(forceRandom = false) {
 
   state.pendingRunSeed = chosenSeed;
   state.pendingRunDeck = deck;
-  state.pendingPowerOptions = getRandomPowerOptions(2, chosenSeed);
+  const tutorialAssistActive = shouldApplyTutorialAssistForStandardRun("standard");
+  state.pendingPowerOptions = tutorialAssistActive
+    ? getTutorialNudgePowerOptions(2, chosenSeed)
+    : getRandomPowerOptions(2, chosenSeed);
   state.pendingRunMode = "standard";
   state.pendingDailyDateKey = "";
   state.pendingDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
@@ -614,6 +700,11 @@ function startRun(forceRandom = false) {
 
 function pickPowerFromChoice(index) {
   if (Date.now() < (state.powerChoiceLockedUntil || 0)) return;
+  if (typeof window.isTutorialBlockingPowerPick === "function" && window.isTutorialBlockingPowerPick()) {
+    state.message = "Choose a power when the tutorial asks you to.";
+    render();
+    return;
+  }
 
   const power = state.pendingPowerOptions[index];
   if (!power) return;
@@ -1586,6 +1677,7 @@ function makeGuess(type) {
   if (
     state.gameOver ||
     !state.current ||
+    !!state.pendingRevealAnimation ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0
   ) {
@@ -1643,6 +1735,24 @@ function makeGuess(type) {
       recordCurrentCardGuess(state.current, type, false);
       recordFaceDownOutcome(next, true, currentWasBase);
       advanceToCard(next);
+      queueCardRevealAnimation({
+        outcome: "wrong",
+        fromCard: lossCurrentCard,
+        fromEffectiveValue: currentComparisonValue,
+        revealCard: next,
+        revealEffectiveValue: nextComparisonValue,
+        effectId: resolveRevealEffectId(buildRevealEffectContext({
+          outcome: "wrong",
+          guessType: type,
+          currentComparisonValue,
+          nextComparisonValue,
+          revealCard: next,
+          match: false,
+          aceAutoWin: false,
+          cheatSpecial: true,
+        })),
+        triggerGameOver: true,
+      });
       state.currentValueModifier = 0;
       state.streak = 0;
       setCurrentCardFeedback("wrong");
@@ -1666,7 +1776,9 @@ function makeGuess(type) {
         sixSevenWasArmed,
         message: lossMessage,
       });
-      triggerGameOverEffect(lossMessage);
+      if (state.pendingRevealAnimation) {
+        state.pendingRevealAnimation.gameOverDetail = lossMessage;
+      }
       state.message = `💀 ${lossMessage}`;
       state.gameOver = true;
       updateBestScoreIfNeeded();
@@ -1716,6 +1828,26 @@ function makeGuess(type) {
     const lossDetail = sixSevenWasArmed
       ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
+    const gameOverMessage = `❌ ${lossDetail}`;
+    queueCardRevealAnimation({
+      outcome: "wrong",
+      fromCard: lossCurrentCard,
+      fromEffectiveValue: currentComparisonValue,
+      revealCard: next,
+      revealEffectiveValue: nextComparisonValue,
+      effectId: resolveRevealEffectId(buildRevealEffectContext({
+        outcome: "wrong",
+        guessType: type,
+        currentComparisonValue,
+        nextComparisonValue,
+        revealCard: next,
+        match: false,
+        aceAutoWin,
+        cheatSpecial,
+      })),
+      triggerGameOver: true,
+      gameOverDetail: gameOverMessage,
+    });
 
     appendRunDebugLog("guess_resolved", {
       guess: type,
@@ -1739,8 +1871,6 @@ function makeGuess(type) {
       message: lossDetail,
     });
 
-    const gameOverMessage = `❌ ${lossDetail}`;
-    triggerGameOverEffect(gameOverMessage);
     state.message = gameOverMessage;
     state.gameOver = true;
     updateBestScoreIfNeeded();
@@ -1753,6 +1883,23 @@ function makeGuess(type) {
   recordCurrentCardGuess(state.current, type, true);
   recordFaceDownOutcome(next, false, currentWasBase);
   advanceToCard(next);
+  queueCardRevealAnimation({
+    outcome: "correct",
+    fromCard: prevCard,
+    fromEffectiveValue: currentComparisonValue,
+    revealCard: next,
+    revealEffectiveValue: nextComparisonValue,
+    effectId: resolveRevealEffectId(buildRevealEffectContext({
+      outcome: "correct",
+      guessType: type,
+      currentComparisonValue,
+      nextComparisonValue,
+      revealCard: next,
+      match,
+      aceAutoWin,
+      cheatSpecial,
+    })),
+  });
   state.correctAnswers += 1;
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;

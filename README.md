@@ -2,6 +2,17 @@
 
 Browser-based higher/lower card roguelike prototype for mobile and desktop play. This branch is the active `USETHIS` working copy and includes the current game UI, progression systems, cheat tools, nudge controls, and tester/debug helpers.
 
+## AI Handoff Docs
+
+For full project handoff context, see:
+- `HANDOVER.md`
+- `RUNBOOK.md`
+- `DATA_CONTRACTS.md`
+- `STATE_MAP.md`
+- `KNOWN_ISSUES.md`
+- `NEXT_TASKS.md`
+- `AI_STARTER_PROMPT.md`
+
 ## Game Overview
 
 - Standard 52-card deck
