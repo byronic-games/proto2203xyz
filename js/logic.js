@@ -1417,8 +1417,6 @@ function makeGuessLegacy(type) {
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
-      state.nudgeUpCharges = 0;
-      state.nudgeDownCharges = 0;
     }
   }
 
@@ -1931,8 +1929,6 @@ function makeGuess(type) {
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
-      state.nudgeUpCharges = 0;
-      state.nudgeDownCharges = 0;
     }
   }
 
@@ -2175,7 +2171,7 @@ function makeGuess(type) {
       ? ` Gained ${forcedNudgeReward} Nudge +1.`
       : ` Gained ${forcedNudgeReward} Nudge -1.`
     : "";
-  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield burned all nudges." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${forcedRewardText}`;
+  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${forcedRewardText}`;
 
   if (state.streak >= getCheatRewardThreshold()) {
     state.streak = 0;
@@ -2259,7 +2255,7 @@ function makeGuess(type) {
     return;
   }
   if (rescuedByCursedShield) {
-    state.message = appendEnergyFeedback(`Cursed Shield saved the run - it was ${describeCard(next)}. Cursed Shield burned all nudges.${forcedRewardText}`, revealDistance);
+    state.message = appendEnergyFeedback(`Cursed Shield saved the run - it was ${describeCard(next)}.${forcedRewardText}`, revealDistance);
     render();
     return;
   }

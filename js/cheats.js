@@ -154,7 +154,7 @@ const CHEAT_DESCRIPTIONS = {
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
   "Suits You, Sir": "If the next card is the same suit as the current card, gain 5 Nudge +1 and 5 Nudge -1 charges.",
-  "Cursed Shield": "Survive your next wrong guess, then lose all currently stored nudges.",
+  "Cursed Shield": "Lose all currently stored nudges now. Your next wrong guess is survived.",
   "The Higher The Better": "Locks this card's value. You must choose Higher on your next guess and gain Nudge +1 charges equal to the card-value difference.",
   "The Lower The Better": "Locks this card's value. You must choose Lower on your next guess and gain Nudge -1 charges equal to the card-value difference.",
   "Suited and Booted": "Survive your next guess regardless of outcome unless the revealed next card matches the current card's suit.",
@@ -1001,8 +1001,10 @@ const CHEATS = [
     stacking: "unique",
     consumeOnUse: true,
     use: () => {
+      state.nudgeUpCharges = 0;
+      state.nudgeDownCharges = 0;
       state.cursedShieldArmed = true;
-      return "Cursed Shield armed - your next wrong guess is survived, then all nudges are lost.";
+      return "Cursed Shield armed - nudges wiped now, and your next wrong guess is survived.";
     },
   },
   {
