@@ -152,7 +152,7 @@ const CHEAT_DESCRIPTIONS = {
   "Swap": "Swap the current face-up card with the next face-down card.",
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
-  "You Can Cheat A Cheater": "After your next three correct guesses, choose an extra Cheat in addition to any normal rewards.",
+  "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
   "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",
   "Locky 7s": "Gain 10 Nudge +1 and 10 Nudge -1 charges. From then on, any card that is or becomes a 7 locks at 7 and cannot be nudged.",
   "Hot or Cold?": "Is the next card within 7 values of the current face card, up or down?",
@@ -962,7 +962,7 @@ const CHEATS = [
     consumeOnUse: true,
     use: () => {
       state.cheatACheaterRemaining = 3;
-      return "You Can Cheat A Cheater armed - choose an extra Cheat after your next 3 correct guesses.";
+      return "You Can Cheat A Cheater armed - choose 2 extra Cheats after your next 3 correct guesses.";
     },
   },
   {
@@ -1260,7 +1260,7 @@ function offerCheatChoice(reason = "") {
   } else if (state.activeCheatAwardReason === "brucie_bonus") {
     state.message = "Brucie Bonus! Choose 1 cheat:";
   } else if (state.activeCheatAwardReason === "cheat_a_cheater") {
-    state.message = "You Can Cheat A Cheater! Choose 1 cheat:";
+    state.message = "You Can Cheat A Cheater! Choose a bonus cheat:";
   } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {

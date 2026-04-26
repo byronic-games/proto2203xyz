@@ -1469,6 +1469,7 @@ function makeGuessLegacy(type) {
     if (state.cheatACheaterRemaining === 0) {
       cheatACheaterTriggered = true;
       queueCheatAward("cheat_a_cheater");
+      queueCheatAward("cheat_a_cheater");
     }
   }
 
@@ -1558,7 +1559,7 @@ function makeGuessLegacy(type) {
 
   if (cheatACheaterTriggered) {
     state.pauseForCheat = true;
-    state.message = "You Can Cheat A Cheater paid out - choose 1 cheat.";
+    state.message = "You Can Cheat A Cheater paid out - choose 2 bonus cheats.";
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -1962,6 +1963,7 @@ function makeGuess(type) {
     if (state.cheatACheaterRemaining === 0) {
       cheatACheaterTriggered = true;
       queueCheatAward("cheat_a_cheater");
+      queueCheatAward("cheat_a_cheater");
     }
   }
 
@@ -2052,7 +2054,7 @@ function makeGuess(type) {
 
   if (cheatACheaterTriggered) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("You Can Cheat A Cheater paid out - choose 1 cheat.", revealDistance);
+    state.message = appendEnergyFeedback("You Can Cheat A Cheater paid out - choose 2 bonus cheats.", revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
