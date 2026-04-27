@@ -571,10 +571,10 @@ function getRedDeckStatsSummary(entry) {
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
   const totalDirectionalNudges = totalUpAmount + totalDownAmount;
   const trendLabel = totalDirectionalNudges === 0
-    ? "No Trend Yet"
+    ? "No Trend"
     : (totalUpAmount > totalDownAmount
       ? "Leans Up"
-      : (totalDownAmount > totalUpAmount ? "Leans Down" : "Balanced"));
+      : (totalDownAmount > totalUpAmount ? "Leans Down" : "Even"));
   const trendTone = totalDirectionalNudges === 0
     ? "neutral"
     : (totalUpAmount > totalDownAmount ? "up" : (totalDownAmount > totalUpAmount ? "down" : "neutral"));

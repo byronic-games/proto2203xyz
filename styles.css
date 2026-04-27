@@ -2238,29 +2238,30 @@ a {
 @media (max-width: 420px) {
   .card-back-stats {
     inset: 7px 6px;
-    padding: 7px 5px 6px;
+    padding: 10px 7px 9px;
     border-radius: 16px;
+    justify-content: space-between;
+    gap: 4px;
   }
 
   .card-back-stats-kicker {
-    font-size: 0.32rem;
+    font-size: 0.42rem;
     letter-spacing: 0.08em;
   }
 
   .card-back-stats-primary {
-    font-size: 0.9rem;
-    letter-spacing: -0.035em;
+    font-size: 1.06rem;
+    letter-spacing: -0.04em;
   }
 
   .card-back-stats-sub {
-    font-size: 0.32rem;
-    letter-spacing: 0.02em;
+    font-size: 0.43rem;
+    letter-spacing: 0.025em;
+    line-height: 1.08;
   }
 
   .card-back-stats-footer {
-    padding-top: 3px;
-    font-size: 0.31rem;
-    letter-spacing: 0.03em;
+    display: none;
   }
 
   #main-layout {
@@ -2428,16 +2429,15 @@ a {
 @media (max-width: 360px) {
   .card-back-stats {
     inset: 6px 5px;
-    padding: 6px 4px 5px;
+    padding: 9px 6px 8px;
   }
 
   .card-back-stats-primary {
-    font-size: 0.84rem;
+    font-size: 0.98rem;
   }
 
-  .card-back-stats-sub,
-  .card-back-stats-footer {
-    font-size: 0.295rem;
+  .card-back-stats-sub {
+    font-size: 0.39rem;
     letter-spacing: 0.02em;
   }
 }
