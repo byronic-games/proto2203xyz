@@ -1225,6 +1225,10 @@ a {
   opacity: 0.42;
 }
 
+.nudge-arrow.keep-bright:disabled {
+  opacity: 1;
+}
+
 .nudge-symbol {
   font-size: 1rem;
   line-height: 1;
@@ -1914,11 +1918,11 @@ a {
 
 #cheat-choice-container .choice-card {
   min-height: 0;
-  padding: 10px 10px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 #cheat-choice-container .choice-top {
@@ -1930,7 +1934,7 @@ a {
 }
 
 #cheat-choice-container .choice-name {
-  font-size: clamp(1rem, 4vw, 1.18rem);
+  font-size: clamp(1.08rem, 4.4vw, 1.24rem);
 }
 
 #cheat-choice-container .choice-rarity,
@@ -1940,8 +1944,9 @@ a {
 
 #cheat-choice-container .choice-desc {
   margin-top: 6px;
-  font-size: clamp(0.76rem, 3.3vw, 0.94rem);
-  line-height: 1.22;
+  font-size: clamp(0.86rem, 3.7vw, 1.02rem);
+  line-height: 1.24;
+  width: 100%;
 }
 
 #cheat-choice-container .choice-footer {
@@ -2627,7 +2632,7 @@ a {
   }
 
   #cheat-choice-container .choice-card {
-    padding: 8px 8px;
+    padding: 8px 6px;
     gap: 4px;
   }
 
@@ -2636,7 +2641,7 @@ a {
   }
 
   #cheat-choice-container .choice-name {
-    font-size: 0.98rem;
+    font-size: 1.08rem;
   }
 
   #cheat-choice-container .choice-rarity,
@@ -2646,8 +2651,8 @@ a {
 
   #cheat-choice-container .choice-desc {
     margin-top: 4px;
-    font-size: 0.7rem;
-    line-height: 1.16;
+    font-size: 0.8rem;
+    line-height: 1.2;
   }
 
   #cheat-choice-container .choice-footer {

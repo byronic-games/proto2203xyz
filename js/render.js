@@ -93,6 +93,11 @@ function playPendingCardRevealAnimation() {
   revealAnimationResetTimer = setTimeout(() => {
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
+    const feedbackEffect = pending.feedbackEffect || pending.outcome;
+    if (feedbackEffect === "correct" || feedbackEffect === "wrong") {
+      if (typeof setCurrentCardFeedback === "function") setCurrentCardFeedback(feedbackEffect);
+      if (typeof flashGameShell === "function") flashGameShell(feedbackEffect);
+    }
     if (state.pendingRevealAnimation && state.pendingRevealAnimation.id === pending.id) {
       state.pendingRevealAnimation = null;
     }
@@ -611,6 +616,10 @@ function renderNudgeControls() {
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
     !!state.pauseForCheat;
+
+  const revealLocked = !!state.pendingRevealAnimation;
+  upBtn.classList.toggle("keep-bright", revealLocked);
+  downBtn.classList.toggle("keep-bright", revealLocked);
 
   upBtn.disabled = isBlocked || !canUseNudge("up");
   downBtn.disabled = isBlocked || !canUseNudge("down");

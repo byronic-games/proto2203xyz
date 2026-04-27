@@ -123,6 +123,7 @@ function queueCardRevealAnimation(options = {}) {
     fromEffectiveValue,
     fromIsTemp,
     effectId: String(options.effectId || ""),
+    feedbackEffect: String(options.feedbackEffect || normalizedOutcome),
     triggerGameOver: !!options.triggerGameOver,
     gameOverDetail: String(options.gameOverDetail || ""),
   };
@@ -1858,8 +1859,6 @@ function makeGuess(type) {
       });
       state.currentValueModifier = 0;
       state.streak = 0;
-      setCurrentCardFeedback("wrong");
-      flashGameShell("wrong");
       const lossMessage = appendEnergyFeedback(
         `Odd One Out triggered - next card was ${formatNextCardForLossMessage(next)}.`,
         -revealDistance
@@ -1939,8 +1938,6 @@ function makeGuess(type) {
     advanceToCard(next);
     state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
-    setCurrentCardFeedback("wrong");
-    flashGameShell("wrong");
     const lossDetail = sixSevenWasArmed
       ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
@@ -2026,8 +2023,6 @@ function makeGuess(type) {
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
-  setCurrentCardFeedback("correct");
-  flashGameShell("correct");
   addMetaProgression(1);
   if (forcedNudgeDirection === "up" && forcedNudgeReward > 0) {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + forcedNudgeReward;

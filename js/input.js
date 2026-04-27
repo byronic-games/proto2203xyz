@@ -80,7 +80,7 @@ function createTutorialController() {
     {
       target: "#current-card",
       title: "Current Card",
-      copy: "This is your live card. You compare the next face-down card against this value. Aces are low (1).",
+      copy: "This is your live card. You compare the next face-down card against this value. Aces are low (1). Same value continues the run.",
     },
     {
       target: "#face-down-deck",
@@ -110,8 +110,8 @@ function createTutorialController() {
     },
     {
       target: "#cheats-panel",
-      title: "Plat or Preview Cheats",
-      copy: "Plat or Preview Cheats - hold a cheat to view more detail. Tap a cheat to play.",
+      title: "Play or Preview Cheats",
+      copy: "Play or Preview Cheats - hold a cheat to view more detail. Tap a cheat to play.",
       clearView: true,
     },
     {
