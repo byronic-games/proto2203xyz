@@ -1,33 +1,26 @@
 # AI Starter Prompt
 
-Use this to start the next AI cleanly.
-
----
-
 You are taking over project `52!` in folder `USETHIS`.
 
-Read first:
+## Read First
 1. `HANDOVER.md`
 2. `RUNBOOK.md`
-3. `DATA_CONTRACTS.md`
-4. `STATE_MAP.md`
-5. `KNOWN_ISSUES.md`
-6. `NEXT_TASKS.md`
+3. `KNOWN_ISSUES.md`
+4. `NEXT_TASKS.md`
+5. `DATA_CONTRACTS.md`
+6. `STATE_MAP.md`
 
-Constraints:
-- Do not wipe local progress/storage unless explicitly asked.
-- Preserve unlock order Blue -> Green -> Red.
-- Keep mobile-first layout stable.
-- Bump HTML asset query versions after JS/CSS edits.
-- Avoid broad refactors; use minimal targeted patches.
+## Hard Constraints
+- Do not clear/reset storage unless explicitly requested.
+- Preserve deck unlock order: Blue -> Green -> Red.
+- Keep mobile layout stable.
+- Use minimal targeted patches (avoid broad refactors).
+- Bump HTML query versions after JS/CSS edits.
 
-Current Daily crown behavior:
-- Online Daily board uses Supabase rows only.
-- Gold crown if `daily_clears > 0` or historical daily score `>= 51` (name fallback).
+## Current Priority
+- Fix Android reveal animation where card rotates but face does not appear.
 
-First actions:
-1. Run RUNBOOK smoke checks.
-2. Report pass/fail briefly.
-3. Start `NEXT_TASKS.md` P0 unless user redirects.
-
----
+## First Actions
+1. Run smoke checks from `RUNBOOK.md`.
+2. Reproduce reveal issue on Android profile.
+3. Patch and re-test Daily/Heroes/Profile regressions.

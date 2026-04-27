@@ -1,28 +1,26 @@
-# Next Tasks Checklist
+# Next Tasks (Priority Order)
 
-## P0 - Shared Player Identity
-- Add stable cross-table player ID for Heroes + Daily.
-- Use ID-first crown enrichment; name fallback only.
-- Acceptance: rename/name-collision no longer breaks crowns.
+## P0 - Fix Reveal Animation On Android
+- Make face reliably appear during reveal flip on Android Chrome.
+- Keep existing sequence intent:
+  - flip reveal
+  - short pause
+  - promote to current card
+  - then correct/incorrect flash
+- Re-test with nudged/temporary next-card values.
 
-## P0 - Explicit Daily Clear Data
-- Ensure daily clear writes durable `daily_clears` signal for new rows.
-- Keep score-threshold fallback only for legacy rows.
-- Acceptance: new rows show gold without inference.
+## P0 - Regression Pass After Animation Fix
+- Verify tutorial flow still works.
+- Verify game-over and deck-clear flows still animate correctly.
+- Verify Cursed Shield overlay badge behavior unaffected.
 
-## P1 - SQL Backfill Scripts In Repo
-- Add `tools/sql/` scripts for preview/apply backfills.
-- Include rollback notes.
-- Acceptance: backfills are repeatable and auditable.
+## P1 - Identity Hardening
+- Move crown enrichment to ID-first joins where possible.
+- Keep name fallback only for historical rows.
 
-## P1 - Diagnostics
-- Add optional debug summary for Daily load path:
-  - source online/offline
-  - row count
-  - crowns enriched count
-- Acceptance: mismatch reports diagnosable from one screenshot/log.
+## P1 - SQL Scripts In Repo
+- Add repeatable preview/apply scripts for crown/daily backfills in `tools/sql/`.
 
-## P2 - Daily Table Polish
-- Validate smallest phone heights.
-- Tune row/crown spacing.
-- Acceptance: no clipping, ties still correct.
+## P2 - Optional Visual Polish
+- Add reveal effect hooks per outcome/card type (already partially scaffolded).
+- Tune timings for low-end Android performance.

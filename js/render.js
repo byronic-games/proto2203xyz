@@ -141,7 +141,9 @@ function playPendingCardRevealAnimation() {
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
-  const streakEl = document.getElementById("current-streak");
+  const energyCardEl = document.getElementById("energy-card");
+  const energyValueEl = document.getElementById("energy-value");
+  const hudRowEl = document.getElementById("hud-row");
   const activeDeckKey = normalizeDeckKey(
     state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck()
   );
@@ -155,9 +157,13 @@ function renderScores() {
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
-  if (streakEl) {
+  {
     const showEnergy = activeDeckKey === "green";
-    streakEl.innerText = showEnergy ? `Energy ${Math.max(0, Number(state.energy) || 0)}` : "";
+    if (hudRowEl) hudRowEl.classList.toggle("hud-row-green", showEnergy);
+    if (energyCardEl) energyCardEl.hidden = !showEnergy;
+    if (energyValueEl) {
+      setAnimatedText(energyValueEl, Math.max(0, Number(state.energy) || 0));
+    }
   }
 
   const metaEl = document.getElementById("meta-progression");

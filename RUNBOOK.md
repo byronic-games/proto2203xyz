@@ -1,26 +1,31 @@
-# Runbook Checklist
+# Runbook (Fast Checks)
 
-## Start Locally
+## Start Local
 - Serve repo root with any static server.
 - Open `index.html`.
 
-## Quick Smoke (5 minutes)
-1. Start Blue run, make guesses, restart run.
-2. Deck picker order is Blue, Green, Red.
-3. Locked decks/levels are greyed out.
-4. Open `daily.html`, confirm board loads.
-5. Daily table shows `Rank | Name (+crowns) | Cards Cleared`.
-6. Open `heroes.html` and `profile.html`, confirm data renders.
+## 5-Minute Smoke
+1. Start Blue run.
+2. Confirm `Cards Cleared` starts at 1 and `Cards Remaining` at 51.
+3. Make one correct guess and one wrong guess path.
+4. Confirm deck picker order is Blue, Green, Red.
+5. Confirm locked decks/levels are visibly greyed out.
+6. Open `daily.html`, `heroes.html`, `profile.html` and confirm no load errors.
 
-## Daily Validation
-1. Compare same date on two devices.
-2. Entry count and ordering must match.
+## Animation Check (Current Priority)
+1. On Android Chrome, make a guess.
+2. Verify next-card flip reveals face during animation.
+3. Verify promoted current card shows true value after move.
+4. Re-test with next-card value modifier case (nudged/temporary value scenario).
+
+## Daily Board Check
+1. Open same date on two devices.
+2. Entry count/order should match.
 3. Tied scores share rank.
-4. Crowns are per-player, not per-viewer.
-5. Today scores hidden before local completion, shown after.
+4. Crowns should be per-player, not per-viewer.
 
 ## Deploy Hygiene
-- After JS/CSS edits, bump query versions in:
+- After JS/CSS edits, bump query strings in:
   - `index.html`
   - `game.html`
   - `daily.html`
@@ -28,25 +33,10 @@
   - `profile.html`
   - `settings.html`
 
-## Supabase Health Check
-- `daily_52` anon `SELECT` and `INSERT` works.
-- `heroes_52` anon `SELECT` works.
-- If Daily hangs loading:
-  1. check network response
-  2. check RLS policy
-  3. check table API availability
-
-## Useful SQL
-```sql
-select date_key, player_name, score, blue_cleared, green_cleared, red_cleared, daily_clears, crown_summary, created_at
-from public.daily_52
-where date_key = '2026-04-25'
-order by score desc, created_at asc;
-```
-
-```sql
-select player_name, deck, deck_level, blue_cleared, green_cleared, red_cleared, created_at
-from public.heroes_52
-where lower(trim(player_name)) = lower(trim('Byronicman'))
-order by created_at desc;
-```
+## Supabase Quick Health
+- `daily_52`: anon `SELECT` + `INSERT`.
+- `heroes_52`: anon `SELECT`.
+- If Daily hangs on “Loading Daily Board”:
+  1. check browser network response
+  2. check RLS/API permissions
+  3. check client-side JS errors
