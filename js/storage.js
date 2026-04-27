@@ -60,6 +60,22 @@ function loadBestScoreMap() {
     localStorage.setItem(BEST_SCORES_BY_MODE_KEY, JSON.stringify(bestScores));
   }
 
+  // One-time migration to one-based scoring display (run starts at 1, full clear = 52).
+  // This keeps local best-score history aligned with the new scoring baseline.
+  const scoringMode = localStorage.getItem(BEST_SCORES_SCORING_MODE_KEY);
+  if (scoringMode !== "one_based") {
+    Object.keys(bestScores).forEach((bucketKey) => {
+      const value = Number(bestScores[bucketKey]);
+      if (!Number.isFinite(value) || value <= 0) return;
+      bestScores[bucketKey] = Math.min(52, value + 1);
+    });
+    localStorage.setItem(BEST_SCORES_BY_MODE_KEY, JSON.stringify(bestScores));
+    localStorage.setItem(BEST_SCORES_SCORING_MODE_KEY, "one_based");
+    if (Number.isFinite(legacyBest) && legacyBest > 0) {
+      localStorage.setItem(BEST_SCORE_KEY, String(Math.min(52, legacyBest + 1)));
+    }
+  }
+
   return bestScores;
 }
 

@@ -686,9 +686,7 @@ function handleRunFinished(finalScore) {
 
   const dateKey = state.dailyDateKey || getCurrentDailyDateKey();
   const playerName = loadPreferredPlayerName();
-  const normalizedFinalScore = Math.max(0, Number(finalScore) || 0);
-  // Daily scoring starts at 1, so a full clear is 52 instead of 51.
-  const dailyScore = normalizedFinalScore + 1;
+  const dailyScore = getRunScoreFromCorrectAnswers(finalScore);
   const entry = buildDailyEntry({
     dateKey,
     seed: state.runSeed,
@@ -749,10 +747,19 @@ function pickPowerFromChoice(index) {
 }
 
 function updateBestScoreIfNeeded() {
-  if (state.correctAnswers > state.bestScore) {
-    state.bestScore = state.correctAnswers;
+  const runScore = getRunScoreFromCorrectAnswers(state.correctAnswers);
+  if (runScore > state.bestScore) {
+    state.bestScore = runScore;
     saveBestScore(state.bestScore, state.currentDeckKey, state.currentLevelNumber);
   }
+}
+
+function getRunScoreFromCorrectAnswers(correctAnswers) {
+  return Math.max(0, Number(correctAnswers) || 0) + 1;
+}
+
+function getDisplayedRunScore() {
+  return state.current ? getRunScoreFromCorrectAnswers(state.correctAnswers) : 0;
 }
 
 function peekNext() {

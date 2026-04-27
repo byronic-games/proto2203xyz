@@ -133,7 +133,7 @@ function renderScores() {
     : normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
 
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
-  if (scoreEl) setAnimatedText(scoreEl, state.correctAnswers);
+  if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   if (streakEl) {
     const showEnergy = activeDeckKey === "green";
