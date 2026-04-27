@@ -169,6 +169,7 @@ function createTutorialController() {
   let stepIndex = 0;
   let focusedTarget = null;
   let cheatOfferPollTimer = null;
+  let revealAdvancePollTimer = null;
   let tutorialCheatOfferHandled = false;
 
   function getActiveSteps() {
@@ -191,6 +192,13 @@ function createTutorialController() {
     if (cheatOfferPollTimer) {
       clearTimeout(cheatOfferPollTimer);
       cheatOfferPollTimer = null;
+    }
+  }
+
+  function clearRevealAdvancePoll() {
+    if (revealAdvancePollTimer) {
+      clearTimeout(revealAdvancePollTimer);
+      revealAdvancePollTimer = null;
     }
   }
 
@@ -227,6 +235,7 @@ function createTutorialController() {
     active = false;
     clearFocusTarget();
     clearCheatOfferPoll();
+    clearRevealAdvancePoll();
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     overlay.classList.remove("tutorial-clear-view");
@@ -420,6 +429,20 @@ function createTutorialController() {
     cheatOfferPollTimer = setTimeout(poll, 120);
   }
 
+  function advanceAfterRevealSettles(onAdvance) {
+    clearRevealAdvancePoll();
+    const poll = () => {
+      if (!active || phase !== "run") return;
+      if (state.pendingRevealAnimation) {
+        revealAdvancePollTimer = setTimeout(poll, 60);
+        return;
+      }
+      revealAdvancePollTimer = null;
+      onAdvance();
+    };
+    revealAdvancePollTimer = setTimeout(poll, 60);
+  }
+
   function handleGuessResolved(type, before, after) {
     if (!active) return;
     if (phase !== "run") return;
@@ -450,8 +473,10 @@ function createTutorialController() {
 
     clearCheatOfferPoll();
     state.message = `Nice. You picked ${type.toUpperCase()} and resolved a card.`;
-    nextStep();
-    render();
+    advanceAfterRevealSettles(() => {
+      nextStep();
+      render();
+    });
   }
 
   function handlePowerPicked(power, isRewardChoice = false) {
