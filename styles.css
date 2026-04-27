@@ -405,6 +405,10 @@ a {
   box-shadow: inset 4px 0 0 var(--lime), inset 0 0 0 1px rgba(255,255,255,0.03);
 }
 
+.hud-card[hidden] {
+  display: none !important;
+}
+
 .hud-card-energy .hud-label,
 #energy-value {
   color: var(--lime);

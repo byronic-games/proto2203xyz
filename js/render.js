@@ -145,7 +145,7 @@ function renderScores() {
   const energyValueEl = document.getElementById("energy-value");
   const hudRowEl = document.getElementById("hud-row");
   const hudDeckKey = state.gameOver
-    ? normalizeDeckKey(state.pendingDeckKey || state.selectedDeckKey || loadSelectedDeck())
+    ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
     : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
   const bestDeckKey = state.gameOver
     ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
@@ -165,7 +165,10 @@ function renderScores() {
         ? "repeat(3, minmax(0, 1fr))"
         : "repeat(2, minmax(0, 1fr))";
     }
-    if (energyCardEl) energyCardEl.hidden = !showEnergy;
+    if (energyCardEl) {
+      energyCardEl.hidden = !showEnergy;
+      energyCardEl.style.display = showEnergy ? "" : "none";
+    }
     if (energyValueEl) {
       setAnimatedText(energyValueEl, Math.max(0, Number(state.energy) || 0));
     }
