@@ -570,9 +570,14 @@ function getRedDeckStatsSummary(entry) {
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
   const totalDirectionalNudges = totalUpAmount + totalDownAmount;
-  const upSplitPercent = totalDirectionalNudges
-    ? Math.round((totalUpAmount / totalDirectionalNudges) * 100)
-    : 50;
+  const trendLabel = totalDirectionalNudges === 0
+    ? "No Trend Yet"
+    : (totalUpAmount > totalDownAmount
+      ? "Leans Up"
+      : (totalDownAmount > totalUpAmount ? "Leans Down" : "Balanced"));
+  const trendTone = totalDirectionalNudges === 0
+    ? "neutral"
+    : (totalUpAmount > totalDownAmount ? "up" : (totalDownAmount > totalUpAmount ? "down" : "neutral"));
 
   return {
     seenCount: blueFaceUpUses,
@@ -580,8 +585,15 @@ function getRedDeckStatsSummary(entry) {
     nudgedPercent: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses),
     upTotal: totalUpAmount,
     downTotal: totalDownAmount,
-    upSplitPercent,
-    downSplitPercent: 100 - upSplitPercent,
+    totalDirectionalNudges,
+    trendLabel,
+    trendTone,
+    nudgedSummary: blueFaceUpUses
+      ? `${blueFaceUpUses} seen · ${formatNudgedPercentage(blueNudgedUses, blueFaceUpUses)} nudged`
+      : "0 seen · 0% nudged",
+    footerLabel: totalDirectionalNudges
+      ? `Among nudges: ${totalDownAmount} down, ${totalUpAmount} up`
+      : "Among nudges: no directional pattern yet",
   };
 }
 
@@ -590,8 +602,7 @@ function getRedDeckStatsTooltipBody(entry) {
   return [
     "Seen: times this card has been face up in Blue runs.",
     `Nudged: percentage of those face-up turns where players nudged it at least once (${summary.nudgedCount}/${summary.seenCount}).`,
-    "Chart: split of the total upward vs downward nudge amount applied while this card was face up.",
-    `Up / Down totals: ${summary.upTotal} up, ${summary.downTotal} down.`,
+    `Trend: ${summary.footerLabel}.`,
   ].join("\n");
 }
 
@@ -769,29 +780,11 @@ function renderFaceDownDeck() {
     statsBox.className = "card-back-stats";
     statsBox.innerHTML = `
       <div class="card-back-stats-top">
-        <div class="card-back-stats-kicker">Nudged</div>
-        <div class="card-back-stats-primary">${statsSummary.nudgedPercent}</div>
-        <div class="card-back-stats-sub">${statsSummary.nudgedCount} of ${statsSummary.seenCount} seen</div>
+        <div class="card-back-stats-kicker">Trend</div>
+        <div class="card-back-stats-primary" data-trend="${statsSummary.trendTone}">${statsSummary.trendLabel}</div>
+        <div class="card-back-stats-sub">${statsSummary.nudgedSummary}</div>
       </div>
-      <div class="card-back-stats-chart-wrap">
-        <div
-          class="card-back-stats-chart"
-          style="--split-angle:${statsSummary.upSplitPercent * 3.6}deg;"
-          aria-hidden="true"
-        >
-          <div class="card-back-stats-chart-hole"></div>
-        </div>
-      </div>
-      <div class="card-back-stats-legend">
-        <div class="card-back-stats-legend-item">
-          <span class="card-back-stats-legend-label">Up</span>
-          <span class="card-back-stats-legend-value">${statsSummary.upTotal}</span>
-        </div>
-        <div class="card-back-stats-legend-item">
-          <span class="card-back-stats-legend-label">Down</span>
-          <span class="card-back-stats-legend-value">${statsSummary.downTotal}</span>
-        </div>
-      </div>
+      <div class="card-back-stats-footer">${statsSummary.footerLabel}</div>
     `;
     deckEl.appendChild(statsBox);
     deckEl.classList.add("has-deck-stats-tooltip");
