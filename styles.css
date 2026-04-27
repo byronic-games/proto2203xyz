@@ -783,6 +783,26 @@ a {
   color: #273500;
 }
 
+.card-shield-badge {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  line-height: 1;
+  background: rgba(40, 28, 62, 0.88);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 232, 255, 0.45),
+    0 0 10px rgba(0, 232, 255, 0.2);
+  pointer-events: none;
+  z-index: 3;
+}
+
 .card-back {
   display: flex;
   align-items: center;
@@ -1449,12 +1469,12 @@ a {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 176px;
+  min-height: 186px;
   order: 5;
 }
 
 #seen-grid-wrap {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: hidden;
@@ -2259,11 +2279,11 @@ a {
 
   #memory-panel {
     flex: 0 0 auto;
-    min-height: 0;
+    min-height: 186px;
   }
 
   #seen-grid-wrap {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     overflow-y: visible;
     padding: 8px 8px 4px;
   }
@@ -2344,7 +2364,7 @@ a {
   #memory-panel {
     align-self: stretch !important;
     min-width: 0 !important;
-    min-height: 0 !important;
+    min-height: 186px !important;
     flex: 1 1 auto !important;
   }
 
@@ -2449,7 +2469,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 176px;
+    min-height: 186px;
   }
 
   #seen-grid-wrap {
@@ -2575,7 +2595,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 164px;
+    min-height: 172px;
   }
 
   #seen-grid-wrap {

@@ -57,7 +57,9 @@ function playPendingCardRevealAnimation() {
     clearGameOverEffects();
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
+    faceDownDeckEl.style.animation = "none";
     void faceDownDeckEl.offsetWidth;
+    faceDownDeckEl.style.animation = "";
     faceDownDeckEl.classList.add("reveal-flip");
     if (effectClass) {
       faceDownDeckEl.classList.add(effectClass);
@@ -79,7 +81,9 @@ function playPendingCardRevealAnimation() {
   clearPendingRevealTimers();
   removeRevealStateClasses(faceDownDeckEl);
   removeRevealStateClasses(currentCardEl);
+  currentCardEl.style.animation = "none";
   void currentCardEl.offsetWidth;
+  currentCardEl.style.animation = "";
   currentCardEl.classList.add("reveal-promote");
   if (pending.outcome === "wrong") {
     currentCardEl.classList.add("reveal-fail");
@@ -444,12 +448,14 @@ function renderActivePowers() {
   `;
 }
 
-function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, includeTornCorner) {
+function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, includeTornCorner, options = {}) {
+  const showShieldBadge = !!options.showShieldBadge;
   const shownRank = isTemporarilyModified ? valueToRank(displayValue) : card.rank;
   const shownLabel = `${shownRank}${card.suit}`;
   return `
     <span class="card-face-label">${shownLabel}</span>
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
+    ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
   `;
 }
@@ -505,7 +511,10 @@ function renderCurrentCard() {
     cardToRender,
     effectiveValue,
     isTemporarilyModified,
-    backStatus.tornCorner
+    backStatus.tornCorner,
+    {
+      showShieldBadge: !!state.cursedShieldArmed,
+    }
   );
 
   currentValueEl.innerText = "";
