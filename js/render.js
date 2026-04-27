@@ -144,9 +144,9 @@ function renderScores() {
   const energyCardEl = document.getElementById("energy-card");
   const energyValueEl = document.getElementById("energy-value");
   const hudRowEl = document.getElementById("hud-row");
-  const activeDeckKey = normalizeDeckKey(
-    state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck()
-  );
+  const hudDeckKey = state.gameOver
+    ? normalizeDeckKey(state.pendingDeckKey || state.selectedDeckKey || loadSelectedDeck())
+    : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
   const bestDeckKey = state.gameOver
     ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
     : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
@@ -158,7 +158,7 @@ function renderScores() {
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   {
-    const showEnergy = activeDeckKey === "green";
+    const showEnergy = hudDeckKey === "green";
     if (hudRowEl) {
       hudRowEl.classList.toggle("hud-row-green", showEnergy);
       hudRowEl.style.gridTemplateColumns = showEnergy
