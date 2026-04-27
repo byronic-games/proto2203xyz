@@ -11,6 +11,7 @@
 - `heroes.html`: clear board
 - `profile.html`: local player stats/crowns
 - `settings.html`: config/reset tools
+- Daily sharing exists in UI but is currently disabled by a code flag in `js/daily-page.js` until we turn it back on.
 
 ## Deck/Progression Model
 - Start: Blue Level 1 unlocked.
@@ -35,6 +36,7 @@
 - `js/daily.js` + `js/daily-page.js`: Daily data flow/UI
 - `js/leaderboard.js` + `js/heroes.js`: Heroes/crowns rendering
 - `js/profile-page.js`: profile stats/crowns
+- `js/fullscreen.js`: viewport-height handling, including Android standalone/home-screen mode
 
 ## Current Critical Risk
 - Reveal animation on some Android browsers still fails to show face mid-flip.

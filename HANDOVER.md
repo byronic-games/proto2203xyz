@@ -14,6 +14,8 @@
 - Deck progression order: Blue -> Green -> Red.
 - Levels: 1-4 currently wired for Blue, Green, Red.
 - Daily and Heroes use Supabase when online; local fallback exists.
+- Daily now has a share button on the result panel, but it is intentionally code-gated off for now with `DAILY_SHARE_ENABLED = false` in `js/daily-page.js`.
+- Android standalone/home-screen sizing was tightened using `visualViewport.height` plus short-screen CSS compression; if layout looks clipped, check cached HTML/JS first.
 
 ## Non-Negotiables
 - Do not wipe player storage unless explicitly asked.
@@ -38,3 +40,4 @@
 1. Run `RUNBOOK.md` smoke checks.
 2. Reproduce current flip bug on Android profile.
 3. Patch minimally and verify Daily/Heroes/Profile did not regress.
+4. If Daily sharing is being revisited, start in `js/daily-page.js` and keep the toggle code-only unless explicitly asked to expose it in the UI.

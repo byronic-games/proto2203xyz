@@ -457,6 +457,6 @@ function buildDailyGameUrl(dateKey) {
 
 function getRequestedDailyDateKeyFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const requested = String(params.get("date") || "").trim();
-  return requested || getCurrentDailyDateKey();
+  if (!params.has("date")) return "";
+  return String(params.get("date") || "").trim();
 }
