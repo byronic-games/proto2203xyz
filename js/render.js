@@ -953,10 +953,10 @@ function hideCheatTooltip() {
 window.hideCheatTooltip = hideCheatTooltip;
 
 function getChoiceCurrentCard(mode = "cheat") {
-  if (state.current) return state.current;
   if (mode === "power" && Array.isArray(state.pendingRunDeck) && state.pendingRunDeck.length > 0) {
     return state.pendingRunDeck[0];
   }
+  if (state.current) return state.current;
   return null;
 }
 
