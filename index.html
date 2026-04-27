@@ -222,6 +222,12 @@
       const debugUnlockEnabled = new URLSearchParams(window.location.search).get("debugUnlock") === "1";
       let pendingDeckSelection = "blue";
 
+      const sharedDailyDate = String(new URLSearchParams(window.location.search).get("date") || "").trim();
+      if (sharedDailyDate) {
+        window.location.replace(`daily.html?date=${encodeURIComponent(sharedDailyDate)}`);
+        return;
+      }
+
       if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelFourBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !levelFourDesc || !nameInput) {
         return;
       }

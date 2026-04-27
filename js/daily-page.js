@@ -1,4 +1,4 @@
-const DAILY_SHARE_BASE_URL = "https://byronicman.com/52/";
+const DAILY_SHARE_BASE_URL = "https://byronicman.com/52/daily.html";
 
 function formatDailyDateLabel(dateKey) {
   if (!dateKey) return "-";
