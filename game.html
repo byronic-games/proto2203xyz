@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260426f">
+  <link rel="stylesheet" href="styles.css?v=20260427b">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -234,6 +234,7 @@
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
           <div class="choice-title">Choose Your Cheat</div>
+          <div id="cheat-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="cheat-choice-list"></div>
           <div class="choice-footer">Tap to select.</div>
         </div>
@@ -243,6 +244,7 @@
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
           <div id="power-choice-title" class="choice-title">Choose Your Power</div>
+          <div id="power-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="power-choice-list"></div>
           <div id="power-choice-footer" class="choice-footer">Pick 1 before the run begins.</div>
         </div>
@@ -301,7 +303,7 @@
   <script src="js/leaderboard.js?v=20260425c"></script>
   <script src="js/daily.js?v=20260426a"></script>
   <script src="js/logic.js?v=20260427a"></script>
-  <script src="js/render.js?v=20260427a"></script>
+  <script src="js/render.js?v=20260427b"></script>
   <script src="js/input.js?v=20260425d"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>

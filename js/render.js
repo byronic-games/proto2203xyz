@@ -952,9 +952,30 @@ function hideCheatTooltip() {
 
 window.hideCheatTooltip = hideCheatTooltip;
 
+function getChoiceCurrentCard(mode = "cheat") {
+  if (state.current) return state.current;
+  if (mode === "power" && Array.isArray(state.pendingRunDeck) && state.pendingRunDeck.length > 0) {
+    return state.pendingRunDeck[0];
+  }
+  return null;
+}
+
+function renderChoiceCurrentCard(el, mode = "cheat") {
+  if (!el) return;
+  const card = getChoiceCurrentCard(mode);
+  if (!card) {
+    el.innerText = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.innerText = `Current card: ${describeCard(card)}`;
+  el.classList.remove("hidden");
+}
+
 function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
   const list = document.getElementById("cheat-choice-list");
+  const currentCardEl = document.getElementById("cheat-choice-current-card");
 
   if (!container || !list) return;
 
@@ -963,11 +984,16 @@ function renderCheatChoice() {
   if (!state.pendingCheatOptions.length) {
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
+    if (currentCardEl) {
+      currentCardEl.innerText = "";
+      currentCardEl.classList.add("hidden");
+    }
     return;
   }
 
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
+  renderChoiceCurrentCard(currentCardEl, "cheat");
 
   const tutorialChoiceLocked = typeof window.isTutorialBlockingCheatChoice === "function"
     ? window.isTutorialBlockingCheatChoice()
@@ -1031,6 +1057,7 @@ function renderPowerChoice() {
   const container = document.getElementById("power-choice-container");
   const list = document.getElementById("power-choice-list");
   const titleEl = document.getElementById("power-choice-title");
+  const currentCardEl = document.getElementById("power-choice-current-card");
   const footerEl = document.getElementById("power-choice-footer");
 
   if (!container || !list) return;
@@ -1041,6 +1068,10 @@ function renderPowerChoice() {
   if (!state.pendingPowerOptions.length) {
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
+    if (currentCardEl) {
+      currentCardEl.innerText = "";
+      currentCardEl.classList.add("hidden");
+    }
     return;
   }
 
@@ -1053,6 +1084,7 @@ function renderPowerChoice() {
   if (footerEl) {
     footerEl.innerText = state.activePowerAwardReason ? "Pick 1 power to gain." : "Pick 1 before the run begins.";
   }
+  renderChoiceCurrentCard(currentCardEl, "power");
 
   const tutorialChoiceLocked = typeof window.isTutorialBlockingPowerPick === "function"
     ? window.isTutorialBlockingPowerPick()

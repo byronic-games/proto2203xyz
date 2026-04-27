@@ -1893,6 +1893,18 @@ a {
   color: var(--pink);
 }
 
+.choice-current-card {
+  margin: -6px 0 10px;
+  color: #cfe9ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  opacity: 0.9;
+}
+
 .choice-footer {
   margin-top: 12px;
   color: var(--muted);
@@ -2645,6 +2657,11 @@ a {
   #cheat-choice-container .choice-title {
     margin-bottom: 8px;
     font-size: 1.18rem;
+  }
+
+  #cheat-choice-container .choice-current-card {
+    margin: -4px 0 8px;
+    font-size: 0.68rem;
   }
 
   #cheat-choice-container #cheat-choice-list {
