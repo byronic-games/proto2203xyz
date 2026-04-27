@@ -159,7 +159,12 @@ function renderScores() {
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   {
     const showEnergy = activeDeckKey === "green";
-    if (hudRowEl) hudRowEl.classList.toggle("hud-row-green", showEnergy);
+    if (hudRowEl) {
+      hudRowEl.classList.toggle("hud-row-green", showEnergy);
+      hudRowEl.style.gridTemplateColumns = showEnergy
+        ? "repeat(3, minmax(0, 1fr))"
+        : "repeat(2, minmax(0, 1fr))";
+    }
     if (energyCardEl) energyCardEl.hidden = !showEnergy;
     if (energyValueEl) {
       setAnimatedText(energyValueEl, Math.max(0, Number(state.energy) || 0));
