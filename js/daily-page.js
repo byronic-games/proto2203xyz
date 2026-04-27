@@ -1,4 +1,5 @@
 const DAILY_SHARE_BASE_URL = "https://byronicman.com/52/daily.html";
+const DAILY_SHARE_ENABLED = false; // Set true to enable the Daily Share button.
 
 function formatDailyDateLabel(dateKey) {
   if (!dateKey) return "-";
@@ -266,6 +267,10 @@ async function refreshDailyPageForDate(activeDateKey) {
     shareBtn.onclick = () => {
       const entry = hasCompletedAttempt ? currentAttempt : null;
       if (!entry) return;
+      if (!DAILY_SHARE_ENABLED) {
+        if (statusEl) statusEl.innerText = "Coming soon.";
+        return;
+      }
       shareDailyResult(entry, activeDateKey, todayKey, statusEl);
     };
   }
