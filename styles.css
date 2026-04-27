@@ -414,11 +414,7 @@ a {
   color: var(--lime);
 }
 
-.hud-card-energy .hud-label {
-  line-height: 1.05;
-}
-
-.hud-energy-break {
+.hud-label-break {
   display: block;
   height: 0.92em;
   font-size: 0;
