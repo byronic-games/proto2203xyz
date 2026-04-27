@@ -1,3 +1,5 @@
+const DAILY_SHARE_BASE_URL = "https://www.byronicman.com/52/";
+
 function formatDailyDateLabel(dateKey) {
   if (!dateKey) return "-";
   const date = new Date(`${dateKey}T00:00:00Z`);
@@ -30,9 +32,8 @@ function getDailyUnlockRunsStarted() {
 }
 
 function buildDailyShareUrl(dateKey) {
-  const url = new URL(window.location.href);
+  const url = new URL(DAILY_SHARE_BASE_URL);
   url.searchParams.set("date", dateKey);
-  url.hash = "";
   return url.toString();
 }
 
