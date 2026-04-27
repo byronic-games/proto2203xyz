@@ -37,7 +37,7 @@ function removeRevealStateClasses(el) {
   if (effectClasses.length) {
     el.classList.remove(...effectClasses);
   }
-  el.classList.remove("reveal-flip", "reveal-promote", "reveal-settle", "reveal-fail");
+  el.classList.remove("reveal-flip", "reveal-flip-out", "reveal-flip-in", "reveal-flip-180", "reveal-promote", "reveal-settle", "reveal-fail");
 }
 
 function playPendingCardRevealAnimation() {
@@ -53,25 +53,45 @@ function playPendingCardRevealAnimation() {
     if (pending.started) return;
 
     pending.started = true;
+    pending.revealSwapDone = false;
     clearPendingRevealTimers();
     clearGameOverEffects();
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
-    faceDownDeckEl.style.animation = "none";
-    void faceDownDeckEl.offsetWidth;
-    faceDownDeckEl.style.animation = "";
-    faceDownDeckEl.classList.add("reveal-flip");
-    if (effectClass) {
-      faceDownDeckEl.classList.add(effectClass);
-    }
+    render();
+    const halfFlipMs = Math.max(1, Math.floor(REVEAL_FLIP_MS / 2));
+    const revealingDeckEl = document.getElementById("face-down-deck");
+    if (!revealingDeckEl) return;
+    revealingDeckEl.style.animation = "none";
+    void revealingDeckEl.offsetWidth;
+    revealingDeckEl.style.animation = "";
+    revealingDeckEl.classList.add("reveal-flip-out");
+    if (effectClass) revealingDeckEl.classList.add(effectClass);
 
     revealAnimationResetTimer = setTimeout(() => {
       revealAnimationResetTimer = null;
       if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
-      state.pendingRevealAnimation.phase = "promoting";
-      state.pendingRevealAnimation.started = false;
+      state.pendingRevealAnimation.revealSwapDone = true;
       render();
-    }, REVEAL_FLIP_MS + REVEAL_HOLD_MS);
+
+      const flipInDeckEl = document.getElementById("face-down-deck");
+      if (flipInDeckEl) {
+        removeRevealStateClasses(flipInDeckEl);
+        flipInDeckEl.style.animation = "none";
+        void flipInDeckEl.offsetWidth;
+        flipInDeckEl.style.animation = "";
+        flipInDeckEl.classList.add("reveal-flip-in");
+        if (effectClass) flipInDeckEl.classList.add(effectClass);
+      }
+
+      revealAnimationResetTimer = setTimeout(() => {
+        revealAnimationResetTimer = null;
+        if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
+        state.pendingRevealAnimation.phase = "promoting";
+        state.pendingRevealAnimation.started = false;
+        render();
+      }, halfFlipMs + REVEAL_HOLD_MS);
+    }, halfFlipMs);
     return;
   }
 
@@ -663,14 +683,25 @@ function renderFaceDownDeck() {
       ? pendingReveal.revealEffectiveValue
       : revealCard.value;
     const revealIsTemp = !!pendingReveal.revealIsTemp;
-
-    deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
-    deckEl.innerHTML = renderCardFaceMarkup(
-      revealCard,
-      revealValue,
-      revealIsTemp,
-      revealStatus.tornCorner
-    );
+    const revealBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
+    const showRevealFace = !!pendingReveal.revealSwapDone;
+    if (showRevealFace) {
+      deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
+      deckEl.innerHTML = renderCardFaceMarkup(
+        revealCard,
+        revealValue,
+        revealIsTemp,
+        revealStatus.tornCorner
+      );
+    } else {
+      deckEl.className = `card-back card-back-${revealBackColor} ${revealStatus.tornCorner ? "torn-corner" : ""}`.trim();
+      deckEl.innerHTML = `<div class="card-back-symbol">&#127136;</div>`;
+      if (revealStatus.tornCorner) {
+        const tear = document.createElement("div");
+        tear.className = "tear-mark";
+        deckEl.appendChild(tear);
+      }
+    }
     deckEl.removeAttribute("data-back-color");
     deckEl.classList.remove("has-deck-stats-tooltip");
     setupDeckStatsTooltip(deckEl, {

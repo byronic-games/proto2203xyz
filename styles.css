@@ -828,6 +828,25 @@ a {
 }
 
 #face-down-deck.reveal-flip {
+  will-change: transform, filter;
+}
+
+#face-down-deck.reveal-flip-out {
+  animation: card-reveal-flip-out 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  will-change: transform, filter;
+}
+
+#face-down-deck.reveal-flip-in {
+  animation: card-reveal-flip-in 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  will-change: transform, filter;
+}
+
+#face-down-deck.reveal-flip-180 {
+  animation: card-reveal-flip-180 320ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  will-change: transform, filter;
+}
+
+#face-down-deck.reveal-flip {
   animation: card-reveal-flip 320ms cubic-bezier(0.22, 0.8, 0.26, 1);
   will-change: transform, filter;
 }
@@ -864,6 +883,27 @@ a {
 
 .reveal-effect-king-strike {
   --reveal-effect-ring: rgba(247, 125, 246, 0.78);
+}
+
+.card-reveal-shell {
+  position: relative;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.card-reveal-side {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-reveal-back {
+  transform: rotateY(0deg);
+}
+
+.card-reveal-front {
+  transform: rotateY(180deg);
 }
 
 .card-back::before {
@@ -1090,6 +1130,43 @@ a {
   }
 }
 
+@keyframes card-reveal-flip-out {
+  0% {
+    transform: perspective(760px) rotateY(0deg) scale(1);
+    filter: brightness(1);
+  }
+  100% {
+    transform: perspective(760px) rotateY(90deg) scale(0.985);
+    filter: brightness(0.9);
+  }
+}
+
+@keyframes card-reveal-flip-in {
+  0% {
+    transform: perspective(760px) rotateY(-90deg) scale(0.985);
+    filter: brightness(0.9);
+  }
+  100% {
+    transform: perspective(760px) rotateY(0deg) scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes card-reveal-flip-180 {
+  0% {
+    transform: perspective(760px) rotateY(0deg) scale(1);
+    filter: brightness(1);
+  }
+  45% {
+    transform: perspective(760px) rotateY(88deg) scale(0.985);
+    filter: brightness(0.9);
+  }
+  100% {
+    transform: perspective(760px) rotateY(180deg) scale(1);
+    filter: brightness(1);
+  }
+}
+
 @keyframes card-reveal-promote {
   0% {
     transform: translateX(26px) scale(0.97);
@@ -1204,6 +1281,9 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   #face-down-deck.reveal-flip,
+  #face-down-deck.reveal-flip-out,
+  #face-down-deck.reveal-flip-in,
+  #face-down-deck.reveal-flip-180,
   #current-card.reveal-promote,
   #current-card.reveal-settle,
   #current-card.reveal-fail {

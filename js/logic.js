@@ -116,6 +116,7 @@ function queueCardRevealAnimation(options = {}) {
     id: cardRevealAnimationToken,
     outcome: normalizedOutcome,
     phase: "revealing",
+    revealSwapDone: false,
     revealCard,
     revealEffectiveValue,
     revealIsTemp,
