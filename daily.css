@@ -130,7 +130,7 @@ h1 {
 
 .daily-result-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -141,9 +141,9 @@ h1 {
 
 .daily-share-btn {
   flex: 0 0 auto;
-  min-width: 96px;
-  min-height: 44px;
-  padding: 0 16px;
+  min-width: 84px;
+  min-height: 42px;
+  padding: 0 14px;
   border: 1px solid rgba(51, 220, 255, 0.24);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(51, 220, 255, 0.22), rgba(51, 220, 255, 0.10));
@@ -388,13 +388,12 @@ td.score {
     grid-template-columns: 1fr;
   }
 
-  .daily-result-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .daily-share-btn {
-    width: 100%;
+    min-width: 76px;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
   }
 
   .table-wrap {
