@@ -128,6 +128,50 @@ h1 {
   line-height: 1.1;
 }
 
+.daily-result-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-result-copy {
+  min-width: 0;
+}
+
+.daily-share-btn {
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(51, 220, 255, 0.24);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(51, 220, 255, 0.22), rgba(51, 220, 255, 0.10));
+  color: var(--cyan);
+  font-family: "Space Grotesk", "Segoe UI", Tahoma, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.daily-share-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(51, 220, 255, 0.46);
+  background: linear-gradient(180deg, rgba(51, 220, 255, 0.30), rgba(51, 220, 255, 0.14));
+}
+
+.daily-share-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.daily-share-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .daily-nav-wrapper {
   display: flex;
   align-items: center;
@@ -342,6 +386,15 @@ td.score {
   .daily-summary,
   .daily-actions {
     grid-template-columns: 1fr;
+  }
+
+  .daily-result-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .daily-share-btn {
+    width: 100%;
   }
 
   .table-wrap {

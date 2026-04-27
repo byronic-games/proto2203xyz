@@ -29,6 +29,58 @@ function getDailyUnlockRunsStarted() {
   }
 }
 
+function buildDailyShareUrl(dateKey) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("date", dateKey);
+  url.hash = "";
+  return url.toString();
+}
+
+function buildDailyShareText(entry, activeDateKey, todayKey) {
+  const score = Math.max(0, Number(entry?.score ?? 0));
+  const isToday = activeDateKey === todayKey;
+  if (isToday) {
+    return `I scored ${score} in today's 52! Daily Challenge. Can you do better?`;
+  }
+  return `I scored ${score} in the 52! Daily Challenge for ${formatDailyDateLabel(activeDateKey)}. Can you do better?`;
+}
+
+async function shareDailyResult(entry, activeDateKey, todayKey, statusEl) {
+  if (!entry) return;
+
+  const text = buildDailyShareText(entry, activeDateKey, todayKey);
+  const url = buildDailyShareUrl(activeDateKey);
+  const title = "52! Daily";
+
+  try {
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title, text, url });
+      if (statusEl) statusEl.innerText = "Daily score shared.";
+      return;
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      if (statusEl) statusEl.innerText = "Share cancelled.";
+      return;
+    }
+  }
+
+  const payload = `${text} ${url}`.trim();
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(payload);
+      if (statusEl) statusEl.innerText = "Daily score copied to clipboard.";
+      return;
+    }
+  } catch {
+    // Fall through to an inline status message.
+  }
+
+  if (statusEl) {
+    statusEl.innerText = payload;
+  }
+}
+
 function renderDailyRows(entries, currentPlayerId, showScores = false) {
   const bodyEl = document.getElementById("daily-table-body");
   const countEl = document.getElementById("daily-board-count");
@@ -139,6 +191,7 @@ async function refreshDailyPageForDate(activeDateKey) {
   const scoreEl = document.getElementById("daily-score-label");
   const resultPanel = document.getElementById("daily-result-panel");
   const startBtn = document.getElementById("daily-start-btn");
+  const shareBtn = document.getElementById("daily-share-btn");
   const nameInput = document.getElementById("daily-name-input");
 
   if (!dailyUnlocked) {
@@ -165,6 +218,10 @@ async function refreshDailyPageForDate(activeDateKey) {
         statusEl.innerText = "This Daily is in progress on this device. Resume to finish your attempt.";
       }
     }
+    if (shareBtn) {
+      shareBtn.disabled = !hasCompletedAttempt;
+      shareBtn.style.display = hasCompletedAttempt ? "" : "none";
+    }
     if (startBtn) {
       startBtn.disabled = hasCompletedAttempt ? true : (activeDateKey !== todayKey);
       startBtn.innerText = hasCompletedAttempt ? "Daily Complete" : (activeDateKey === todayKey ? "Resume Daily" : "Archive");
@@ -179,6 +236,10 @@ async function refreshDailyPageForDate(activeDateKey) {
     if (startBtn) {
       startBtn.disabled = activeDateKey !== todayKey;
       startBtn.innerText = activeDateKey === todayKey ? "Play Daily" : "Archive";
+    }
+    if (shareBtn) {
+      shareBtn.disabled = true;
+      shareBtn.style.display = "none";
     }
   }
 
@@ -197,6 +258,14 @@ async function refreshDailyPageForDate(activeDateKey) {
       }
 
       window.location.href = buildDailyGameUrl(activeDateKey);
+    };
+  }
+
+  if (shareBtn) {
+    shareBtn.onclick = () => {
+      const entry = hasCompletedAttempt ? currentAttempt : null;
+      if (!entry) return;
+      shareDailyResult(entry, activeDateKey, todayKey, statusEl);
     };
   }
 
