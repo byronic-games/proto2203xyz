@@ -960,7 +960,7 @@ function getChoiceCurrentCard(mode = "cheat") {
   return null;
 }
 
-function renderChoiceCurrentCard(el, mode = "cheat") {
+function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
   if (!el) return;
   const card = getChoiceCurrentCard(mode);
   if (!card) {
@@ -968,7 +968,7 @@ function renderChoiceCurrentCard(el, mode = "cheat") {
     el.classList.add("hidden");
     return;
   }
-  el.innerText = `Current card: ${describeCard(card)}`;
+  el.innerText = `${label}: ${describeCard(card)}`;
   el.classList.remove("hidden");
 }
 
@@ -993,7 +993,7 @@ function renderCheatChoice() {
 
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
-  renderChoiceCurrentCard(currentCardEl, "cheat");
+  renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
 
   const tutorialChoiceLocked = typeof window.isTutorialBlockingCheatChoice === "function"
     ? window.isTutorialBlockingCheatChoice()
@@ -1084,7 +1084,8 @@ function renderPowerChoice() {
   if (footerEl) {
     footerEl.innerText = state.activePowerAwardReason ? "Pick 1 power to gain." : "Pick 1 before the run begins.";
   }
-  renderChoiceCurrentCard(currentCardEl, "power");
+  const powerCardLabel = state.activePowerAwardReason ? "Current card" : "Starting card";
+  renderChoiceCurrentCard(currentCardEl, "power", powerCardLabel);
 
   const tutorialChoiceLocked = typeof window.isTutorialBlockingPowerPick === "function"
     ? window.isTutorialBlockingPowerPick()
