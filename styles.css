@@ -1895,7 +1895,7 @@ a {
 
 .choice-current-card {
   margin: -6px 0 10px;
-  color: #cfe9ff;
+  color: #dff5ff;
   font-family: "Space Grotesk", sans-serif;
   font-size: 0.76rem;
   font-weight: 700;
@@ -1903,6 +1903,9 @@ a {
   text-transform: uppercase;
   text-align: center;
   opacity: 0.9;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
 }
 
 .choice-footer {
