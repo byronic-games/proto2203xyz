@@ -1,5 +1,5 @@
 :root {
-  --app-height: 100dvh;
+  --app-height: 100svh;
   --bg-0: #120b1a;
   --bg-1: #181021;
   --bg-2: #22142d;
@@ -2592,7 +2592,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 186px;
+    min-height: 170px;
   }
 
   #seen-grid-wrap {
@@ -2607,10 +2607,10 @@ a {
   }
 
   #message-bar {
-    min-height: calc(1.25em * 3 + 10px);
-    max-height: calc(1.25em * 3 + 10px);
+    min-height: calc(1.2em * 2 + 8px);
+    max-height: calc(1.2em * 2 + 8px);
     padding: 4px 9px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
   }
 
   #bottom-bar {
@@ -2719,7 +2719,7 @@ a {
   }
 
   #memory-panel {
-    min-height: 172px;
+    min-height: 160px;
   }
 
   #seen-grid-wrap {
@@ -2740,8 +2740,8 @@ a {
   }
 
   #message-bar {
-    min-height: calc(1.25em * 3 + 10px);
-    max-height: calc(1.25em * 3 + 10px);
+    min-height: calc(1.2em * 2 + 8px);
+    max-height: calc(1.2em * 2 + 8px);
     font-size: 0.78rem;
     padding: 4px 8px;
   }

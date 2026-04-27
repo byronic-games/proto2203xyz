@@ -7,7 +7,9 @@
     viewportTicking = true;
     window.requestAnimationFrame(() => {
       viewportTicking = false;
-      const height = window.innerHeight || document.documentElement.clientHeight;
+      const viewport = window.visualViewport;
+      const height =
+        Math.floor((viewport && viewport.height) || window.innerHeight || document.documentElement.clientHeight);
       if (!height) return;
       document.documentElement.style.setProperty("--app-height", `${height}px`);
     });
