@@ -168,7 +168,7 @@ async function fetchDailyClearedNameSet(config, limit = 5000) {
 
     const byScoreQuery =
       `select=player_name` +
-      `&score=gte.51` +
+      `&score=gte.52` +
       `&limit=${safeLimit}`;
     const byScoreUrl = `${config.supabaseUrl}/rest/v1/${config.table}?${byScoreQuery}`;
     const scoreResponse = await fetchWithTimeout(byScoreUrl, { headers });

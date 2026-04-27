@@ -686,12 +686,15 @@ function handleRunFinished(finalScore) {
 
   const dateKey = state.dailyDateKey || getCurrentDailyDateKey();
   const playerName = loadPreferredPlayerName();
+  const normalizedFinalScore = Math.max(0, Number(finalScore) || 0);
+  // Daily scoring starts at 1, so a full clear is 52 instead of 51.
+  const dailyScore = normalizedFinalScore + 1;
   const entry = buildDailyEntry({
     dateKey,
     seed: state.runSeed,
     playerName: playerName || "Unknown",
     playerId: getOrCreateDailyPlayerId(),
-    score: finalScore,
+    score: dailyScore,
   });
 
   submitDailyResult(entry).finally(() => {
