@@ -102,10 +102,10 @@ function createTutorialController() {
     {
       target: "#controls",
       title: "Build Your Streak",
-      copy: "Keep guessing until you have made three correct guesses. Then you will unlock a cheat choice.",
+      copy: "Keep guessing until you have made three correct guesses. Then you will unlock a cheat choice and pick one yourself.",
       requireGuess: true,
       untilCorrectAnswers: 3,
-      waitForCheatOffer: true,
+      requireCheatPick: true,
       clearView: true,
     },
     {
@@ -393,32 +393,19 @@ function createTutorialController() {
 
   function waitForCheatOfferThenAdvance() {
     clearCheatOfferPoll();
-    const autoClaimTutorialCheat = () => {
-      const options = Array.isArray(state.pendingCheatOptions) ? state.pendingCheatOptions : [];
-      const picked = options[0];
-      if (picked) {
-        if (typeof canAddCheatToHand === "function" && canAddCheatToHand(picked)) {
-          state.cheats.push({ ...picked });
-          state.message = `Tutorial bonus: ${picked.name} added to your hand.`;
-        } else {
-          state.message = "Tutorial bonus added.";
-        }
-      }
-      state.pendingCheatOptions = [];
-      state.cheatChoiceLockedUntil = 0;
-      state.activeCheatAwardReason = "";
-      state.justUnlockedCheatIds = [];
-      tutorialCheatOfferHandled = true;
-    };
     const poll = () => {
       if (!active || phase !== "run") return;
       const steps = getActiveSteps();
       const step = steps[stepIndex];
-      if (!step?.waitForCheatOffer) return;
+      if (!step?.waitForCheatOffer && !step?.requireCheatPick) return;
 
       if (Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0) {
-        autoClaimTutorialCheat();
-        nextStep();
+        if (step?.requireCheatPick) {
+          state.message = "Choose one of the cheat cards to continue the tutorial.";
+          render();
+          return;
+        }
+        state.message = "Tutorial bonus ready.";
         render();
         return;
       }
@@ -462,11 +449,19 @@ function createTutorialController() {
       return;
     }
 
-    if (step.waitForCheatOffer) {
+    if (step.waitForCheatOffer || step.requireCheatPick) {
       if (!Array.isArray(state.pendingCheatOptions) || state.pendingCheatOptions.length === 0) {
-        state.message = "Nice streak. Waiting for your cheat offer...";
+        state.message = step.requireCheatPick
+          ? "Nice streak. Your cheat choice is on the way..."
+          : "Nice streak. Waiting for your cheat offer...";
         render();
         waitForCheatOfferThenAdvance();
+        return;
+      }
+
+      if (step.requireCheatPick) {
+        state.message = "Choose one of the cheat cards to continue the tutorial.";
+        render();
         return;
       }
     }
