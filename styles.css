@@ -18,6 +18,8 @@
   --shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
   --glow-pink: 0 0 24px rgba(247, 125, 246, 0.2);
   --glow-cyan: 0 0 22px rgba(0, 232, 255, 0.16);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-border-strong: rgba(255, 255, 255, 0.12);
   --radius: 18px;
   --radius-sm: 10px;
   --card-width: 110px;
@@ -59,7 +61,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.08;
+  opacity: 0.06;
   background:
     radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1.2px) 0 0 / 18px 18px;
 }
@@ -79,7 +81,7 @@ a {
 #game-shell {
   height: var(--app-height);
   min-height: var(--app-height);
-  padding: 12px;
+  padding: 14px;
   position: relative;
   overflow: hidden;
 }
@@ -115,12 +117,17 @@ a {
   margin: 0 auto;
   padding: 12px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 16%),
-    repeating-linear-gradient(180deg, rgba(255,124,245,0.04) 0 2px, transparent 2px 6px),
-    linear-gradient(180deg, rgba(17, 10, 24, 0.98), rgba(24, 13, 33, 0.96));
-  box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.02);
+    radial-gradient(circle at top, rgba(247, 125, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%),
+    repeating-linear-gradient(180deg, rgba(255,124,245,0.03) 0 2px, transparent 2px 8px),
+    linear-gradient(180deg, rgba(17, 10, 24, 0.98), rgba(24, 13, 33, 0.95));
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.46),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter: blur(14px);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -194,8 +201,8 @@ a {
 #app-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
 }
 
 .brand-lockup h1 {
@@ -211,7 +218,7 @@ a {
 
 .header-meta {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
@@ -227,7 +234,11 @@ a {
   justify-content: center;
   gap: 2px;
   text-align: center;
-  padding-top: 2px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(33, 20, 45, 0.66);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -245,7 +256,7 @@ a {
   font-family: "Space Grotesk", sans-serif;
   font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cyan);
   line-height: 1.1;
@@ -254,7 +265,7 @@ a {
 .header-run-power {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--muted);
+  color: #d9d0e5;
   line-height: 1.15;
 }
 
@@ -276,7 +287,7 @@ a {
 #best-score {
   margin-top: 2px;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   line-height: 1;
   font-weight: 800;
   color: var(--pink);
@@ -350,13 +361,13 @@ a {
   display: flex;
   min-height: calc(1.25em * 3 + 10px);
   max-height: calc(1.25em * 3 + 10px);
-  padding: 5px 12px;
-  border-radius: 12px;
-  background: rgba(255, 124, 245, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255,124,245,0.12);
-  color: #ffd8ff;
-  font-size: 0.82rem;
-  line-height: 1.25;
+  padding: 7px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 124, 245, 0.1), rgba(255, 124, 245, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(255,124,245,0.14);
+  color: #ffe5ff;
+  font-size: 0.84rem;
+  line-height: 1.32;
   font-weight: 700;
   text-align: center;
   align-items: center;
@@ -377,7 +388,7 @@ a {
 #hud-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 #hud-row.hud-row-green {
@@ -385,10 +396,16 @@ a {
 }
 
 .hud-card {
-  padding: 10px 12px 8px;
-  background: var(--surface);
-  min-height: 68px;
-  box-shadow: inset 4px 0 0 rgba(255,255,255,0.06);
+  padding: 11px 12px 10px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 28%),
+    var(--surface);
+  min-height: 72px;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow:
+    inset 4px 0 0 rgba(255,255,255,0.06),
+    0 0 0 1px rgba(0,0,0,0.12);
   display: flex;
   flex-direction: column;
 }
@@ -442,12 +459,14 @@ a {
 #energy-value,
 #cards-remaining-value {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 2.15rem;
+  font-size: 2.24rem;
   line-height: 1;
   font-weight: 800;
   font-style: italic;
   width: 100%;
   text-align: center;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 16px rgba(255,255,255,0.08);
 }
 
 .hud-pop {
@@ -470,8 +489,9 @@ a {
 }
 
 #face-down-count {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--cyan);
+  font-weight: 700;
   min-height: 0;
 }
 
@@ -479,11 +499,16 @@ a {
 #cheats-panel,
 #memory-panel,
 .utility-panel {
-  background: rgba(24, 14, 33, 0.88);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 20%),
+    rgba(24, 14, 33, 0.88);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 #play-area {
-  padding: 2px 0 0;
+  padding: 8px 10px 10px;
   position: relative;
   transform-origin: center top;
   flex: 0 0 auto;
@@ -496,7 +521,7 @@ a {
 #card-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 16px;
   align-items: start;
   position: relative;
 }
@@ -615,7 +640,7 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -625,13 +650,14 @@ a {
 
 .pile-label {
   color: var(--muted);
+  font-size: 0.65rem;
 }
 
 .current-card-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 #game.game-over-effect .current-card-wrap {
@@ -642,14 +668,14 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card-face,
 .card-back {
   width: var(--card-width);
   height: var(--card-height);
-  border-radius: 8px;
+  border-radius: 14px;
   position: relative;
   overflow: hidden;
   flex: 0 0 var(--card-width);
@@ -659,11 +685,16 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(69, 49, 86, 0.98), rgba(53, 37, 69, 0.98));
-  box-shadow: inset 0 0 0 2px rgba(247,125,246,0.6), var(--glow-pink);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), transparent 18%),
+    linear-gradient(180deg, rgba(69, 49, 86, 0.98), rgba(53, 37, 69, 0.98));
+  box-shadow:
+    inset 0 0 0 2px rgba(247,125,246,0.6),
+    var(--glow-pink);
   font-family: "Space Grotesk", sans-serif;
-  font-size: 2rem;
+  font-size: 2.08rem;
   font-weight: 700;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.14);
 }
 
 .card-face.red {
@@ -830,7 +861,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(188, 111, 186, 0.92), rgba(146, 86, 155, 0.95));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), transparent 22%),
+    linear-gradient(180deg, rgba(188, 111, 186, 0.92), rgba(146, 86, 155, 0.95));
   box-shadow:
     inset 0 0 0 2px rgba(255,255,255,0.12),
     inset -3px -3px 0 rgba(71, 31, 74, 0.26);
@@ -1334,8 +1367,8 @@ a {
 #next-info {
   min-height: 1.1em;
   text-align: center;
-  font-size: 0.76rem;
-  color: var(--muted);
+  font-size: 0.78rem;
+  color: #d5c8e0;
 }
 
 #current-effective-value {
@@ -1346,16 +1379,18 @@ a {
 .nudge-arrow {
   width: 50px;
   height: 58px;
-  border: 0;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(36, 27, 48, 0.98), rgba(23, 17, 31, 0.98));
+  border: 1px solid rgba(0,232,255,0.12);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), transparent 18%),
+    linear-gradient(180deg, rgba(36, 27, 48, 0.98), rgba(23, 17, 31, 0.98));
   box-shadow:
     inset 0 0 0 1px rgba(0,232,255,0.14),
-    0 0 14px rgba(0,232,255,0.08);
+    0 0 16px rgba(0,232,255,0.1);
   color: var(--cyan);
   display: grid;
   place-items: center;
-  gap: 3px;
+  gap: 4px;
   padding: 6px 0;
 }
 
@@ -1374,52 +1409,52 @@ a {
 }
 
 .nudge-count {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .nudge-label {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.56rem;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #c5bacf;
   text-align: center;
 }
 
 #controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 #higher-btn,
 #lower-btn {
-  min-height: 54px;
-  border: 0;
-  border-radius: 4px;
+  min-height: 58px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 1.55rem;
+  font-size: 1.48rem;
   font-weight: 800;
   font-style: italic;
   text-transform: uppercase;
-  letter-spacing: -0.03em;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.3);
 }
 
 #higher-btn {
   background: var(--lime);
   color: #304600;
-  box-shadow: 0 0 22px rgba(199,255,84,0.3);
+  box-shadow: 0 0 22px rgba(199,255,84,0.32), 0 10px 22px rgba(0,0,0,0.24);
 }
 
 #lower-btn {
   background: linear-gradient(180deg, #ef426f, #d52a58);
   color: #fff4f7;
-  box-shadow: 0 0 22px rgba(239,66,111,0.26);
+  box-shadow: 0 0 22px rgba(239,66,111,0.28), 0 10px 22px rgba(0,0,0,0.24);
 }
 
 #higher-btn:disabled,
@@ -1433,8 +1468,6 @@ a {
 #memory-panel,
 .utility-panel {
   padding: 10px 12px;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 
 .section-bar {
@@ -1446,7 +1479,7 @@ a {
 }
 
 .section-title {
-  color: #d7d0e0;
+  color: #efe7f6;
 }
 
 .section-scroll-hint {
@@ -1461,10 +1494,10 @@ a {
 
 .section-chip {
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   background: rgba(199,255,84,0.15);
   color: var(--lime);
-  font-size: 0.62rem;
+  font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1484,18 +1517,20 @@ a {
 
 .cheat-button {
   border: 0;
-  border-radius: 8px;
-  width: 114px;
-  min-width: 114px;
-  max-width: 114px;
-  min-height: 94px;
-  padding: 10px 6px;
+  border-radius: 12px;
+  width: 118px;
+  min-width: 118px;
+  max-width: 118px;
+  min-height: 96px;
+  padding: 10px 7px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: rgba(14, 10, 18, 0.98);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%),
+    rgba(14, 10, 18, 0.98);
   box-shadow:
     inset 0 0 0 2px rgba(247,125,246,0.42),
     0 0 14px rgba(247,125,246,0.12);
@@ -1533,13 +1568,13 @@ a {
 
 .cheat-name {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   text-align: center;
-  color: var(--muted);
-  line-height: 1.2;
+  color: #d1c8db;
+  line-height: 1.18;
 }
 
 #utility-row {
@@ -1597,8 +1632,10 @@ a {
   overflow-x: hidden;
   overflow-y: hidden;
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(102, 123, 50, 0.16), rgba(116, 137, 58, 0.26));
-  box-shadow: inset 0 0 0 1px rgba(0,232,255,0.14);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 20%),
+    linear-gradient(180deg, rgba(102, 123, 50, 0.16), rgba(116, 137, 58, 0.26));
+  box-shadow: inset 0 0 0 1px rgba(0,232,255,0.18);
   padding: 8px;
 }
 
@@ -1617,8 +1654,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
-  font-size: 0.42rem;
+  border-radius: 4px;
+  font-size: 0.44rem;
 }
 
 .grid-header,
@@ -1682,27 +1719,30 @@ a {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr 0.86fr;
   gap: 8px;
-  padding-top: 10px;
-  background: linear-gradient(180deg, transparent, rgba(18,11,26,0.92) 26%, rgba(18,11,26,0.98));
+  padding-top: 12px;
+  background: linear-gradient(180deg, transparent, rgba(18,11,26,0.88) 22%, rgba(18,11,26,0.98));
 }
 
 .nav-action {
   min-height: 54px;
-  border: 0;
-  border-radius: 6px;
-  background: rgba(30, 20, 40, 0.96);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%),
+    rgba(30, 20, 40, 0.96);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  color: rgba(240,229,247,0.65);
+  color: rgba(240,229,247,0.72);
 }
 
 .nav-action-primary {
   background: linear-gradient(180deg, #f67aea, #da6de0);
   color: #4f1b56;
-  box-shadow: 0 0 18px rgba(247,125,246,0.28);
+  box-shadow: 0 0 20px rgba(247,125,246,0.32);
 }
 
 .nav-icon {
@@ -1712,7 +1752,7 @@ a {
 
 .nav-label {
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -2326,7 +2366,7 @@ a {
   }
 
   #best-score {
-    font-size: 1.3rem;
+    font-size: 1.45rem;
   }
 
   #seed-console {
@@ -2370,13 +2410,13 @@ a {
   #current-effective-value,
   #next-info {
     min-height: 0.65em;
-    font-size: 0.7rem;
+    font-size: 0.74rem;
   }
 
   #higher-btn,
   #lower-btn {
-    min-height: 46px;
-    font-size: 1.2rem;
+    min-height: 48px;
+    font-size: 1.28rem;
   }
 
   #controls {
@@ -2394,14 +2434,14 @@ a {
   }
 
   .nudge-count {
-    font-size: 0.76rem;
+    font-size: 0.84rem;
   }
 
   #message-bar {
     min-height: calc(1.2em * 2 + 8px);
     padding: 4px 10px;
-    font-size: 0.78rem;
-    line-height: 1.2;
+    font-size: 0.82rem;
+    line-height: 1.24;
   }
 
   #cheats-panel,
@@ -2435,10 +2475,10 @@ a {
   }
 
   .cheat-button {
-    width: 102px;
-    min-width: 102px;
-    max-width: 102px;
-    min-height: 80px;
+    width: 106px;
+    min-width: 106px;
+    max-width: 106px;
+    min-height: 84px;
     padding: 8px 6px;
   }
 
