@@ -802,9 +802,19 @@ function renderFaceDownDeck() {
 }
 
 function renderButtons() {
+  const controls = document.getElementById("controls");
   const higherBtn = document.getElementById("higher-btn");
   const lowerBtn = document.getElementById("lower-btn");
-  if (!higherBtn || !lowerBtn) return;
+  if (!controls || !higherBtn || !lowerBtn) return;
+
+  const hideControls = state.pendingPowerOptions.length > 0;
+  controls.hidden = hideControls;
+  controls.setAttribute("aria-hidden", hideControls ? "true" : "false");
+  if (hideControls) {
+    higherBtn.disabled = true;
+    lowerBtn.disabled = true;
+    return;
+  }
 
   const tutorialBlocked = typeof window.isTutorialGuessButtonsDisabled === "function"
     ? window.isTutorialGuessButtonsDisabled()

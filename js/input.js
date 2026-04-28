@@ -170,6 +170,7 @@ function createTutorialController() {
   let focusedTarget = null;
   let cheatOfferPollTimer = null;
   let revealAdvancePollTimer = null;
+  let highlightSyncRaf = null;
   let tutorialCheatOfferHandled = false;
 
   function getActiveSteps() {
@@ -188,6 +189,50 @@ function createTutorialController() {
     focusedTarget = null;
   }
 
+  function clearHighlightSync() {
+    if (highlightSyncRaf !== null) {
+      cancelAnimationFrame(highlightSyncRaf);
+      highlightSyncRaf = null;
+    }
+  }
+
+  function positionHighlight(step) {
+    if (!active) return;
+    if (step?.showHighlight === false) {
+      highlight.style.display = "none";
+      clearFocusTarget();
+      return;
+    }
+    const target = step?.target ? document.querySelector(step.target) : null;
+    if (!target) {
+      highlight.style.display = "none";
+      clearFocusTarget();
+      return;
+    }
+
+    if (focusedTarget !== target) {
+      clearFocusTarget();
+      focusedTarget = target;
+      target.classList.add("tutorial-focus-target");
+    }
+
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    highlight.style.display = "block";
+    highlight.style.top = `${Math.max(6, rect.top - pad)}px`;
+    highlight.style.left = `${Math.max(6, rect.left - pad)}px`;
+    highlight.style.width = `${Math.min(window.innerWidth - 12, rect.width + pad * 2)}px`;
+    highlight.style.height = `${Math.min(window.innerHeight - 12, rect.height + pad * 2)}px`;
+  }
+
+  function scheduleHighlightSync(step) {
+    clearHighlightSync();
+    highlightSyncRaf = requestAnimationFrame(() => {
+      highlightSyncRaf = null;
+      positionHighlight(step);
+    });
+  }
+
   function clearCheatOfferPoll() {
     if (cheatOfferPollTimer) {
       clearTimeout(cheatOfferPollTimer);
@@ -203,26 +248,7 @@ function createTutorialController() {
   }
 
   function setFocusTarget(step) {
-    clearFocusTarget();
-    if (step?.showHighlight === false) {
-      highlight.style.display = "none";
-      return;
-    }
-    const target = step?.target ? document.querySelector(step.target) : null;
-    if (!target) {
-      highlight.style.display = "none";
-      return;
-    }
-    focusedTarget = target;
-    target.classList.add("tutorial-focus-target");
-    highlight.style.display = "block";
-
-    const rect = target.getBoundingClientRect();
-    const pad = 8;
-    highlight.style.top = `${Math.max(6, rect.top - pad)}px`;
-    highlight.style.left = `${Math.max(6, rect.left - pad)}px`;
-    highlight.style.width = `${Math.min(window.innerWidth - 12, rect.width + pad * 2)}px`;
-    highlight.style.height = `${Math.min(window.innerHeight - 12, rect.height + pad * 2)}px`;
+    positionHighlight(step);
   }
 
   function setTutorialCompleted() {
@@ -234,6 +260,7 @@ function createTutorialController() {
     if (!active) return;
     active = false;
     clearFocusTarget();
+    clearHighlightSync();
     clearCheatOfferPoll();
     clearRevealAdvancePoll();
     overlay.classList.add("hidden");
@@ -262,8 +289,8 @@ function createTutorialController() {
       : (step.nextLabel || (stepIndex === steps.length - 1 ? "Finish" : "Next"));
     nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick || !!step.requireCheatPick || !!step.requireCheatUse;
     overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
-    setFocusTarget(step);
     syncTutorialLockedControls();
+    scheduleHighlightSync(step);
   }
 
   function syncTutorialLockedControls() {
@@ -522,12 +549,22 @@ function createTutorialController() {
   skipBtn.addEventListener("click", () => closeOverlay({ complete: true }));
   window.addEventListener("resize", () => {
     if (!active) return;
-    renderStep();
+    scheduleHighlightSync(getActiveSteps()[stepIndex]);
   });
   window.addEventListener("scroll", () => {
     if (!active) return;
-    renderStep();
+    scheduleHighlightSync(getActiveSteps()[stepIndex]);
   }, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+      if (!active) return;
+      scheduleHighlightSync(getActiveSteps()[stepIndex]);
+    });
+    window.visualViewport.addEventListener("scroll", () => {
+      if (!active) return;
+      scheduleHighlightSync(getActiveSteps()[stepIndex]);
+    });
+  }
 
   return {
     maybeStartRun,
