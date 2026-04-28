@@ -433,6 +433,7 @@ function createTutorialController() {
           return;
         }
         state.message = "Tutorial bonus ready.";
+        nextStep();
         render();
         return;
       }

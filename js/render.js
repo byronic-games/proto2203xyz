@@ -810,6 +810,7 @@ function renderButtons() {
   const hideControls = state.pendingPowerOptions.length > 0 || state.pendingCheatOptions.length > 0;
   controls.hidden = hideControls;
   controls.setAttribute("aria-hidden", hideControls ? "true" : "false");
+  controls.style.display = hideControls ? "none" : "";
   if (hideControls) {
     higherBtn.disabled = true;
     lowerBtn.disabled = true;
