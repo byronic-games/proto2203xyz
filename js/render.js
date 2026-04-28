@@ -1023,6 +1023,7 @@ function renderCheatChoice() {
   list.innerHTML = "";
 
   if (!state.pendingCheatOptions.length) {
+    document.body.classList.remove("choice-modal-open", "cheat-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
     if (currentCardEl) {
@@ -1032,6 +1033,8 @@ function renderCheatChoice() {
     return;
   }
 
+  document.body.classList.remove("power-choice-open");
+  document.body.classList.add("choice-modal-open", "cheat-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
   renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
@@ -1107,6 +1110,7 @@ function renderPowerChoice() {
   list.dataset.count = String(state.pendingPowerOptions.length || 0);
 
   if (!state.pendingPowerOptions.length) {
+    document.body.classList.remove("choice-modal-open", "power-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
     if (currentCardEl) {
@@ -1116,6 +1120,8 @@ function renderPowerChoice() {
     return;
   }
 
+  document.body.classList.remove("cheat-choice-open");
+  document.body.classList.add("choice-modal-open", "power-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
 

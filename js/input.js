@@ -56,7 +56,6 @@ document.getElementById("lower-btn").onclick = () => handleGuessButtonPress("low
 
 function createTutorialController() {
   const overlay = document.getElementById("tutorial-overlay");
-  const highlight = document.getElementById("tutorial-highlight");
   const title = document.getElementById("tutorial-title");
   const copy = document.getElementById("tutorial-copy");
   const progress = document.getElementById("tutorial-progress");
@@ -153,7 +152,7 @@ function createTutorialController() {
     },
   ];
 
-  if (!overlay || !highlight || !title || !copy || !progress || !nextBtn || !skipBtn || !tutorialEnabled) {
+  if (!overlay || !title || !copy || !progress || !nextBtn || !skipBtn || !tutorialEnabled) {
     return {
       maybeStartRun() {},
       maybeStartPowerChoice() {},
@@ -177,7 +176,6 @@ function createTutorialController() {
   let focusedTarget = null;
   let cheatOfferPollTimer = null;
   let revealAdvancePollTimer = null;
-  let highlightSyncRaf = null;
   let tutorialCheatOfferHandled = false;
 
   function getActiveSteps() {
@@ -196,43 +194,6 @@ function createTutorialController() {
     focusedTarget = null;
   }
 
-  function clearHighlightSync() {
-    if (highlightSyncRaf !== null) {
-      cancelAnimationFrame(highlightSyncRaf);
-      highlightSyncRaf = null;
-    }
-  }
-
-  function positionHighlight(step) {
-    if (!active) return;
-    if (step?.showHighlight === false) {
-      highlight.style.display = "none";
-      clearFocusTarget();
-      return;
-    }
-    const target = step?.target ? document.querySelector(step.target) : null;
-    if (!target) {
-      highlight.style.display = "none";
-      clearFocusTarget();
-      return;
-    }
-
-    if (focusedTarget !== target) {
-      clearFocusTarget();
-      focusedTarget = target;
-      target.classList.add("tutorial-focus-target");
-    }
-    highlight.style.display = "none";
-  }
-
-  function scheduleHighlightSync(step) {
-    clearHighlightSync();
-    highlightSyncRaf = requestAnimationFrame(() => {
-      highlightSyncRaf = null;
-      positionHighlight(step);
-    });
-  }
-
   function clearCheatOfferPoll() {
     if (cheatOfferPollTimer) {
       clearTimeout(cheatOfferPollTimer);
@@ -248,7 +209,20 @@ function createTutorialController() {
   }
 
   function setFocusTarget(step) {
-    positionHighlight(step);
+    if (step?.showHighlight === false) {
+      clearFocusTarget();
+      return;
+    }
+    const target = step?.target ? document.querySelector(step.target) : null;
+    if (!target) {
+      clearFocusTarget();
+      return;
+    }
+    if (focusedTarget !== target) {
+      clearFocusTarget();
+      focusedTarget = target;
+      target.classList.add("tutorial-focus-target");
+    }
   }
 
   function setTutorialCompleted() {
@@ -260,13 +234,11 @@ function createTutorialController() {
     if (!active) return;
     active = false;
     clearFocusTarget();
-    clearHighlightSync();
     clearCheatOfferPoll();
     clearRevealAdvancePoll();
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     overlay.classList.remove("tutorial-clear-view");
-    highlight.style.display = "none";
     syncTutorialLockedControls();
     if (complete) {
       setTutorialCompleted();
@@ -289,8 +261,8 @@ function createTutorialController() {
       : (step.nextLabel || (stepIndex === steps.length - 1 ? "Finish" : "Next"));
     nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick || !!step.requireCheatPick || !!step.requireCheatUse;
     overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
+    setFocusTarget(step);
     syncTutorialLockedControls();
-    scheduleHighlightSync(step);
   }
 
   function syncTutorialLockedControls() {
@@ -392,9 +364,7 @@ function createTutorialController() {
   function isBlockingPowerPick() {
     if (!active) return false;
     if (phase !== "power") return false;
-    const steps = getActiveSteps();
-    const step = steps[stepIndex];
-    return !step?.requirePowerPick;
+    return false;
   }
 
   function isTutorialCheatOfferActive() {
@@ -408,7 +378,7 @@ function createTutorialController() {
     if (!active || phase !== "run") return false;
     const steps = getActiveSteps();
     const step = steps[stepIndex];
-    return !step?.requireCheatPick;
+    return !step?.requireCheatPick && !(Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0);
   }
 
   function isBlockingCheatUse() {
@@ -506,9 +476,6 @@ function createTutorialController() {
     if (!active) return;
     if (phase !== "power") return;
     if (isRewardChoice) return;
-    const steps = getActiveSteps();
-    const step = steps[stepIndex];
-    if (!step?.requirePowerPick) return;
     const powerName = power?.name || "that power";
     state.message = `Nice pick. ${powerName} is now your starting power.`;
     closeOverlay({ complete: false });
@@ -518,7 +485,8 @@ function createTutorialController() {
     if (!active || phase !== "run") return;
     const steps = getActiveSteps();
     const step = steps[stepIndex];
-    if (!step?.requireCheatPick) return;
+    const choiceAvailable = Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0;
+    if (!step?.requireCheatPick && !choiceAvailable) return;
     tutorialCheatOfferHandled = true;
     state.message = `Nice pick. ${cheat?.name || "That cheat"} is in hand.`;
     nextStep();
@@ -548,24 +516,6 @@ function createTutorialController() {
   });
 
   skipBtn.addEventListener("click", () => closeOverlay({ complete: true }));
-  window.addEventListener("resize", () => {
-    if (!active) return;
-    scheduleHighlightSync(getActiveSteps()[stepIndex]);
-  });
-  window.addEventListener("scroll", () => {
-    if (!active) return;
-    scheduleHighlightSync(getActiveSteps()[stepIndex]);
-  }, { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () => {
-      if (!active) return;
-      scheduleHighlightSync(getActiveSteps()[stepIndex]);
-    });
-    window.visualViewport.addEventListener("scroll", () => {
-      if (!active) return;
-      scheduleHighlightSync(getActiveSteps()[stepIndex]);
-    });
-  }
 
   return {
     maybeStartRun,
