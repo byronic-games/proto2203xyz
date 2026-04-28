@@ -569,10 +569,6 @@ function getRedDeckStatsSummary(entry) {
   const blueNudgedUses = entry.nudgeStats?.blueNudgedUses || 0;
   const totalUpAmount = entry.nudgeStats?.totalUpAmount || 0;
   const totalDownAmount = entry.nudgeStats?.totalDownAmount || 0;
-  const totalDirectionalNudges = totalUpAmount + totalDownAmount;
-  const upSplitPercent = totalDirectionalNudges
-    ? Math.round((totalUpAmount / totalDirectionalNudges) * 100)
-    : 50;
 
   return {
     seenCount: blueFaceUpUses,
@@ -580,8 +576,6 @@ function getRedDeckStatsSummary(entry) {
     nudgedPercent: formatNudgedPercentage(blueNudgedUses, blueFaceUpUses),
     upTotal: totalUpAmount,
     downTotal: totalDownAmount,
-    upSplitPercent,
-    downSplitPercent: 100 - upSplitPercent,
   };
 }
 
@@ -590,7 +584,7 @@ function getRedDeckStatsTooltipBody(entry) {
   return [
     "Seen: times this card has been face up in Blue runs.",
     `Nudged: percentage of those face-up turns where players nudged it at least once (${summary.nudgedCount}/${summary.seenCount}).`,
-    "Chart: split of the total upward vs downward nudge amount applied while this card was face up.",
+    "Up / Down: total upward vs downward nudge amount applied while this card was face up.",
     `Up / Down totals: ${summary.upTotal} up, ${summary.downTotal} down.`,
   ].join("\n");
 }
@@ -773,23 +767,14 @@ function renderFaceDownDeck() {
         <div class="card-back-stats-primary">${statsSummary.nudgedPercent}</div>
         <div class="card-back-stats-sub">${statsSummary.nudgedCount} of ${statsSummary.seenCount} seen</div>
       </div>
-      <div class="card-back-stats-chart-wrap">
-        <div
-          class="card-back-stats-chart"
-          style="--split-angle:${statsSummary.upSplitPercent * 3.6}deg;"
-          aria-hidden="true"
-        >
-          <div class="card-back-stats-chart-hole"></div>
+      <div class="card-back-stats-split">
+        <div class="card-back-stats-metric card-back-stats-up">
+          <div class="card-back-stats-metric-label">Up</div>
+          <div class="card-back-stats-metric-value">${statsSummary.upTotal}</div>
         </div>
-      </div>
-      <div class="card-back-stats-legend">
-        <div class="card-back-stats-legend-item">
-          <span class="card-back-stats-legend-label">Up</span>
-          <span class="card-back-stats-legend-value">${statsSummary.upTotal}</span>
-        </div>
-        <div class="card-back-stats-legend-item">
-          <span class="card-back-stats-legend-label">Down</span>
-          <span class="card-back-stats-legend-value">${statsSummary.downTotal}</span>
+        <div class="card-back-stats-metric card-back-stats-down">
+          <div class="card-back-stats-metric-label">Down</div>
+          <div class="card-back-stats-metric-value">${statsSummary.downTotal}</div>
         </div>
       </div>
     `;
