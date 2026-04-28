@@ -222,14 +222,7 @@ function createTutorialController() {
       focusedTarget = target;
       target.classList.add("tutorial-focus-target");
     }
-
-    const rect = target.getBoundingClientRect();
-    const pad = 8;
-    highlight.style.display = "block";
-    highlight.style.top = `${Math.max(6, rect.top - pad)}px`;
-    highlight.style.left = `${Math.max(6, rect.left - pad)}px`;
-    highlight.style.width = `${Math.min(window.innerWidth - 12, rect.width + pad * 2)}px`;
-    highlight.style.height = `${Math.min(window.innerHeight - 12, rect.height + pad * 2)}px`;
+    highlight.style.display = "none";
   }
 
   function scheduleHighlightSync(step) {

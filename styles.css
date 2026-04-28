@@ -1919,6 +1919,11 @@ a {
 .tutorial-focus-target {
   position: relative;
   z-index: 1303 !important;
+  box-shadow:
+    0 0 0 3px rgba(128, 238, 255, 0.98),
+    0 0 24px rgba(109, 228, 255, 0.56),
+    0 0 52px rgba(109, 228, 255, 0.24) !important;
+  border-radius: inherit;
 }
 
 .help-dialog,
