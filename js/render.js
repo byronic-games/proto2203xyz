@@ -40,6 +40,10 @@ function removeRevealStateClasses(el) {
   el.classList.remove("reveal-flip", "reveal-flip-out", "reveal-flip-in", "reveal-flip-180", "reveal-promote", "reveal-settle", "reveal-fail");
 }
 
+function getPreservedTutorialFocusClass(el) {
+  return el?.classList?.contains("tutorial-focus-target") ? " tutorial-focus-target" : "";
+}
+
 function playPendingCardRevealAnimation() {
   const pending = state.pendingRevealAnimation;
   if (!pending) return;
@@ -519,7 +523,7 @@ function renderCurrentCard() {
 
   if (!cardToRender) {
     const idleBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
-    currentCardEl.className = `card-back card-back-${idleBackColor}`;
+    currentCardEl.className = `card-back card-back-${idleBackColor}${getPreservedTutorialFocusClass(currentCardEl)}`;
     currentCardEl.innerHTML = `<div class="card-back-symbol">🂠</div>`;
     currentValueEl.innerText = "";
     return;
@@ -540,7 +544,7 @@ function renderCurrentCard() {
     ? `feedback-${state.currentCardFeedback}`
     : "";
 
-  currentCardEl.className = `card-face ${isRed(cardToRender) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass}`.trim();
+  currentCardEl.className = `card-face ${isRed(cardToRender) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass}${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
   currentCardEl.innerHTML = renderCardFaceMarkup(
     cardToRender,
     effectiveValue,
@@ -672,7 +676,7 @@ function renderFaceDownDeck() {
   if (!state.current) {
     deckEl.innerHTML = "";
     const idleDeckBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
-    deckEl.className = `card-back card-back-${idleDeckBackColor}`;
+    deckEl.className = `card-back card-back-${idleDeckBackColor}${getPreservedTutorialFocusClass(deckEl)}`;
     deckEl.removeAttribute("data-back-color");
     countEl.innerText = "";
     if (remainingValueEl) remainingValueEl.innerText = "00";
@@ -694,7 +698,7 @@ function renderFaceDownDeck() {
     const revealBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
     const showRevealFace = !!pendingReveal.revealSwapDone;
     if (showRevealFace) {
-      deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
+      deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
       deckEl.innerHTML = renderCardFaceMarkup(
         revealCard,
         revealValue,
@@ -702,7 +706,7 @@ function renderFaceDownDeck() {
         revealStatus.tornCorner
       );
     } else {
-      deckEl.className = `card-back card-back-${revealBackColor} ${revealStatus.tornCorner ? "torn-corner" : ""}`.trim();
+      deckEl.className = `card-back card-back-${revealBackColor} ${revealStatus.tornCorner ? "torn-corner" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
       deckEl.innerHTML = `<div class="card-back-symbol">&#127136;</div>`;
       if (revealStatus.tornCorner) {
         const tear = document.createElement("div");
@@ -734,9 +738,10 @@ function renderFaceDownDeck() {
   const backColor = getDeckBackColor(state.currentDeckKey);
   const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
 
+  const tutorialFocusClass = getPreservedTutorialFocusClass(deckEl);
   deckEl.className = shouldShowDeckStatsInline
-    ? `card-face red card-stats-face ${backStatus.tornCorner ? "torn-corner-face" : ""}`.trim()
-    : `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}`.trim();
+    ? `card-face red card-stats-face ${backStatus.tornCorner ? "torn-corner-face" : ""}${tutorialFocusClass}`.trim()
+    : `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}${tutorialFocusClass}`.trim();
   deckEl.setAttribute("data-back-color", backColor);
   deckEl.innerHTML = "";
 

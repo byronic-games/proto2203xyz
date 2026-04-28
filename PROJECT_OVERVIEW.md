@@ -3,6 +3,7 @@
 ## What It Is
 - `52!` is a browser-based higher/lower card game with progression, powers, cheats, and shared Daily mode.
 - Mobile-first UI; desktop is supported but not primary.
+- HTML is now served as revalidating content via `.htaccess`; versioned JS/CSS assets are expected to be cache-busted when changed.
 
 ## Core Surfaces
 - `index.html`: entry hub
@@ -24,14 +25,14 @@
 ## Gameplay Notes
 - Aces are low.
 - Equal-value comparisons continue the run.
-- Cards-cleared model is now “start at 1” (starting face-up card counts).
+- Cards-cleared model is now "start at 1" (starting face-up card counts).
 - Nudges use separate + / - charge pools.
 - Daily/Heroes support Supabase + local fallback behavior.
 
 ## Main Code Ownership
 - `js/logic.js`: game rules and state transitions
 - `js/render.js`: DOM rendering and animation hooks
-- `js/input.js`: controls/input gating
+- `js/input.js`: controls/input gating + tutorial flow
 - `js/storage.js`: persistence/migrations
 - `js/daily.js` + `js/daily-page.js`: Daily data flow/UI
 - `js/leaderboard.js` + `js/heroes.js`: Heroes/crowns rendering
@@ -40,3 +41,8 @@
 
 ## Current Critical Risk
 - Reveal animation on some Android browsers still fails to show face mid-flip.
+
+## Current Sensitive Area
+- Tutorial / choice-modal behavior on mobile was recently adjusted:
+  - target-element highlighting replaces floating highlight positioning
+  - gameplay guess buttons should hide while power / cheat choice modals are open

@@ -1890,11 +1890,37 @@ body.choice-modal-open #controls {
 .tutorial-focus-target {
   position: relative;
   z-index: 1303 !important;
+  outline: 2px solid rgba(128, 238, 255, 0.98);
+  outline-offset: 3px;
   box-shadow:
     0 0 0 3px rgba(128, 238, 255, 0.98),
     0 0 24px rgba(109, 228, 255, 0.56),
-    0 0 52px rgba(109, 228, 255, 0.24) !important;
+    0 0 52px rgba(109, 228, 255, 0.24);
   border-radius: inherit;
+  animation: tutorial-focus-throb 1200ms ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform, box-shadow, filter;
+}
+
+@keyframes tutorial-focus-throb {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow:
+      0 0 0 3px rgba(128, 238, 255, 0.88),
+      0 0 18px rgba(109, 228, 255, 0.42),
+      0 0 42px rgba(109, 228, 255, 0.18);
+  }
+
+  50% {
+    transform: scale(1.035);
+    filter: brightness(1.13);
+    box-shadow:
+      0 0 0 5px rgba(128, 238, 255, 1),
+      0 0 30px rgba(109, 228, 255, 0.72),
+      0 0 70px rgba(109, 228, 255, 0.34);
+  }
 }
 
 .help-dialog,

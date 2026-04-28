@@ -15,13 +15,17 @@
 - Levels: 1-4 currently wired for Blue, Green, Red.
 - Daily and Heroes use Supabase when online; local fallback exists.
 - Daily now has a share button on the result panel, but it is intentionally code-gated off for now with `DAILY_SHARE_ENABLED = false` in `js/daily-page.js`.
-- Android standalone/home-screen sizing was tightened using `visualViewport.height` plus short-screen CSS compression; if layout looks clipped, check cached HTML/JS first.
+- Android standalone/home-screen sizing was tightened using `visualViewport.height` plus short-screen CSS compression.
+- Mobile cache behavior is now split:
+  - HTML / manifest-style files revalidate via `.htaccess`
+  - versioned JS / CSS assets remain aggressively cacheable
+- Tutorial highlighting now styles the actual target element instead of positioning a separate floating highlight box.
 
 ## Non-Negotiables
 - Do not wipe player storage unless explicitly asked.
 - Keep unlock order and existing progress compatible.
 - Keep mobile layout stable first; desktop is secondary.
-- After JS/CSS edits, bump HTML query versions on pages that load them.
+- After JS/CSS edits, bump HTML query versions on pages that load them even though HTML now revalidates on the server.
 - Avoid broad refactors unless requested.
 
 ## Current Known Live Bug
@@ -31,13 +35,25 @@
   - midpoint swap (flip-out / flip-in)
 - Status: still reported as broken on-device; see `KNOWN_ISSUES.md`.
 
+## Recently Touched Areas
+- Tutorial flow in `js/input.js`:
+  - power-pick blocking relaxed
+  - cheat-choice progression split from streak-building
+  - floating highlight plumbing removed
+- Choice modal visibility in `js/render.js` and `styles.css`:
+  - `body.choice-modal-open` hides the gameplay guess row
+- Cache behavior:
+  - `.htaccess` now sends `no-cache` headers for HTML-like files
+  - `game.html` asset query strings were bumped alongside tutorial/UI fixes
+
 ## Crown/Leaderboard Rules (Current)
 - Daily board should render crowns from row-backed enrichment only (not viewer-local state).
 - Blue/Green/Red crowns from clear booleans.
 - Gold daily crown from durable daily clear signal and legacy fallback logic.
 
-## Quick “Do First” For New AI
+## Quick "Do First" For New AI
 1. Run `RUNBOOK.md` smoke checks.
 2. Reproduce current flip bug on Android profile.
-3. Patch minimally and verify Daily/Heroes/Profile did not regress.
-4. If Daily sharing is being revisited, start in `js/daily-page.js` and keep the toggle code-only unless explicitly asked to expose it in the UI.
+3. Re-test tutorial overlays and choice-modal behavior on mobile before changing adjacent UI.
+4. Patch minimally and verify Daily/Heroes/Profile did not regress.
+5. If Daily sharing is being revisited, start in `js/daily-page.js` and keep the toggle code-only unless explicitly asked to expose it in the UI.

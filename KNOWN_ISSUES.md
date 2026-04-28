@@ -6,8 +6,9 @@
   - Affects perceived gameplay quality and trust in reveal flow.
 
 ## P1
-- Mobile browser caching can hold stale JS/CSS if query strings are not bumped.
-- Daily/Heroes availability depends on Supabase policy/API state; misconfig can appear as “loading forever”.
+- Mobile browser caching still depends on version discipline for JS/CSS even though `.htaccess` now forces HTML revalidation.
+- Daily/Heroes availability depends on Supabase policy/API state; misconfig can appear as "loading forever".
+- Tutorial and choice-modal flow on mobile was recently patched and should be treated as regression-sensitive until re-confirmed on device.
 
 ## P2
 - Name-based identity fallback for crowns is still imperfect when names collide/rename.

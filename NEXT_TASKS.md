@@ -11,6 +11,8 @@
 
 ## P0 - Regression Pass After Animation Fix
 - Verify tutorial flow still works.
+- Verify tutorial step progression reaches cheat choice cleanly and power choice remains tappable.
+- Verify `Higher / Lower` stays hidden whenever power or cheat choice modals are open.
 - Verify game-over and deck-clear flows still animate correctly.
 - Verify Cursed Shield overlay badge behavior unaffected.
 
@@ -24,3 +26,4 @@
 ## P2 - Optional Visual Polish
 - Add reveal effect hooks per outcome/card type (already partially scaffolded).
 - Tune timings for low-end Android performance.
+- If tutorial UI changes continue, keep target-element highlighting and avoid reintroducing floating overlay-box positioning.
