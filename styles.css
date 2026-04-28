@@ -962,12 +962,12 @@ a {
 
 .card-back-stats {
   position: absolute;
-  inset: 10px 9px;
+  inset: 9px 8px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px 8px 8px;
-  border-radius: 20px;
+  padding: 11px 9px 9px;
+  border-radius: 19px;
   background: linear-gradient(180deg, rgba(74, 54, 92, 0.78), rgba(47, 33, 63, 0.86));
   box-shadow:
     inset 0 10px 18px rgba(255,255,255,0.02),
@@ -984,12 +984,12 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   text-align: center;
 }
 
 .card-back-stats-kicker {
-  font-size: 0.4rem;
+  font-size: 0.46rem;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -999,18 +999,18 @@ a {
 }
 
 .card-back-stats-primary {
-  font-size: clamp(1.18rem, 7.2vw, 1.7rem);
+  font-size: clamp(1.3rem, 8.1vw, 1.95rem);
   font-weight: 800;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.07em;
   color: rgba(255,255,255,0.98);
-  line-height: 0.9;
+  line-height: 0.88;
   text-align: center;
 }
 
 .card-back-stats-sub {
-  font-size: clamp(0.34rem, 1.45vw, 0.44rem);
+  font-size: clamp(0.38rem, 1.65vw, 0.5rem);
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: rgba(226, 236, 245, 0.76);
   line-height: 1.05;
   text-align: center;
@@ -1019,7 +1019,7 @@ a {
 .card-back-stats-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  gap: 6px;
   align-items: stretch;
 }
 
@@ -1030,7 +1030,7 @@ a {
   justify-content: center;
   gap: 2px;
   min-height: 0;
-  padding: 7px 4px 6px;
+  padding: 8px 4px 7px;
   border-radius: 999px;
   background:
     linear-gradient(180deg, rgba(34, 23, 45, 0.9), rgba(23, 16, 32, 0.92));
@@ -1048,7 +1048,7 @@ a {
 }
 
 .card-back-stats-metric-label {
-  font-size: 0.33rem;
+  font-size: 0.38rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1057,7 +1057,7 @@ a {
 }
 
 .card-back-stats-metric-value {
-  font-size: clamp(1rem, 5.8vw, 1.45rem);
+  font-size: clamp(1.08rem, 6.4vw, 1.62rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.06em;
@@ -1073,37 +1073,37 @@ a {
 @media (max-width: 420px) {
   .card-back-stats {
     inset: 8px 7px;
-    padding: 8px 6px 6px;
+    padding: 9px 7px 7px;
     border-radius: 18px;
   }
 
   .card-back-stats-top {
-    gap: 1px;
+    gap: 2px;
   }
 
   .card-back-stats-primary {
-    font-size: 1.12rem;
+    font-size: 1.2rem;
   }
 
   .card-back-stats-sub {
-    font-size: 0.36rem;
+    font-size: 0.39rem;
   }
 
   .card-back-stats-split {
-    gap: 5px;
+    gap: 6px;
   }
 
   .card-back-stats-metric {
-    padding: 6px 3px 5px;
+    padding: 7px 4px 6px;
     border-radius: 999px;
   }
 
   .card-back-stats-metric-label {
-    font-size: 0.29rem;
+    font-size: 0.32rem;
   }
 
   .card-back-stats-metric-value {
-    font-size: 0.98rem;
+    font-size: 1.06rem;
   }
 }
 
@@ -1114,15 +1114,15 @@ a {
   }
 
   .card-back-stats-primary {
-    font-size: 1rem;
+    font-size: 1.08rem;
   }
 
   .card-back-stats-sub {
-    font-size: 0.32rem;
+    font-size: 0.35rem;
   }
 
   .card-back-stats-split {
-    gap: 4px;
+    gap: 5px;
   }
 
   .card-back-stats-metric {
@@ -1130,11 +1130,11 @@ a {
   }
 
   .card-back-stats-metric-label {
-    font-size: 0.27rem;
+    font-size: 0.29rem;
   }
 
   .card-back-stats-metric-value {
-    font-size: 0.92rem;
+    font-size: 0.98rem;
   }
 }
 
