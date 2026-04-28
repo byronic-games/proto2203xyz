@@ -105,6 +105,13 @@ function createTutorialController() {
       copy: "Keep guessing until you have made three correct guesses. Then you will unlock a cheat choice and pick one yourself.",
       requireGuess: true,
       untilCorrectAnswers: 3,
+      waitForCheatOffer: true,
+      clearView: true,
+    },
+    {
+      target: "#cheat-choice-container .choice-modal",
+      title: "Choose Your Cheat",
+      copy: "Your streak unlocked a cheat choice. Pick one now to continue the tutorial.",
       requireCheatPick: true,
       clearView: true,
     },

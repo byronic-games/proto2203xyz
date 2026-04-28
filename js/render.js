@@ -807,7 +807,7 @@ function renderButtons() {
   const lowerBtn = document.getElementById("lower-btn");
   if (!controls || !higherBtn || !lowerBtn) return;
 
-  const hideControls = state.pendingPowerOptions.length > 0;
+  const hideControls = state.pendingPowerOptions.length > 0 || state.pendingCheatOptions.length > 0;
   controls.hidden = hideControls;
   controls.setAttribute("aria-hidden", hideControls ? "true" : "false");
   if (hideControls) {
