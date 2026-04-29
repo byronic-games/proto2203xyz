@@ -1898,15 +1898,13 @@ body.choice-modal-open #controls {
     0 0 52px rgba(109, 228, 255, 0.24);
   border-radius: inherit;
   animation: tutorial-focus-throb 1200ms ease-in-out infinite;
-  transform-origin: center;
-  will-change: transform, box-shadow, filter;
+  will-change: box-shadow, outline-color;
 }
 
 @keyframes tutorial-focus-throb {
   0%,
   100% {
-    transform: scale(1);
-    filter: brightness(1);
+    outline-color: rgba(128, 238, 255, 0.82);
     box-shadow:
       0 0 0 3px rgba(128, 238, 255, 0.88),
       0 0 18px rgba(109, 228, 255, 0.42),
@@ -1914,8 +1912,7 @@ body.choice-modal-open #controls {
   }
 
   50% {
-    transform: scale(1.035);
-    filter: brightness(1.13);
+    outline-color: rgba(128, 238, 255, 1);
     box-shadow:
       0 0 0 5px rgba(128, 238, 255, 1),
       0 0 30px rgba(109, 228, 255, 0.72),
