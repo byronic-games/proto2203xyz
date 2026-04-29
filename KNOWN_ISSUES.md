@@ -8,7 +8,7 @@
 ## P1
 - Mobile browser caching still depends on version discipline for JS/CSS even though `.htaccess` now forces HTML revalidation.
 - Daily/Heroes availability depends on Supabase policy/API state; misconfig can appear as "loading forever".
-- Tutorial and choice-modal flow on mobile was recently patched and should be treated as regression-sensitive until re-confirmed on device.
+- Tutorial and choice-modal flow on mobile was recently patched and should be treated as regression-sensitive until re-confirmed on device. Current-card and face-down-card highlights now preserve focus through redraws and throb via CSS.
 
 ## P2
 - Name-based identity fallback for crowns is still imperfect when names collide/rename.

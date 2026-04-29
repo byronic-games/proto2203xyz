@@ -130,6 +130,116 @@ function saveLocalDailyAttempt(entry) {
   return attempts[entry.dateKey];
 }
 
+function getDailyRequestHeaders(config, includeJson = false, prefer = "") {
+  const headers = {
+    apikey: config.supabaseAnonKey,
+    Authorization: `Bearer ${config.supabaseAnonKey}`,
+  };
+  if (includeJson) headers["Content-Type"] = "application/json";
+  if (prefer) headers.Prefer = prefer;
+  return headers;
+}
+
+function buildDailyRemotePayload(entry, includeCrownFields = true) {
+  const payload = {
+    date_key: entry.dateKey,
+    seed: entry.seed,
+    player_name: entry.playerName,
+    player_id: entry.playerId,
+    score: entry.score,
+    game_version: GAME_VERSION,
+  };
+
+  if (includeCrownFields) {
+    payload.blue_cleared = entry.blueCleared;
+    payload.green_cleared = entry.greenCleared;
+    payload.red_cleared = entry.redCleared;
+    payload.daily_clears = entry.dailyClears;
+    payload.crown_summary = entry.crownSummary;
+  }
+
+  return payload;
+}
+
+function buildDailyRemoteIdentityQuery(entry) {
+  const dateKey = encodeURIComponent(entry.dateKey);
+  if (entry.playerId) {
+    return `date_key=eq.${dateKey}&player_id=eq.${encodeURIComponent(entry.playerId)}`;
+  }
+
+  return [
+    `date_key=eq.${dateKey}`,
+    `seed=eq.${encodeURIComponent(entry.seed)}`,
+    `player_name=eq.${encodeURIComponent(entry.playerName)}`,
+    `score=eq.${encodeURIComponent(entry.score)}`,
+  ].join("&");
+}
+
+async function remoteDailyEntryExists(entry, config = getDailyLeaderboardConfig()) {
+  if (!entry?.completed || !dailyRemoteEnabled()) return false;
+
+  const query =
+    `select=date_key,player_id,score` +
+    `&${buildDailyRemoteIdentityQuery(entry)}` +
+    `&limit=1`;
+  const url = `${config.supabaseUrl}/rest/v1/${config.table}?${query}`;
+  const response = await fetchWithTimeout(url, {
+    headers: getDailyRequestHeaders(config),
+  });
+
+  if (!response.ok) return false;
+
+  const rows = await response.json();
+  return Array.isArray(rows) && rows.length > 0;
+}
+
+async function submitDailyResultToRemote(entry, config = getDailyLeaderboardConfig()) {
+  let response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
+    method: "POST",
+    headers: getDailyRequestHeaders(config, true, "return=minimal"),
+    body: JSON.stringify(buildDailyRemotePayload(entry, true)),
+  });
+
+  if (!response.ok && response.status !== 409) {
+    response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
+      method: "POST",
+      headers: getDailyRequestHeaders(config, true, "return=minimal"),
+      body: JSON.stringify(buildDailyRemotePayload(entry, false)),
+    });
+  }
+
+  if (response.ok || response.status === 409) {
+    return { ok: true, alreadyExists: response.status === 409 };
+  }
+
+  return { ok: false, status: response.status };
+}
+
+async function syncLocalDailyAttemptToRemote(dateKey) {
+  const localAttempt = getLocalDailyAttempt(dateKey);
+  if (!localAttempt?.completed || !dailyRemoteEnabled()) {
+    return { ok: false, synced: false, reason: "not_ready" };
+  }
+
+  const config = getDailyLeaderboardConfig();
+  try {
+    if (await remoteDailyEntryExists(localAttempt, config)) {
+      saveLocalDailyAttempt({ ...localAttempt, source: "remote", completed: true });
+      return { ok: true, synced: false, alreadyOnline: true };
+    }
+
+    const result = await submitDailyResultToRemote(localAttempt, config);
+    if (result.ok) {
+      saveLocalDailyAttempt({ ...localAttempt, source: "remote", completed: true });
+      return { ok: true, synced: true, alreadyOnline: !!result.alreadyExists };
+    }
+
+    return { ok: false, synced: false, reason: "remote_save_failed" };
+  } catch {
+    return { ok: false, synced: false, reason: "network" };
+  }
+}
+
 function normalizeDailyNameKey(name) {
   return String(name || "").trim().toLowerCase();
 }
@@ -265,53 +375,10 @@ async function submitDailyResult(entry) {
     return { ok: true, message: "Daily result saved locally.", entry: { ...normalized, completed: true } };
   }
 
-  const config = getDailyLeaderboardConfig();
-
   try {
-    let response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
-      method: "POST",
-      headers: {
-        apikey: config.supabaseAnonKey,
-        Authorization: `Bearer ${config.supabaseAnonKey}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        date_key: normalized.dateKey,
-        seed: normalized.seed,
-        player_name: normalized.playerName,
-        player_id: normalized.playerId,
-        score: normalized.score,
-        game_version: GAME_VERSION,
-        blue_cleared: normalized.blueCleared,
-        green_cleared: normalized.greenCleared,
-        red_cleared: normalized.redCleared,
-        daily_clears: normalized.dailyClears,
-        crown_summary: normalized.crownSummary,
-      }),
-    });
-
-    if (!response.ok && response.status !== 409) {
-      response = await fetchWithTimeout(`${config.supabaseUrl}/rest/v1/${config.table}`, {
-        method: "POST",
-        headers: {
-          apikey: config.supabaseAnonKey,
-          Authorization: `Bearer ${config.supabaseAnonKey}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify({
-          date_key: normalized.dateKey,
-          seed: normalized.seed,
-          player_name: normalized.playerName,
-          player_id: normalized.playerId,
-          score: normalized.score,
-          game_version: GAME_VERSION,
-        }),
-      });
-    }
-
-    if (response.ok) {
+    const result = await submitDailyResultToRemote(normalized);
+    if (result.ok) {
+      saveLocalDailyAttempt({ ...normalized, source: "remote", completed: true });
       return { ok: true, message: "Daily result saved.", entry: { ...normalized, completed: true } };
     }
 
@@ -322,7 +389,7 @@ async function submitDailyResult(entry) {
 }
 
 async function fetchDailyLeaderboard(dateKey, limit = 100) {
-  const localAttempt = getLocalDailyAttempt(dateKey);
+  let localAttempt = getLocalDailyAttempt(dateKey);
 
   if (!dailyRemoteEnabled()) {
     return buildDailyLeaderboardResult(localAttempt?.completed ? [localAttempt] : [], false, "offline_config");
@@ -331,6 +398,13 @@ async function fetchDailyLeaderboard(dateKey, limit = 100) {
   const config = getDailyLeaderboardConfig();
 
   try {
+    if (localAttempt?.completed) {
+      const syncResult = await syncLocalDailyAttemptToRemote(dateKey);
+      if (syncResult.ok) {
+        localAttempt = getLocalDailyAttempt(dateKey);
+      }
+    }
+
     const queryPrimary =
       `select=date_key,seed,player_name,player_id,score,blue_cleared,green_cleared,red_cleared,daily_clears,crown_summary,created_at` +
       `&date_key=eq.${encodeURIComponent(dateKey)}` +

@@ -14,10 +14,11 @@
 
 ## Tutorial / Modal Check
 1. Replay tutorial from Settings if needed.
-2. Confirm the current-card tutorial highlight hugs the actual card element.
-3. Confirm power choice cards are tappable during tutorial.
-4. Confirm cheat choice cards are tappable during tutorial.
-5. Confirm `Higher / Lower` is hidden whenever power or cheat choice modals are open.
+2. Confirm the current-card tutorial highlight hugs the actual card element and throbs.
+3. Confirm the next-card / face-down-card tutorial highlight hugs the actual card element and throbs.
+4. Confirm power choice cards are tappable during tutorial.
+5. Confirm cheat choice cards are tappable during tutorial.
+6. Confirm `Higher / Lower` is hidden whenever power or cheat choice modals are open.
 
 ## Animation Check (Current Priority)
 1. On Android Chrome, make a guess.
@@ -30,6 +31,7 @@
 2. Entry count/order should match.
 3. Tied scores share rank.
 4. Crowns should be per-player, not per-viewer.
+5. For a completed local Daily attempt that failed to save online, opening that Daily board while connected should upload the missing row.
 
 ## Deploy Hygiene
 - After JS/CSS edits, bump query strings in:

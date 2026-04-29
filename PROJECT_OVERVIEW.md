@@ -45,4 +45,6 @@
 ## Current Sensitive Area
 - Tutorial / choice-modal behavior on mobile was recently adjusted:
   - target-element highlighting replaces floating highlight positioning
+  - render-owned current-card and face-down-card elements preserve tutorial focus after redraws
+  - focused tutorial targets use a cyan throbbing ring in `styles.css`
   - gameplay guess buttons should hide while power / cheat choice modals are open

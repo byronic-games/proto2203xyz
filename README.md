@@ -34,5 +34,6 @@ Mobile-first browser card game (higher/lower) with deck progression, powers, che
 - Fix Android reveal animation where card rotates but face does not appear during flip.
 
 ## Recent Ops Notes
-- Tutorial highlighting now styles the actual target element instead of a separate floating highlight box.
+- Daily leaderboard loads retry-upload a completed local Daily attempt when that player's online row is missing.
+- Tutorial highlighting now styles the actual target element instead of a separate floating highlight box. Rendered card elements preserve the focus class across redraws, and focused tutorial targets throb again.
 - Choice modals are intended to hide the gameplay `Higher / Lower` row while open.
