@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260429a">
+  <link rel="stylesheet" href="styles.css?v=20260507d">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -24,70 +24,52 @@
 
     <div id="game">
       <header id="app-header">
-        <div class="brand-lockup">
-          <h1>52!</h1>
-        </div>
-
-        <div id="header-run-status" class="header-run-status" aria-live="polite" hidden>
-          <div id="header-run-title" class="header-run-title"></div>
-          <div id="header-run-power" class="header-run-power"></div>
-        </div>
-
-        <div class="header-meta">
-          <div class="header-best">
-            <div class="hud-label">Highest Run</div>
-            <div id="best-score">0</div>
-          </div>
-
-          <button id="settings-btn" class="icon-button" type="button" aria-label="Settings">
-            <span class="gear-icon" aria-hidden="true">&#9881;</span>
+        <div class="header-mainline">
+          <h1 id="brand-title">52!</h1>
+          <button id="header-power-chip" class="header-power-chip" type="button" aria-label="Starting power details">
+            <span id="header-power-glyph">·</span>
           </button>
+
+          <div class="header-metrics">
+            <div class="header-metric">
+              <div class="header-metric-label">Best</div>
+              <div id="best-score" class="header-metric-value">0</div>
+            </div>
+            <div class="header-metric">
+              <div class="header-metric-label">Cleared</div>
+              <div id="score" class="header-metric-value">0</div>
+            </div>
+            <div class="header-metric">
+              <div class="header-metric-label">Remaining</div>
+              <div id="cards-remaining-value" class="header-metric-value">52</div>
+            </div>
+            <div id="header-energy-metric" class="header-metric" hidden>
+              <div class="header-metric-label">Energy</div>
+              <div id="energy-value" class="header-metric-value">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-menu-wrap">
+          <button id="menu-btn" class="icon-button menu-button" type="button" aria-label="Open menu" aria-expanded="false">
+            <span class="menu-icon" aria-hidden="true">&#9776;</span>
+          </button>
+          <div id="header-menu" class="header-menu hidden" aria-hidden="true">
+            <button id="howto-open-btn" class="header-menu-action" type="button">How To Play</button>
+            <a class="header-menu-action" href="heroes.html?v=20260419a">High Scores</a>
+            <button id="settings-menu-btn" class="header-menu-action" type="button">Settings</button>
+            <button id="exit-btn" class="header-menu-action" type="button">Exit</button>
+          </div>
         </div>
       </header>
 
       <main id="main-layout">
-        <section id="hud-row">
-          <article class="hud-card hud-card-score">
-            <div class="hud-label">Cards Cleared<br><span class="hud-label-break" aria-hidden="true">&nbsp;</span></div>
-            <div class="hud-value-wrap">
-              <div id="score">0</div>
-            </div>
-          </article>
-
-          <article id="energy-card" class="hud-card hud-card-energy" hidden>
-            <div class="hud-label">Energy<br><span class="hud-label-break" aria-hidden="true">&nbsp;</span></div>
-            <div class="hud-value-wrap">
-              <div id="energy-value">0</div>
-            </div>
-          </article>
-
-          <article class="hud-card hud-card-remaining">
-            <div class="hud-label">Cards Remaining</div>
-            <div class="hud-value-wrap">
-              <div id="cards-remaining-value">52</div>
-              <div id="face-down-count"></div>
-            </div>
-          </article>
-        </section>
-
         <section id="play-area">
           <div id="card-row">
             <div class="play-stack play-stack-current">
               <div class="card-column">
-                <div class="pile-label">Current Card</div>
-                <div class="current-card-wrap">
-                <div id="current-card" class="card-face">?</div>
-                  <div class="nudge-stack" aria-label="Nudge controls">
-                    <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
-                      <span class="nudge-symbol">&#9650;</span>
-                      <span id="nudge-up-count" class="nudge-count">0</span>
-                    </button>
-                    <div class="nudge-label">Nudges</div>
-                    <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
-                      <span class="nudge-symbol">&#9660;</span>
-                      <span id="nudge-down-count" class="nudge-count">0</span>
-                    </button>
-                  </div>
+                <div class="current-card-wrap card-slot">
+                  <div id="current-card" class="card-face">?</div>
                 </div>
                 <div id="current-effective-value"></div>
               </div>
@@ -95,8 +77,11 @@
 
             <div class="play-stack play-stack-next">
               <div class="card-column">
-                <div class="pile-label">Next Card</div>
-                <div id="face-down-deck" class="card-back"></div>
+                <div class="card-slot">
+                  <div id="face-down-deck" class="card-back"></div>
+                  <div id="reveal-overlay" class="reveal-overlay hidden" aria-hidden="true"></div>
+                </div>
+                <div id="next-info"></div>
               </div>
             </div>
 
@@ -104,58 +89,30 @@
             <div id="victory-confetti" aria-hidden="true"></div>
             <div id="game-over-detail" aria-live="polite"></div>
           </div>
-
-          <div id="next-info"></div>
-
         </section>
 
         <div id="message-bar"></div>
 
         <section id="cheats-panel">
           <div class="section-bar">
-            <div class="section-title">Cheats - hold for info</div>
+            <div class="section-title">Cheats</div>
             <div class="section-scroll-hint">Swipe</div>
           </div>
           <div id="cheat-list"></div>
         </section>
 
         <div id="controls">
-          <button id="higher-btn" type="button">Higher</button>
+          <button id="restart-btn" class="launch-run-btn" type="button">Start Run</button>
           <button id="lower-btn" type="button">Lower</button>
+          <button id="higher-btn" type="button">Higher</button>
         </div>
 
         <section id="memory-panel">
-          <div class="section-bar">
-            <div class="section-title">Cards Seen This Run</div>
-            <div id="seen-count-badge" class="section-chip">0 / 52 Tracked</div>
-          </div>
           <div id="seen-grid-wrap">
             <div id="seen-grid"></div>
           </div>
         </section>
       </main>
-
-      <nav id="bottom-bar" aria-label="Game navigation">
-        <button id="restart-btn" class="nav-action nav-action-primary" type="button">
-          <span class="nav-icon">&#9654;</span>
-          <span class="nav-label">Start Run</span>
-        </button>
-
-        <button id="howto-open-btn" class="nav-action" type="button">
-          <span class="nav-icon">?</span>
-          <span class="nav-label">How To Play</span>
-        </button>
-
-          <a class="nav-action" href="heroes.html?v=20260419a">
-          <span class="nav-icon">&#9638;</span>
-          <span class="nav-label">High Scores</span>
-        </a>
-
-        <button id="exit-btn" class="nav-action" type="button">
-          <span class="nav-icon">&#8617;</span>
-          <span class="nav-label">Exit</span>
-        </button>
-      </nav>
 
       <div id="game-howto-modal" class="hidden" aria-hidden="true">
         <div class="help-backdrop" id="howto-close-backdrop"></div>
@@ -240,11 +197,11 @@
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
           <div class="choice-title">Choose Your Cheat</div>
-          <div id="cheat-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="cheat-choice-list"></div>
-          <div class="choice-footer">Tap to select.</div>
+          <div id="cheat-choice-info" class="cheat-choice-info" aria-live="polite"></div>
         </div>
       </div>
+      <div id="cheat-choice-flyout" class="hidden" aria-hidden="true"></div>
 
       <div id="power-choice-container" class="hidden" aria-hidden="true">
         <div class="choice-backdrop"></div>
@@ -297,19 +254,19 @@
     </div>
   </div>
 
-  <script src="js/fullscreen.js?v=20260427a"></script>
+  <script src="js/fullscreen.js?v=20260506b"></script>
   <script src="js/constants.js?v=20260427a"></script>
   <script src="js/storage.js?v=20260427a"></script>
-  <script src="js/state.js?v=20260423a"></script>
-  <script src="js/powers.js?v=20260425b"></script>
-  <script src="js/cheats.js?v=20260425b"></script>
+  <script src="js/state.js?v=20260506b"></script>
+  <script src="js/powers.js?v=20260502a"></script>
+  <script src="js/cheats.js?v=20260506b"></script>
   <script src="js/cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
-  <script src="js/logic.js?v=20260427b"></script>
-  <script src="js/render.js?v=20260428d"></script>
-  <script src="js/input.js?v=20260428c"></script>
+  <script src="js/logic.js?v=20260506c"></script>
+  <script src="js/render.js?v=20260507d"></script>
+  <script src="js/input.js?v=20260506a"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

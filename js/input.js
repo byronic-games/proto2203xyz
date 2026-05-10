@@ -94,9 +94,9 @@ function createTutorialController() {
       clearView: true,
     },
     {
-      target: ".nudge-stack",
+      target: "#cheats-panel",
       title: "Nudges",
-      copy: "Nudges can temporarily shift the value before your next guess. You gain them during play. Save them for tricky spots.",
+      copy: "Nudges now live in the cheats row. Use them to temporarily shift the current card before your next guess.",
     },
     {
       target: "#controls",
@@ -627,18 +627,54 @@ function openHowToModal() {
   document.body.classList.add("modal-open");
 }
 
-document.getElementById("howto-open-btn")?.addEventListener("click", openHowToModal);
+const headerMenuEl = document.getElementById("header-menu");
+const menuBtnEl = document.getElementById("menu-btn");
+const menuWrapEl = document.querySelector(".header-menu-wrap");
+
+function setHeaderMenuOpen(open) {
+  if (!headerMenuEl || !menuBtnEl) return;
+  headerMenuEl.classList.toggle("hidden", !open);
+  headerMenuEl.setAttribute("aria-hidden", open ? "false" : "true");
+  menuBtnEl.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+menuBtnEl?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const isOpen = menuBtnEl.getAttribute("aria-expanded") === "true";
+  setHeaderMenuOpen(!isOpen);
+});
+
+document.addEventListener("click", (event) => {
+  if (!menuWrapEl || !headerMenuEl || headerMenuEl.classList.contains("hidden")) return;
+  if (!menuWrapEl.contains(event.target)) {
+    setHeaderMenuOpen(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setHeaderMenuOpen(false);
+    closeHowToModal();
+  }
+});
+
+document.getElementById("howto-open-btn")?.addEventListener("click", () => {
+  setHeaderMenuOpen(false);
+  openHowToModal();
+});
 document.getElementById("howto-close-btn")?.addEventListener("click", closeHowToModal);
 document.getElementById("howto-close-icon-btn")?.addEventListener("click", closeHowToModal);
 document.getElementById("howto-close-backdrop")?.addEventListener("click", closeHowToModal);
 
-document.getElementById("settings-btn")?.addEventListener("click", () => {
+document.getElementById("settings-menu-btn")?.addEventListener("click", () => {
+  setHeaderMenuOpen(false);
   saveGameStateSnapshot(state);
   saveSettingsReturnUrl(`game.html?resume=1`);
   window.location.href = "settings.html?v=20260405h";
 });
 
 document.getElementById("exit-btn")?.addEventListener("click", () => {
+  setHeaderMenuOpen(false);
   window.skipAutoSnapshot = true;
   clearGameStateSnapshot();
   window.location.href = "index.html?v=20260405d";

@@ -645,7 +645,7 @@ a {
 }
 
 .play-stack-next .card-column {
-  min-width: var(--card-width);
+  min-width: 0;
 }
 
 .pile-label {
@@ -883,28 +883,46 @@ a {
   animation: deck-collapse-shudder 520ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
-#face-down-deck.reveal-flip {
+#face-down-deck.reveal-flip,
+#reveal-overlay.reveal-flip {
   will-change: transform, filter;
 }
 
-#face-down-deck.reveal-flip-out {
+#face-down-deck.reveal-flip-out,
+#reveal-overlay.reveal-flip-out {
   animation: card-reveal-flip-out 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
   will-change: transform, filter;
 }
 
-#face-down-deck.reveal-flip-in {
+#face-down-deck.reveal-flip-in,
+#reveal-overlay.reveal-flip-in {
   animation: card-reveal-flip-in 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
   will-change: transform, filter;
 }
 
-#face-down-deck.reveal-flip-180 {
+#face-down-deck.reveal-flip-180,
+#reveal-overlay.reveal-flip-180 {
   animation: card-reveal-flip-180 320ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
   will-change: transform, filter;
 }
 
-#face-down-deck.reveal-flip {
+#face-down-deck.reveal-flip,
+#reveal-overlay.reveal-flip {
   animation: card-reveal-flip 320ms cubic-bezier(0.22, 0.8, 0.26, 1);
   will-change: transform, filter;
+}
+
+#face-down-deck.reveal-win-flash,
+#reveal-overlay.reveal-win-flash {
+  animation: card-reveal-win-flash 220ms ease-in-out 2 alternate;
+  will-change: box-shadow, filter;
+}
+
+#face-down-deck.reveal-slide-over,
+#reveal-overlay.reveal-slide-over {
+  animation: card-reveal-slide-over 400ms ease-in-out both;
+  will-change: transform, filter;
+  z-index: 12;
 }
 
 #current-card.reveal-promote {
@@ -923,6 +941,7 @@ a {
 }
 
 #face-down-deck[class*="reveal-effect-"],
+#reveal-overlay[class*="reveal-effect-"],
 #current-card[class*="reveal-effect-"] {
   --reveal-effect-ring: rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 0 0 2px var(--reveal-effect-ring), 0 0 16px rgba(255, 255, 255, 0.08);
@@ -1249,6 +1268,32 @@ a {
   }
 }
 
+@keyframes card-reveal-win-flash {
+  0% {
+    box-shadow:
+      inset 0 0 0 1px rgba(126, 255, 170, 0.18),
+      0 0 0 rgba(98, 255, 149, 0);
+    filter: brightness(1);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 3px rgba(126, 255, 170, 0.92),
+      0 0 22px rgba(98, 255, 149, 0.45);
+    filter: brightness(1.06);
+  }
+}
+
+@keyframes card-reveal-slide-over {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: brightness(1.04);
+  }
+  100% {
+    transform: translate3d(var(--reveal-slide-x, 0px), var(--reveal-slide-y, 0px), 0) scale(1);
+    filter: brightness(1);
+  }
+}
+
 @keyframes card-reveal-settle {
   0% {
     transform: translateY(-4px) scale(1.01);
@@ -1355,6 +1400,14 @@ a {
   #face-down-deck.reveal-flip-out,
   #face-down-deck.reveal-flip-in,
   #face-down-deck.reveal-flip-180,
+  #face-down-deck.reveal-win-flash,
+  #face-down-deck.reveal-slide-over,
+  #reveal-overlay.reveal-flip,
+  #reveal-overlay.reveal-flip-out,
+  #reveal-overlay.reveal-flip-in,
+  #reveal-overlay.reveal-flip-180,
+  #reveal-overlay.reveal-win-flash,
+  #reveal-overlay.reveal-slide-over,
   #current-card.reveal-promote,
   #current-card.reveal-settle,
   #current-card.reveal-fail {
@@ -2239,93 +2292,6 @@ body.choice-modal-open #controls {
   white-space: pre-line;
 }
 
-@media (min-width: 760px) {
-  #game {
-    width: min(100%, 980px);
-    padding: 16px;
-    gap: 14px;
-  }
-
-  #app-header {
-    align-items: center;
-  }
-
-  #main-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
-    grid-template-areas:
-      "hud hud"
-      "play cheats"
-      "message message"
-      "memory cheats";
-    align-items: start;
-  }
-
-  #message-bar {
-    grid-area: message;
-  }
-
-  #hud-row {
-    grid-area: hud;
-  }
-
-  #play-area {
-    grid-area: play;
-  }
-
-  #cheats-panel {
-    grid-area: cheats;
-    align-self: start;
-    min-width: 0;
-  }
-
-  #memory-panel {
-    grid-area: memory;
-    min-height: 290px;
-  }
-
-  #game {
-    min-height: unset;
-    height: auto;
-  }
-
-  #seed-console {
-    grid-template-columns: auto minmax(220px, 1fr) auto;
-  }
-
-  #cheat-list {
-    display: flex;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  #cheat-list::-webkit-scrollbar {
-    display: block;
-    height: 8px;
-  }
-
-  #cheat-list::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.05);
-    border-radius: 999px;
-  }
-
-  #cheat-list::-webkit-scrollbar-thumb {
-    background: rgba(247,125,246,0.5);
-    border-radius: 999px;
-    box-shadow: 0 0 10px rgba(247,125,246,0.18);
-  }
-
-  #bottom-bar {
-    grid-template-columns: 180px repeat(3, 1fr);
-  }
-
-  #cheat-choice-list,
-  #power-choice-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 @media (max-width: 420px) {
   #main-layout {
@@ -2490,81 +2456,6 @@ body.choice-modal-open #controls {
   }
 }
 
-/* Force phone-style layout on desktop until dedicated desktop UI is fixed. */
-@media (min-width: 760px) {
-  #game-shell {
-    padding: 12px !important;
-  }
-
-  #game {
-    width: min(100%, 390px) !important;
-    min-height: calc(var(--app-height) - 24px) !important;
-    height: calc(var(--app-height) - 24px) !important;
-    padding: 12px !important;
-    gap: 12px !important;
-  }
-
-  #main-layout {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    align-items: stretch !important;
-  }
-
-  #hud-row {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  #hud-row.hud-row-green {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  #play-area {
-    padding: 2px 0 0 !important;
-  }
-
-  #card-row {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 18px !important;
-  }
-
-  #cheats-panel {
-    align-self: stretch !important;
-    min-width: 0 !important;
-    min-height: 112px !important;
-    flex: 0 0 auto !important;
-  }
-
-  #memory-panel {
-    align-self: stretch !important;
-    min-width: 0 !important;
-    min-height: 186px !important;
-    flex: 1 1 auto !important;
-  }
-
-  #controls {
-    width: 100% !important;
-  }
-
-  #cheat-list {
-    display: flex !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-  }
-
-  #bottom-bar {
-    grid-template-columns: 1.2fr 1fr 1fr 0.86fr !important;
-  }
-
-  #cheat-choice-list,
-  #power-choice-list {
-    grid-template-columns: 1fr !important;
-  }
-}
 
 @media (max-height: 860px) {
   :root {
@@ -2900,5 +2791,1135 @@ body.choice-modal-open #controls {
   .seen-grid-note {
     margin-top: 4px;
     font-size: 0.54rem;
+  }
+}
+
+/* Compact header and vertical cleanup pass */
+
+#game[data-deck="blue"] {
+  --deck-accent: #69d8ff;
+}
+
+#game[data-deck="green"] {
+  --deck-accent: #b7ff5d;
+}
+
+#game[data-deck="red"] {
+  --deck-accent: #ff6f93;
+}
+
+#game-shell {
+  padding: 8px !important;
+}
+
+#game {
+  width: min(100%, 460px) !important;
+  height: calc(var(--app-height) - 16px) !important;
+  min-height: calc(var(--app-height) - 16px) !important;
+  padding: 10px !important;
+  gap: 8px !important;
+}
+
+#app-header {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+  position: relative;
+  z-index: 6;
+}
+
+.header-left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+#brand-title {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(2.35rem, 8vw, 3rem);
+  line-height: 0.88;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  color: var(--deck-accent, var(--pink));
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.08);
+}
+
+.header-power-chip {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--deck-accent, var(--text));
+  display: grid;
+  place-items: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.header-power-chip:not(.has-power) {
+  opacity: 0.45;
+}
+
+.header-power-chip.has-power {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 0 18px rgba(255,255,255,0.08);
+}
+
+.header-best-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.best-inline-label {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#best-score {
+  margin-top: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.05rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.header-menu-wrap {
+  position: relative;
+}
+
+.menu-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 1;
+}
+
+.menu-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.header-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(220px, calc(100vw - 24px));
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), transparent 18%),
+    rgba(18, 11, 26, 0.97);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
+  display: grid;
+  gap: 6px;
+}
+
+.header-menu.hidden {
+  display: none;
+}
+
+.header-menu-action {
+  min-height: 42px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  text-align: left;
+}
+
+#main-layout {
+  gap: 6px !important;
+}
+
+#message-bar {
+  display: none !important;
+  min-height: calc(1.16em * 2 + 8px) !important;
+  max-height: calc(1.16em * 2 + 8px) !important;
+  padding: 4px 8px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+  font-size: 0.78rem !important;
+  line-height: 1.18 !important;
+}
+
+#message-bar.has-message {
+  display: flex !important;
+}
+
+#hud-row {
+  gap: 14px !important;
+}
+
+.hud-card {
+  min-height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.hud-label {
+  color: var(--muted) !important;
+  font-size: 0.58rem !important;
+  letter-spacing: 0.16em !important;
+}
+
+.hud-label-break,
+#face-down-count,
+.pile-label {
+  display: none !important;
+}
+
+.hud-value-wrap {
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+#score,
+#energy-value,
+#cards-remaining-value {
+  width: auto !important;
+  text-align: left !important;
+  font-size: clamp(1.55rem, 5.4vw, 1.95rem) !important;
+  text-shadow: none !important;
+}
+
+#play-area,
+#cheats-panel,
+#memory-panel,
+.utility-panel {
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#play-area {
+  padding: 0 !important;
+}
+
+#card-row {
+  gap: 10px !important;
+}
+
+.card-column {
+  gap: 4px !important;
+}
+
+.current-card-wrap {
+  gap: 8px !important;
+}
+
+#current-effective-value,
+#next-info {
+  min-height: 0 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.1;
+}
+
+#controls {
+  gap: 8px !important;
+  margin-top: 2px !important;
+}
+
+#controls.controls-single {
+  grid-template-columns: 1fr !important;
+}
+
+#higher-btn,
+#lower-btn {
+  min-height: 46px !important;
+  border-radius: 12px !important;
+  font-size: 1.16rem !important;
+}
+
+#cheats-panel {
+  padding: 0 !important;
+}
+
+.section-bar {
+  margin-bottom: 4px !important;
+}
+
+.section-title {
+  font-size: 0.56rem !important;
+}
+
+.section-scroll-hint {
+  font-size: 0.54rem !important;
+}
+
+#cheat-list {
+  gap: 6px !important;
+}
+
+.cheat-button {
+  width: 90px !important;
+  min-width: 90px !important;
+  max-width: 90px !important;
+  min-height: 70px !important;
+  padding: 7px 5px !important;
+}
+
+.cheat-icon {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 0.9rem !important;
+}
+
+.cheat-name {
+  font-size: 0.56rem !important;
+}
+
+#memory-panel {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+}
+
+.launch-run-btn {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), transparent 18%),
+    linear-gradient(180deg, rgba(255,255,255,0.2), var(--deck-accent, var(--pink)));
+  color: #101018;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.16rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+}
+
+#seen-grid-wrap {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+  padding: 6px !important;
+}
+
+#seen-grid {
+  grid-template-columns: 12px repeat(13, minmax(0, 1fr)) !important;
+  gap: 2px !important;
+}
+
+.grid-header,
+.grid-suit,
+.grid-cell {
+  min-height: 13px !important;
+  border-radius: 3px !important;
+  font-size: 0.34rem !important;
+}
+
+.seen-grid-note,
+#bottom-bar {
+  display: none !important;
+}
+
+@media (max-height: 760px) {
+  #game {
+    padding: 8px !important;
+    gap: 6px !important;
+  }
+
+  #brand-title {
+    font-size: clamp(2rem, 7vw, 2.4rem);
+  }
+
+  #score,
+  #energy-value,
+  #cards-remaining-value {
+    font-size: 1.36rem !important;
+  }
+
+  :root {
+    --card-width: 84px;
+    --card-height: 118px;
+  }
+
+  .nudge-arrow {
+    width: 40px !important;
+    height: 42px !important;
+  }
+
+  .nudge-label {
+    font-size: 0.5rem !important;
+  }
+
+  #higher-btn,
+  #lower-btn {
+    min-height: 40px !important;
+    font-size: 1rem !important;
+  }
+
+  .cheat-button {
+    width: 82px !important;
+    min-width: 82px !important;
+    max-width: 82px !important;
+    min-height: 62px !important;
+  }
+
+  .launch-run-btn {
+    min-height: 40px;
+    font-size: 1rem;
+  }
+
+  .grid-header,
+  .grid-suit,
+  .grid-cell {
+    min-height: 11px !important;
+    font-size: 0.3rem !important;
+  }
+}
+
+/* Header-line metric layout refinement */
+
+#app-header {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+}
+
+.header-mainline {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
+}
+
+#brand-title {
+  font-size: clamp(2rem, 7vw, 2.6rem) !important;
+  align-self: center;
+}
+
+.header-power-chip,
+.menu-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  align-self: center;
+}
+
+.header-power-chip {
+  font-size: 1.4rem;
+}
+
+.menu-icon {
+  font-size: 1.6rem;
+}
+
+.header-metrics {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.header-metric {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.header-metric-label {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.54rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.header-metric[hidden],
+#header-energy-metric[hidden] {
+  display: none !important;
+}
+
+.header-metric-value,
+#best-score.header-metric-value,
+#score.header-metric-value,
+#cards-remaining-value.header-metric-value {
+  width: 100% !important;
+  margin: 0 !important;
+  text-align: center !important;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3vw, 1.15rem) !important;
+  line-height: 1 !important;
+  font-weight: 800;
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+.header-menu-action {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+#hud-row {
+  gap: 0 !important;
+}
+
+#energy-card {
+  max-width: 132px;
+  margin-left: auto;
+}
+
+@media (max-width: 420px) {
+  .header-mainline {
+    column-gap: 8px;
+  }
+
+  .header-metrics {
+    gap: 5px;
+  }
+
+  .header-metric-label {
+    font-size: 0.48rem;
+    letter-spacing: 0.12em;
+  }
+
+  .header-metric-value,
+  #best-score.header-metric-value,
+  #score.header-metric-value,
+  #cards-remaining-value.header-metric-value {
+    font-size: 0.92rem !important;
+  }
+
+  .header-power-chip,
+  .menu-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .header-power-chip {
+    font-size: 1.2rem;
+  }
+
+  .menu-icon {
+    font-size: 1.45rem;
+  }
+}
+
+@media (max-height: 760px) {
+  #brand-title {
+    font-size: clamp(1.8rem, 6vw, 2.2rem) !important;
+  }
+
+  .header-metric-label {
+    font-size: 0.46rem;
+  }
+
+  .header-metric-value,
+  #best-score.header-metric-value,
+  #score.header-metric-value,
+  #cards-remaining-value.header-metric-value {
+    font-size: 0.88rem !important;
+  }
+
+  .header-power-chip,
+  .menu-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .header-power-chip {
+    font-size: 1.08rem;
+  }
+
+  .menu-icon {
+    font-size: 1.3rem;
+  }
+}
+
+/* Structured vertical layout system */
+
+#game {
+  container-type: inline-size;
+  --section-gap: clamp(6px, 1.8cqw, 10px);
+  --header-height: clamp(60px, 16cqw, 88px);
+  --cards-height: clamp(184px, 52cqw, 310px);
+  --info-height: clamp(38px, 10.5cqw, 58px);
+  --cheats-height: clamp(84px, 23cqw, 132px);
+  --buttons-height: clamp(54px, 16cqw, 86px);
+  --status-height: clamp(104px, 30cqw, 180px);
+  display: grid !important;
+  grid-template-rows: var(--header-height) minmax(0, 1fr) !important;
+}
+
+#app-header {
+  min-height: var(--header-height);
+  height: var(--header-height);
+  align-items: center !important;
+}
+
+.header-mainline {
+  height: 100%;
+  align-items: center;
+}
+
+.header-metrics {
+  height: 100%;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-template-columns: none;
+  align-items: center;
+}
+
+.header-metric {
+  height: 100%;
+  justify-content: center;
+}
+
+#main-layout {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows:
+    var(--cards-height)
+    var(--info-height)
+    var(--cheats-height)
+    var(--buttons-height)
+    minmax(var(--status-height), 1fr) !important;
+  gap: var(--section-gap) !important;
+}
+
+#play-area {
+  min-height: 0;
+  display: grid !important;
+  grid-template-rows: 1fr auto;
+  gap: 6px;
+  align-items: stretch;
+  padding: 0 !important;
+}
+
+#card-row {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 3cqw, 18px) !important;
+  align-items: stretch;
+}
+
+.play-stack,
+.card-column,
+.current-card-wrap {
+  min-height: 0;
+  height: 100%;
+}
+
+.card-column {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: stretch;
+}
+
+.play-stack-next .card-column {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.current-card-wrap,
+.card-slot {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  place-items: center;
+}
+
+.card-slot {
+  min-height: 0;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 11 / 15;
+  justify-self: center;
+  position: relative;
+}
+
+#current-card,
+#face-down-deck {
+  height: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  aspect-ratio: auto;
+}
+
+#reveal-overlay {
+  position: absolute;
+  inset: 0;
+  height: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  aspect-ratio: auto;
+  pointer-events: none;
+  z-index: 11;
+}
+
+#reveal-overlay.hidden {
+  display: none !important;
+}
+
+#current-effective-value,
+#next-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0 !important;
+  text-align: center !important;
+}
+
+#message-bar {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--info-height);
+  max-height: var(--info-height);
+  visibility: visible !important;
+  pointer-events: auto !important;
+  overflow: hidden;
+}
+
+#cheats-panel {
+  min-height: 0;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 4px;
+}
+
+#cheat-list {
+  min-height: 0;
+  align-items: stretch;
+}
+
+.cheat-button {
+  min-height: 100% !important;
+  width: clamp(76px, 20cqw, 110px) !important;
+  min-width: clamp(76px, 20cqw, 110px) !important;
+  max-width: clamp(76px, 20cqw, 110px) !important;
+  justify-content: space-between;
+  padding: 8px 6px !important;
+}
+
+.cheat-button.is-placeholder {
+  display: grid;
+  place-items: center;
+}
+
+.cheat-empty-mark {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.cheat-button.is-receive-target-hidden {
+  opacity: 0;
+}
+
+#cheat-choice-container {
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+#cheat-choice-container .choice-backdrop,
+#cheat-choice-container .choice-modal,
+#cheat-choice-container .cheat-choice-card,
+#cheat-choice-container .cheat-choice-info {
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+#cheat-choice-container .choice-modal {
+  width: min(85vw, 560px);
+  height: min(50dvh, 420px);
+  min-height: min(50dvh, 420px);
+  max-height: calc(100dvh - 32px);
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto auto minmax(112px, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+#cheat-choice-container .choice-title {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#cheat-choice-container #cheat-choice-list {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  min-height: 96px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+#cheat-choice-container .choice-card.cheat-choice-card {
+  width: clamp(76px, 20vw, 110px) !important;
+  min-width: clamp(76px, 20vw, 110px) !important;
+  max-width: clamp(76px, 20vw, 110px) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  aspect-ratio: 118 / 96;
+  padding: 10px 7px !important;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  transform: translateY(0) scale(1);
+}
+
+#cheat-choice-container .choice-card.cheat-choice-card.is-previewed {
+  box-shadow:
+    inset 0 0 0 2px rgba(123, 238, 255, 0.72),
+    0 0 18px rgba(96, 227, 255, 0.18);
+}
+
+#cheat-choice-container .choice-card.cheat-choice-card.is-dismissing {
+  opacity: 0;
+  transform: translateY(14px) scale(0.94);
+}
+
+#cheat-choice-container .choice-card.cheat-choice-card.is-selected-ghost {
+  opacity: 1;
+  transform: none;
+}
+
+#cheat-choice-container .cheat-icon {
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+}
+
+#cheat-choice-container .cheat-name {
+  font-size: clamp(0.72rem, 2vw, 0.92rem);
+}
+
+#cheat-choice-container .cheat-stack-count {
+  font-size: 0.6rem;
+}
+
+.cheat-choice-info {
+  min-height: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+  text-align: center;
+  overflow: hidden;
+}
+
+.cheat-choice-info.is-dismissing {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.cheat-choice-info-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3.4vw, 1.22rem);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.cheat-choice-info-rarity,
+.cheat-choice-info-hint {
+  margin-top: 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cheat-choice-info-rarity {
+  color: var(--pink);
+}
+
+.cheat-choice-info-copy {
+  margin-top: 8px;
+  color: #e8e1f0;
+  font-size: 0.88rem;
+  line-height: 1.32;
+}
+
+.cheat-choice-info-hint {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+#cheat-choice-container.is-closing .choice-backdrop,
+#cheat-choice-container.is-flying .choice-backdrop,
+#cheat-choice-container.is-flying .choice-modal {
+  opacity: 0;
+}
+
+#cheat-choice-container.is-closing .choice-modal {
+  transform: none;
+}
+
+#cheat-choice-flyout {
+  position: fixed;
+  z-index: 1220;
+  pointer-events: none;
+  margin: 0;
+  transform-origin: center center;
+  transition:
+    opacity 300ms ease-in-out,
+    transform 300ms ease-in-out;
+}
+
+#cheat-choice-flyout.cheat-button {
+  width: var(--flyout-width) !important;
+  min-width: var(--flyout-width) !important;
+  max-width: var(--flyout-width) !important;
+  height: var(--flyout-height) !important;
+  min-height: var(--flyout-height) !important;
+  max-height: var(--flyout-height) !important;
+  flex: 0 0 auto !important;
+  justify-content: center;
+  padding: 10px 7px !important;
+  scroll-snap-align: none;
+}
+
+#cheat-choice-flyout.hidden {
+  display: none !important;
+}
+
+#message-bar.is-game-over {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3.1cqw, 1.28rem) !important;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 232, 238, 0.98);
+}
+
+#game.game-over-effect #play-area,
+#game.game-over-effect .current-card-wrap,
+#game.game-over-effect #face-down-deck,
+#game.game-over-effect #reveal-overlay {
+  animation: none !important;
+}
+
+#game.game-over-effect #card-row::after,
+#game.game-over-effect #game-over-detail:not(:empty) {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+#game.game-over-effect #current-card,
+#game.game-over-effect #face-down-deck {
+  animation: card-neon-pulse-wrong 520ms ease-out !important;
+}
+
+.nudge-cheat-button .cheat-icon {
+  color: var(--cyan);
+  box-shadow: inset 0 0 0 1px rgba(0,232,255,0.52), 0 0 12px rgba(0,232,255,0.14);
+}
+
+.cheat-stack-count {
+  min-height: 1em;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+#controls {
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: clamp(8px, 2cqw, 12px) !important;
+  margin-top: 0 !important;
+}
+
+#controls.controls-single {
+  grid-template-columns: 1fr !important;
+}
+
+#restart-btn,
+#higher-btn,
+#lower-btn {
+  min-height: 100% !important;
+  height: 100%;
+}
+
+#higher-btn,
+#lower-btn,
+.launch-run-btn {
+  font-size: clamp(1.08rem, 3.5cqw, 1.5rem) !important;
+  border-radius: 16px !important;
+}
+
+#memory-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+#seen-grid-wrap {
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#seen-grid {
+  height: 100%;
+}
+
+@media (max-height: 760px) {
+  #game {
+    --header-height: clamp(56px, 15cqw, 74px);
+    --cards-height: clamp(162px, 48cqw, 250px);
+    --info-height: clamp(34px, 9.5cqw, 46px);
+    --cheats-height: clamp(76px, 21cqw, 106px);
+    --buttons-height: clamp(48px, 14cqw, 68px);
+    --status-height: clamp(88px, 26cqw, 132px);
+  }
+
+  .header-metric-label {
+    font-size: 0.42rem;
+  }
+
+  .cheat-stack-count {
+    font-size: 0.54rem;
+  }
+}
+
+@media (min-width: 760px) {
+  #game-shell {
+    display: flex;
+    justify-content: center;
+    padding: 16px !important;
+  }
+
+  #game {
+    width: min(100%, 460px) !important;
+    max-width: 460px !important;
+    height: calc(var(--app-height) - 32px) !important;
+    min-height: calc(var(--app-height) - 32px) !important;
+    --header-height: 84px;
+    --cards-height: clamp(210px, 52cqw, 300px);
+    --info-height: 52px;
+    --cheats-height: 128px;
+    --buttons-height: 74px;
+    --status-height: 210px;
+  }
+
+  .header-mainline {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .header-metric-label {
+    font-size: 0.62rem;
+  }
+
+  .header-metric-value,
+  #best-score.header-metric-value,
+  #score.header-metric-value,
+  #cards-remaining-value.header-metric-value {
+    font-size: 1.18rem !important;
+  }
+
+  #play-area {
+    gap: 8px;
+  }
+
+  #card-row {
+    gap: 18px !important;
+  }
+
+  .card-column {
+    grid-template-rows: minmax(0, 1fr) 28px !important;
+  }
+
+  .play-stack-next .card-column {
+    grid-template-rows: minmax(0, 1fr) 28px !important;
+  }
+
+  #current-card,
+  #face-down-deck {
+    max-height: 100%;
+  }
+
+  #message-bar {
+    font-size: 0.9rem !important;
+  }
+
+  .cheat-button {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+  }
+
+  .cheat-stack-count {
+    font-size: 0.68rem;
+  }
+
+  #seen-grid-wrap {
+    padding: 10px !important;
+  }
+
+  .grid-header,
+  .grid-suit,
+  .grid-cell {
+    font-size: 0.42rem !important;
   }
 }

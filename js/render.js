@@ -7,9 +7,14 @@ function getDeckBackColor(deckKey) {
 
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
+let cheatChoiceAnimationTimer = null;
+const CHEAT_CHOICE_CLOSE_MS = 140;
+const CHEAT_CHOICE_FLY_MS = 300;
 const REVEAL_FLIP_MS = 280;
-const REVEAL_HOLD_MS = 140;
-const REVEAL_PROMOTE_MS = 240;
+const REVEAL_HOLD_MS = 160;
+const REVEAL_SUCCESS_FLASH_MS = 220;
+const REVEAL_SLIDE_MS = 400;
+const REVEAL_FAILURE_HOLD_MS = 180;
 
 function clearPendingRevealTimers() {
   if (revealAnimationResetTimer) {
@@ -19,6 +24,13 @@ function clearPendingRevealTimers() {
   if (revealGameOverTimer) {
     clearTimeout(revealGameOverTimer);
     revealGameOverTimer = null;
+  }
+}
+
+function clearPendingCheatChoiceTimer() {
+  if (cheatChoiceAnimationTimer) {
+    clearTimeout(cheatChoiceAnimationTimer);
+    cheatChoiceAnimationTimer = null;
   }
 }
 
@@ -37,11 +49,123 @@ function removeRevealStateClasses(el) {
   if (effectClasses.length) {
     el.classList.remove(...effectClasses);
   }
-  el.classList.remove("reveal-flip", "reveal-flip-out", "reveal-flip-in", "reveal-flip-180", "reveal-promote", "reveal-settle", "reveal-fail");
+  el.classList.remove(
+    "reveal-flip",
+    "reveal-flip-out",
+    "reveal-flip-in",
+    "reveal-flip-180",
+    "reveal-promote",
+    "reveal-settle",
+    "reveal-fail",
+    "reveal-win-flash",
+    "reveal-slide-over"
+  );
+  el.style.removeProperty("--reveal-slide-x");
+  el.style.removeProperty("--reveal-slide-y");
 }
 
 function getPreservedTutorialFocusClass(el) {
   return el?.classList?.contains("tutorial-focus-target") ? " tutorial-focus-target" : "";
+}
+
+function setRevealOverlayHidden(hidden) {
+  const overlayEl = document.getElementById("reveal-overlay");
+  if (!overlayEl) return;
+  overlayEl.classList.toggle("hidden", !!hidden);
+  overlayEl.setAttribute("aria-hidden", hidden ? "true" : "false");
+  if (hidden) {
+    overlayEl.innerHTML = "";
+  }
+}
+
+function renderRevealOverlayCard(pending, showFace) {
+  const overlayEl = document.getElementById("reveal-overlay");
+  if (!overlayEl || !pending?.revealCard) return null;
+
+  const revealCard = pending.revealCard;
+  const revealStatus = getCardBackStatus(revealCard.id);
+  const revealValue = Number.isFinite(pending.revealEffectiveValue)
+    ? pending.revealEffectiveValue
+    : revealCard.value;
+  const revealIsTemp = !!pending.revealIsTemp;
+  const revealBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
+
+  overlayEl.innerHTML = "";
+  if (showFace) {
+    overlayEl.className = `reveal-overlay card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
+    overlayEl.innerHTML = renderCardFaceMarkup(
+      revealCard,
+      revealValue,
+      revealIsTemp,
+      revealStatus.tornCorner
+    );
+  } else {
+    overlayEl.className = `reveal-overlay card-back card-back-${revealBackColor} ${revealStatus.tornCorner ? "torn-corner" : ""}`.trim();
+    overlayEl.innerHTML = `<div class="card-back-symbol">&#127136;</div>`;
+    if (revealStatus.tornCorner) {
+      const tear = document.createElement("div");
+      tear.className = "tear-mark";
+      overlayEl.appendChild(tear);
+    }
+  }
+
+  overlayEl.classList.remove("hidden");
+  overlayEl.setAttribute("aria-hidden", "false");
+  return overlayEl;
+}
+
+function finalizePendingReveal(pending) {
+  const currentCardEl = document.getElementById("current-card");
+  const faceDownDeckEl = document.getElementById("face-down-deck");
+  const overlayEl = document.getElementById("reveal-overlay");
+  removeRevealStateClasses(currentCardEl);
+  removeRevealStateClasses(faceDownDeckEl);
+  removeRevealStateClasses(overlayEl);
+  setRevealOverlayHidden(true);
+
+  if (pending.triggerGameOver && state.gameOver) {
+    state.gameOverDisplayCards = {
+      leftCard: pending.fromCard || null,
+      leftEffectiveValue: Number.isFinite(pending.fromEffectiveValue) ? pending.fromEffectiveValue : pending.fromCard?.value ?? null,
+      leftIsTemp: !!pending.fromIsTemp,
+      rightCard: pending.revealCard || null,
+      rightEffectiveValue: Number.isFinite(pending.revealEffectiveValue) ? pending.revealEffectiveValue : pending.revealCard?.value ?? null,
+      rightIsTemp: !!pending.revealIsTemp,
+    };
+  } else {
+    state.gameOverDisplayCards = null;
+    const feedbackEffect = pending.feedbackEffect || pending.outcome;
+    if (feedbackEffect === "correct" || feedbackEffect === "wrong") {
+      if (typeof setCurrentCardFeedback === "function") setCurrentCardFeedback(feedbackEffect);
+      if (typeof flashGameShell === "function") flashGameShell(feedbackEffect);
+    }
+  }
+
+  if (state.pendingRevealAnimation && state.pendingRevealAnimation.id === pending.id) {
+    state.pendingRevealAnimation = null;
+  }
+
+  if (pending.triggerGameOver && state.gameOver) {
+    clearGameOverEffects();
+    revealGameOverTimer = setTimeout(() => {
+      triggerGameOverEffect("");
+      revealGameOverTimer = null;
+    }, 40);
+  }
+
+  render();
+}
+
+function setRevealSlideOffset(revealingDeckEl, currentCardEl) {
+  if (!revealingDeckEl || !currentCardEl) return;
+
+  const revealRect = revealingDeckEl.getBoundingClientRect();
+  const currentRect = currentCardEl.getBoundingClientRect();
+  const deltaX = currentRect.left - revealRect.left;
+  const deltaY = currentRect.top - revealRect.top;
+
+  revealingDeckEl.style.setProperty("--reveal-slide-x", `${Math.round(deltaX)}px`);
+  revealingDeckEl.style.setProperty("--reveal-slide-y", `${Math.round(deltaY)}px`);
 }
 
 function playPendingCardRevealAnimation() {
@@ -50,7 +174,8 @@ function playPendingCardRevealAnimation() {
 
   const currentCardEl = document.getElementById("current-card");
   const faceDownDeckEl = document.getElementById("face-down-deck");
-  if (!currentCardEl || !faceDownDeckEl) return;
+  const overlayEl = document.getElementById("reveal-overlay");
+  if (!currentCardEl || !faceDownDeckEl || !overlayEl) return;
   const effectClass = getRevealEffectClass(pending.effectId);
 
   if (pending.phase === "revealing") {
@@ -62,36 +187,34 @@ function playPendingCardRevealAnimation() {
     clearGameOverEffects();
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
-    render();
+    removeRevealStateClasses(overlayEl);
     const halfFlipMs = Math.max(1, Math.floor(REVEAL_FLIP_MS / 2));
-    const revealingDeckEl = document.getElementById("face-down-deck");
-    if (!revealingDeckEl) return;
-    revealingDeckEl.style.animation = "none";
-    void revealingDeckEl.offsetWidth;
-    revealingDeckEl.style.animation = "";
-    revealingDeckEl.classList.add("reveal-flip-out");
-    if (effectClass) revealingDeckEl.classList.add(effectClass);
+    const revealingOverlayEl = renderRevealOverlayCard(pending, false);
+    if (!revealingOverlayEl) return;
+    revealingOverlayEl.style.animation = "none";
+    void revealingOverlayEl.offsetWidth;
+    revealingOverlayEl.style.animation = "";
+    revealingOverlayEl.classList.add("reveal-flip-out");
+    if (effectClass) revealingOverlayEl.classList.add(effectClass);
 
     revealAnimationResetTimer = setTimeout(() => {
       revealAnimationResetTimer = null;
       if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
       state.pendingRevealAnimation.revealSwapDone = true;
-      render();
-
-      const flipInDeckEl = document.getElementById("face-down-deck");
-      if (flipInDeckEl) {
-        removeRevealStateClasses(flipInDeckEl);
-        flipInDeckEl.style.animation = "none";
-        void flipInDeckEl.offsetWidth;
-        flipInDeckEl.style.animation = "";
-        flipInDeckEl.classList.add("reveal-flip-in");
-        if (effectClass) flipInDeckEl.classList.add(effectClass);
+      const flipInOverlayEl = renderRevealOverlayCard(pending, true);
+      if (flipInOverlayEl) {
+        removeRevealStateClasses(flipInOverlayEl);
+        flipInOverlayEl.style.animation = "none";
+        void flipInOverlayEl.offsetWidth;
+        flipInOverlayEl.style.animation = "";
+        flipInOverlayEl.classList.add("reveal-flip-in");
+        if (effectClass) flipInOverlayEl.classList.add(effectClass);
       }
 
       revealAnimationResetTimer = setTimeout(() => {
         revealAnimationResetTimer = null;
         if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
-        state.pendingRevealAnimation.phase = "promoting";
+        state.pendingRevealAnimation.phase = pending.outcome === "correct" ? "highlighting" : "finishing";
         state.pendingRevealAnimation.started = false;
         render();
       }, halfFlipMs + REVEAL_HOLD_MS);
@@ -99,55 +222,76 @@ function playPendingCardRevealAnimation() {
     return;
   }
 
-  if (pending.phase !== "promoting" || pending.started) return;
+  if (pending.phase === "highlighting") {
+    if (pending.started) return;
+
+    pending.started = true;
+    clearPendingRevealTimers();
+    removeRevealStateClasses(overlayEl);
+    const highlightingOverlayEl = renderRevealOverlayCard(pending, true);
+    if (!highlightingOverlayEl) return;
+    highlightingOverlayEl.style.animation = "none";
+    void highlightingOverlayEl.offsetWidth;
+    highlightingOverlayEl.style.animation = "";
+    highlightingOverlayEl.classList.add("reveal-win-flash");
+    if (effectClass) highlightingOverlayEl.classList.add(effectClass);
+
+    revealAnimationResetTimer = setTimeout(() => {
+      revealAnimationResetTimer = null;
+      if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
+      state.pendingRevealAnimation.phase = "sliding";
+      state.pendingRevealAnimation.started = false;
+      render();
+    }, REVEAL_SUCCESS_FLASH_MS);
+    return;
+  }
+
+  if (pending.phase === "sliding") {
+    if (pending.started) return;
+
+    pending.started = true;
+    clearPendingRevealTimers();
+    removeRevealStateClasses(overlayEl);
+    const slidingDeckEl = renderRevealOverlayCard(pending, true);
+    const slidingCurrentEl = document.getElementById("current-card");
+    if (!slidingDeckEl || !slidingCurrentEl) return;
+    setRevealSlideOffset(slidingDeckEl, slidingCurrentEl);
+    slidingDeckEl.style.animation = "none";
+    void slidingDeckEl.offsetWidth;
+    slidingDeckEl.style.animation = "";
+    slidingDeckEl.classList.add("reveal-slide-over");
+    if (effectClass) slidingDeckEl.classList.add(effectClass);
+
+    revealAnimationResetTimer = setTimeout(() => {
+      revealAnimationResetTimer = null;
+      if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
+      finalizePendingReveal(pending);
+    }, REVEAL_SLIDE_MS + 30);
+    return;
+  }
+
+  if (pending.phase !== "finishing" || pending.started) return;
 
   pending.started = true;
   clearPendingRevealTimers();
-  removeRevealStateClasses(faceDownDeckEl);
-  removeRevealStateClasses(currentCardEl);
-  currentCardEl.style.animation = "none";
-  void currentCardEl.offsetWidth;
-  currentCardEl.style.animation = "";
-  currentCardEl.classList.add("reveal-promote");
-  if (pending.outcome === "wrong") {
-    currentCardEl.classList.add("reveal-fail");
-  } else {
-    currentCardEl.classList.add("reveal-settle");
-  }
+  removeRevealStateClasses(overlayEl);
+  const finishingOverlayEl = renderRevealOverlayCard(pending, true);
   if (effectClass) {
-    currentCardEl.classList.add(effectClass);
+    finishingOverlayEl?.classList.add(effectClass);
   }
 
   revealAnimationResetTimer = setTimeout(() => {
-    removeRevealStateClasses(currentCardEl);
-    removeRevealStateClasses(faceDownDeckEl);
-    const feedbackEffect = pending.feedbackEffect || pending.outcome;
-    if (feedbackEffect === "correct" || feedbackEffect === "wrong") {
-      if (typeof setCurrentCardFeedback === "function") setCurrentCardFeedback(feedbackEffect);
-      if (typeof flashGameShell === "function") flashGameShell(feedbackEffect);
-    }
-    if (state.pendingRevealAnimation && state.pendingRevealAnimation.id === pending.id) {
-      state.pendingRevealAnimation = null;
-    }
     revealAnimationResetTimer = null;
-    render();
-  }, REVEAL_PROMOTE_MS + 110);
-
-  if (pending.triggerGameOver && state.gameOver) {
-    clearGameOverEffects();
-    revealGameOverTimer = setTimeout(() => {
-      triggerGameOverEffect(pending.gameOverDetail || state.message || "");
-      revealGameOverTimer = null;
-    }, REVEAL_PROMOTE_MS + 40);
-  }
+    if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
+    finalizePendingReveal(pending);
+  }, REVEAL_FAILURE_HOLD_MS);
 }
 
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
-  const energyCardEl = document.getElementById("energy-card");
+  const energyCardEl = document.getElementById("header-energy-metric");
   const energyValueEl = document.getElementById("energy-value");
-  const hudRowEl = document.getElementById("hud-row");
   const hudDeckKey = state.gameOver
     ? normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck())
     : normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || loadSelectedDeck());
@@ -162,16 +306,9 @@ function renderScores() {
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
   {
-    const showEnergy = hudDeckKey === "green";
-    if (hudRowEl) {
-      hudRowEl.classList.toggle("hud-row-green", showEnergy);
-      hudRowEl.style.gridTemplateColumns = showEnergy
-        ? "repeat(3, minmax(0, 1fr))"
-        : "repeat(2, minmax(0, 1fr))";
-    }
+    const showEnergy = !state.gameOver && !!state.current && hudDeckKey === "green";
     if (energyCardEl) {
       energyCardEl.hidden = !showEnergy;
-      energyCardEl.style.display = showEnergy ? "" : "none";
     }
     if (energyValueEl) {
       setAnimatedText(energyValueEl, Math.max(0, Number(state.energy) || 0));
@@ -239,40 +376,37 @@ function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
 }
 
 function renderHeaderStatus() {
-  const seedInput = document.getElementById("run-seed-input");
-  const runStatusEl = document.getElementById("header-run-status");
-  const runTitleEl = document.getElementById("header-run-title");
-  const runPowerEl = document.getElementById("header-run-power");
-  const hasActiveRun = !state.gameOver && !!state.current;
-  const runDeckName = getDeckName(state.currentDeckKey || state.selectedDeckKey || "blue");
+  const gameEl = document.getElementById("game");
+  const brandTitleEl = document.getElementById("brand-title");
+  const powerChipEl = document.getElementById("header-power-chip");
+  const powerGlyphEl = document.getElementById("header-power-glyph");
   const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
-  const runPowerName = getPowerName(state.selectedStartPowerId);
-  const runDeckKey = state.currentDeckKey || state.selectedDeckKey || "blue";
-  const runPowerTooltipBody = buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber);
+  const runPowerId = state.selectedStartPowerId || "";
+  const runPowerName = runPowerId ? getPowerName(runPowerId) : "No power selected";
+  const runDeckKey = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue");
+  const runDeckName = getDeckName(runDeckKey);
+  const runPowerTooltipBody = runPowerId
+    ? buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber)
+    : "";
 
-  if (runStatusEl && runTitleEl && runPowerEl) {
-    if (hasActiveRun) {
-      runTitleEl.innerText = `${runDeckName} Deck - Level ${runLevelNumber}`;
-      runPowerEl.innerText = `Starting Power: ${runPowerName}`;
-      runStatusEl.hidden = false;
-      runStatusEl.classList.toggle("has-power-tooltip", !!runPowerTooltipBody);
-    } else {
-      runTitleEl.innerText = "";
-      runPowerEl.innerText = "";
-      runStatusEl.hidden = true;
-      runStatusEl.classList.remove("has-power-tooltip");
-    }
+  if (gameEl) {
+    gameEl.dataset.deck = runDeckKey;
+  }
 
-    setupHeaderPowerTooltip(runStatusEl, {
-      enabled: hasActiveRun && !!runPowerTooltipBody,
+  if (brandTitleEl) {
+    brandTitleEl.dataset.deck = runDeckKey;
+  }
+
+  if (powerChipEl && powerGlyphEl) {
+    const hasPower = !!runPowerId;
+    powerGlyphEl.innerText = hasPower ? getPowerIcon(runPowerId) : "·";
+    powerChipEl.classList.toggle("has-power", hasPower);
+    powerChipEl.setAttribute("aria-label", hasPower ? `${runPowerName} details` : "No starting power selected");
+    setupHeaderPowerTooltip(powerChipEl, {
+      enabled: hasPower && !!runPowerTooltipBody,
       title: `${runDeckName} Deck - Level ${runLevelNumber} Starting Power: ${runPowerName}`,
       description: runPowerTooltipBody,
     });
-  }
-
-  if (seedInput && !seedInput.dataset.initialized) {
-    seedInput.value = state.runSeed || loadLastRunSeed() || randomSeedString();
-    seedInput.dataset.initialized = "true";
   }
 }
 
@@ -378,8 +512,20 @@ function renderRestartButton() {
   if (!btn) return;
 
   const runIsActive = !state.gameOver && !!state.current;
-  btn.innerText =
-    runIsActive && state.restartConfirmArmed ? "Confirm Restart" : "Start Run";
+  const hasStartedRun = Array.isArray(state.deck) && state.deck.length > 0;
+  if (state.runMode === "daily" && state.gameOver) {
+    btn.innerText = "Daily Complete";
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = false;
+  if (runIsActive) {
+    btn.innerText = state.restartConfirmArmed ? "Confirm Restart" : "Restart Run";
+    return;
+  }
+
+  btn.innerText = hasStartedRun ? "Restart Run" : "Start Run";
 }
 
 function renderStartPowerSelector() {
@@ -505,21 +651,11 @@ function renderCurrentCard() {
   if (!currentCardEl || !currentValueEl) return;
 
   const pendingReveal = state.pendingRevealAnimation;
-  const showPreRevealCard =
-    !!pendingReveal &&
-    pendingReveal.phase === "revealing" &&
-    !!pendingReveal.fromCard;
-  const showPromotedTrueCard =
-    !!pendingReveal &&
-    pendingReveal.phase === "promoting" &&
-    !!pendingReveal.revealCard &&
-    !!state.current &&
-    pendingReveal.revealCard.id === state.current.id;
-  const cardToRender = showPreRevealCard
+  const gameOverCards = state.gameOver ? state.gameOverDisplayCards : null;
+  const showPinnedCurrentCard = !!pendingReveal && !!pendingReveal.fromCard;
+  const cardToRender = showPinnedCurrentCard
     ? pendingReveal.fromCard
-    : showPromotedTrueCard
-      ? pendingReveal.revealCard
-      : state.current;
+    : gameOverCards?.leftCard || state.current;
 
   if (!cardToRender) {
     const idleBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
@@ -530,15 +666,15 @@ function renderCurrentCard() {
   }
 
   const backStatus = getCardBackStatus(cardToRender.id);
-  const effectiveValue = showPreRevealCard
+  const effectiveValue = showPinnedCurrentCard
     ? pendingReveal.fromEffectiveValue
-    : showPromotedTrueCard
-      ? cardToRender.value
+    : gameOverCards?.leftCard && cardToRender.id === gameOverCards.leftCard.id
+      ? gameOverCards.leftEffectiveValue
       : getCurrentEffectiveValue();
-  const isTemporarilyModified = showPreRevealCard
+  const isTemporarilyModified = showPinnedCurrentCard
     ? !!pendingReveal.fromIsTemp
-    : showPromotedTrueCard
-      ? false
+    : gameOverCards?.leftCard && cardToRender.id === gameOverCards.leftCard.id
+      ? !!gameOverCards.leftIsTemp
       : effectiveValue !== cardToRender.value;
   const feedbackClass = state.currentCardFeedback
     ? `feedback-${state.currentCardFeedback}`
@@ -668,52 +804,39 @@ function renderNudgeControls() {
 
 function renderFaceDownDeck() {
   const deckEl = document.getElementById("face-down-deck");
-  const countEl = document.getElementById("face-down-count");
   const remainingValueEl = document.getElementById("cards-remaining-value");
 
-  if (!deckEl || !countEl) return;
+  if (!deckEl) return;
+
+  if (!state.pendingRevealAnimation) {
+    setRevealOverlayHidden(true);
+  }
 
   if (!state.current) {
     deckEl.innerHTML = "";
     const idleDeckBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
     deckEl.className = `card-back card-back-${idleDeckBackColor}${getPreservedTutorialFocusClass(deckEl)}`;
     deckEl.removeAttribute("data-back-color");
-    countEl.innerText = "";
     if (remainingValueEl) remainingValueEl.innerText = "00";
     return;
   }
 
-  const pendingReveal = state.pendingRevealAnimation;
-  if (
-    pendingReveal &&
-    pendingReveal.phase === "revealing" &&
-    pendingReveal.revealCard
-  ) {
-    const revealCard = pendingReveal.revealCard;
+  const gameOverCards = state.gameOver ? state.gameOverDisplayCards : null;
+  if (gameOverCards?.rightCard && !state.pendingRevealAnimation) {
+    const revealCard = gameOverCards.rightCard;
     const revealStatus = getCardBackStatus(revealCard.id);
-    const revealValue = Number.isFinite(pendingReveal.revealEffectiveValue)
-      ? pendingReveal.revealEffectiveValue
+    const revealValue = Number.isFinite(gameOverCards.rightEffectiveValue)
+      ? gameOverCards.rightEffectiveValue
       : revealCard.value;
-    const revealIsTemp = !!pendingReveal.revealIsTemp;
-    const revealBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
-    const showRevealFace = !!pendingReveal.revealSwapDone;
-    if (showRevealFace) {
-      deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
-      deckEl.innerHTML = renderCardFaceMarkup(
-        revealCard,
-        revealValue,
-        revealIsTemp,
-        revealStatus.tornCorner
-      );
-    } else {
-      deckEl.className = `card-back card-back-${revealBackColor} ${revealStatus.tornCorner ? "torn-corner" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
-      deckEl.innerHTML = `<div class="card-back-symbol">&#127136;</div>`;
-      if (revealStatus.tornCorner) {
-        const tear = document.createElement("div");
-        tear.className = "tear-mark";
-        deckEl.appendChild(tear);
-      }
-    }
+    const revealIsTemp = !!gameOverCards.rightIsTemp;
+
+    deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
+    deckEl.innerHTML = renderCardFaceMarkup(
+      revealCard,
+      revealValue,
+      revealIsTemp,
+      revealStatus.tornCorner
+    );
     deckEl.removeAttribute("data-back-color");
     deckEl.classList.remove("has-deck-stats-tooltip");
     setupDeckStatsTooltip(deckEl, {
@@ -723,7 +846,6 @@ function renderFaceDownDeck() {
     });
 
     const remainingCount = getFaceDownCount();
-    countEl.innerText = "";
     if (remainingValueEl) {
       setAnimatedText(remainingValueEl, String(remainingCount).padStart(2, "0"));
     }
@@ -800,7 +922,6 @@ function renderFaceDownDeck() {
   }
 
   const remainingCount = getFaceDownCount();
-  countEl.innerText = "";
   if (remainingValueEl) {
     setAnimatedText(remainingValueEl, String(remainingCount).padStart(2, "0"));
   }
@@ -808,15 +929,34 @@ function renderFaceDownDeck() {
 
 function renderButtons() {
   const controls = document.getElementById("controls");
+  const restartBtn = document.getElementById("restart-btn");
   const higherBtn = document.getElementById("higher-btn");
   const lowerBtn = document.getElementById("lower-btn");
-  if (!controls || !higherBtn || !lowerBtn) return;
+  if (!controls || !restartBtn || !higherBtn || !lowerBtn) return;
 
-  const hideControls = state.pendingPowerOptions.length > 0 || state.pendingCheatOptions.length > 0;
+  const showingChoiceModal = state.pendingPowerOptions.length > 0 || state.pendingCheatOptions.length > 0;
+  const revealInFlight = !!state.pendingRevealAnimation;
+  const runIsActive = !!state.current && (!state.gameOver || revealInFlight);
+  const showRestartButton = !runIsActive;
+  const hideControls = showingChoiceModal;
+
   controls.hidden = hideControls;
   controls.setAttribute("aria-hidden", hideControls ? "true" : "false");
   controls.style.display = hideControls ? "none" : "";
+  controls.classList.toggle("controls-single", showRestartButton);
+
+  restartBtn.hidden = !showRestartButton;
+  higherBtn.hidden = showRestartButton;
+  lowerBtn.hidden = showRestartButton;
+
   if (hideControls) {
+    restartBtn.disabled = true;
+    higherBtn.disabled = true;
+    lowerBtn.disabled = true;
+    return;
+  }
+
+  if (showRestartButton) {
     higherBtn.disabled = true;
     lowerBtn.disabled = true;
     return;
@@ -834,7 +974,7 @@ function renderButtons() {
     const forceDisabled =
       state.gameOver ||
       !state.current ||
-      !!state.pendingRevealAnimation ||
+      revealInFlight ||
       state.pendingCheatOptions.length > 0 ||
       state.pendingPowerOptions.length > 0 ||
       isPause;
@@ -847,7 +987,7 @@ function renderButtons() {
   const disableGuessing =
     state.gameOver ||
     !state.current ||
-    !!state.pendingRevealAnimation ||
+    revealInFlight ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
     isPause ||
@@ -871,33 +1011,236 @@ function renderHandCard() {
   handEl.className = isRed(state.handCard) ? "red" : "black";
 }
 
+function buildCheatButtonMarkup(title, iconGlyph, count = 0) {
+  return `
+    <div class="cheat-icon">${iconGlyph}</div>
+    <div class="cheat-name">${title}</div>
+    <div class="cheat-stack-count">${count > 1 ? `x${count}` : "&nbsp;"}</div>
+  `;
+}
+
+function getCheatChoiceRarityLabel(cheat) {
+  return (cheat?.rarity || "common").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+function hideCheatChoiceFlyout() {
+  const flyoutEl = document.getElementById("cheat-choice-flyout");
+  if (!flyoutEl) return;
+  flyoutEl.className = "hidden";
+  flyoutEl.setAttribute("aria-hidden", "true");
+  flyoutEl.innerHTML = "";
+  flyoutEl.removeAttribute("style");
+}
+
+function renderCheatChoiceInfo(infoEl, cheat, promptText = "") {
+  if (!infoEl) return;
+
+  if (!cheat) {
+    infoEl.innerHTML = `<div class="cheat-choice-info-copy">${promptText || "Tap a cheat to read the description."}</div>`;
+    return;
+  }
+
+  const rarityLabel = getCheatChoiceRarityLabel(cheat);
+  infoEl.innerHTML = `
+    <div class="cheat-choice-info-title">${cheat.name}</div>
+    <div class="cheat-choice-info-rarity">${rarityLabel}</div>
+    <div class="cheat-choice-info-copy">${getCheatDescription(cheat)}</div>
+    <div class="cheat-choice-info-hint">Tap again to select</div>
+  `;
+}
+
+function completeCheatChoiceSelectionAnimation(followup) {
+  hideCheatChoiceFlyout();
+  clearPendingCheatChoiceTimer();
+  state.cheatChoiceAnimating = null;
+  if (typeof runDeferredCheatChoiceFollowup === "function") {
+    runDeferredCheatChoiceFollowup(followup);
+    return;
+  }
+  render();
+}
+
+function beginCheatChoiceSelection(index, buttonEl) {
+  const cheat = state.pendingCheatOptions[index];
+  if (!cheat || !buttonEl || state.cheatChoiceAnimating) return;
+
+  const optionsSnapshot = state.pendingCheatOptions.map((option) => ({ ...option }));
+  const sourceRect = buttonEl.getBoundingClientRect();
+  const selectionResult = pickCheatFromChoice(index, { deferFollowup: true, suppressRender: true });
+
+  state.cheatChoiceAnimating = {
+    stage: "closing",
+    started: false,
+    selectedIndex: index,
+    cheat: selectionResult?.cheat || { ...cheat },
+    optionsSnapshot,
+    sourceRect: {
+      left: sourceRect.left,
+      top: sourceRect.top,
+      width: sourceRect.width,
+      height: sourceRect.height,
+    },
+    targetEntryId: selectionResult?.targetEntryId || cheat.id,
+    followup: selectionResult?.followup || { type: "render" },
+  };
+  state.cheatChoicePreviewIndex = -1;
+  render();
+}
+
+function playPendingCheatChoiceAnimation() {
+  const animation = state.cheatChoiceAnimating;
+  if (!animation) {
+    hideCheatChoiceFlyout();
+    return;
+  }
+
+  if (animation.stage === "closing") {
+    if (animation.started) return;
+    animation.started = true;
+    clearPendingCheatChoiceTimer();
+    cheatChoiceAnimationTimer = setTimeout(() => {
+      cheatChoiceAnimationTimer = null;
+      if (!state.cheatChoiceAnimating || state.cheatChoiceAnimating !== animation) return;
+      state.cheatChoiceAnimating.stage = "flying";
+      state.cheatChoiceAnimating.started = false;
+      render();
+    }, CHEAT_CHOICE_CLOSE_MS);
+    return;
+  }
+
+  if (animation.stage !== "flying" || animation.started) return;
+
+  const flyoutEl = document.getElementById("cheat-choice-flyout");
+  const cheatListEl = document.getElementById("cheat-list");
+  if (!flyoutEl || !cheatListEl) return;
+
+  animation.started = true;
+  clearPendingCheatChoiceTimer();
+
+  const rarity = animation.cheat?.rarity || "common";
+  const title = animation.cheat?.name || "Cheat";
+  const iconGlyph = getCheatIcon(title);
+  const extraClass = animation.cheat?.id === "nudge_up" || animation.cheat?.id === "nudge_down"
+    ? " nudge-cheat-button"
+    : "";
+
+  flyoutEl.className = `cheat-choice-flyout cheat-button ${rarity}${extraClass}`;
+  flyoutEl.innerHTML = buildCheatButtonMarkup(title, iconGlyph, 0);
+  flyoutEl.setAttribute("aria-hidden", "true");
+
+  const source = animation.sourceRect;
+  flyoutEl.style.left = `${source.left}px`;
+  flyoutEl.style.top = `${source.top}px`;
+  flyoutEl.style.setProperty("--flyout-width", `${source.width}px`);
+  flyoutEl.style.setProperty("--flyout-height", `${source.height}px`);
+  flyoutEl.style.opacity = "1";
+  flyoutEl.style.transform = "translate3d(0, 0, 0) scale(1)";
+
+  const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(animation.targetEntryId || "")}"]`) || cheatListEl;
+  const targetRect = targetEl.getBoundingClientRect();
+  const sourceCenterX = source.left + (source.width / 2);
+  const sourceCenterY = source.top + (source.height / 2);
+  const targetCenterX = targetRect.left + (targetRect.width / 2);
+  const targetCenterY = targetRect.top + (targetRect.height / 2);
+  const deltaX = targetCenterX - sourceCenterX;
+  const deltaY = targetCenterY - sourceCenterY;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      flyoutEl.classList.add("is-moving");
+      flyoutEl.style.opacity = "0.92";
+      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0)`;
+    });
+  });
+
+  cheatChoiceAnimationTimer = setTimeout(() => {
+    completeCheatChoiceSelectionAnimation(animation.followup);
+  }, CHEAT_CHOICE_FLY_MS + 20);
+}
+
 function renderCheats() {
   const cheatList = document.getElementById("cheat-list");
   if (!cheatList) return;
 
   cheatList.innerHTML = "";
 
-  const visibleCheats = state.cheats.filter(
-    (cheat) => cheat.id !== "nudge_up" && cheat.id !== "nudge_down"
-  );
+  const groupedEntries = [];
+  const groupedCheats = new Map();
 
-  if (!visibleCheats.length) {
-    cheatList.innerHTML = `<div class=\"cheat-button common\" style=\"opacity:0.5;\">No Cheats</div>`;
+  const nudgeUpCount = Math.max(0, Number(state.nudgeUpCharges) || 0);
+  const nudgeDownCount = Math.max(0, Number(state.nudgeDownCharges) || 0);
+
+  if (nudgeDownCount > 0) {
+    groupedEntries.push({
+      kind: "nudge",
+      id: "nudge_down",
+      count: nudgeDownCount,
+      direction: "down",
+      icon: "↓",
+      name: "Nudge -1",
+      rarity: "common",
+      description: isGreenDeckRun()
+        ? "Shift the current card down by 1. Costs 1 energy."
+        : "Shift the current card down by 1."
+    });
+  }
+
+  if (nudgeUpCount > 0) {
+    groupedEntries.push({
+      kind: "nudge",
+      id: "nudge_up",
+      count: nudgeUpCount,
+      direction: "up",
+      icon: "↑",
+      name: "Nudge +1",
+      rarity: "common",
+      description: isGreenDeckRun()
+        ? "Shift the current card up by 1. Costs 1 energy."
+        : "Shift the current card up by 1."
+    });
+  }
+
+  state.cheats
+    .filter((cheat) => cheat.id !== "nudge_up" && cheat.id !== "nudge_down")
+    .forEach((cheat) => {
+      const existing = groupedCheats.get(cheat.id);
+      if (existing) {
+        existing.count += 1;
+        return;
+      }
+
+      groupedCheats.set(cheat.id, {
+        kind: "cheat",
+        id: cheat.id,
+        count: 1,
+        cheat,
+      });
+    });
+
+  groupedEntries.push(...groupedCheats.values());
+
+  if (!groupedEntries.length) {
+    cheatList.innerHTML = `<div class=\"cheat-button common is-placeholder\"><div class=\"cheat-empty-mark\">X</div></div>`;
     return;
   }
 
-  visibleCheats.forEach((cheat) => {
+  groupedEntries.forEach((entry) => {
     const btn = document.createElement("button");
-    btn.className = `cheat-button ${cheat.rarity || "common"}`;
+    const rarity = entry.kind === "cheat" ? (entry.cheat.rarity || "common") : entry.rarity;
+    const title = entry.kind === "cheat" ? entry.cheat.name : entry.name;
+    const iconGlyph = entry.kind === "cheat" ? getCheatIcon(entry.cheat.name) : entry.icon;
+    const tooltipBody = entry.kind === "cheat" ? getCheatDescription(entry.cheat) : entry.description;
     const tutorialCheatUseBlocked = typeof window.isTutorialBlockingCheatUse === "function"
       ? window.isTutorialBlockingCheatUse()
       : false;
+    btn.className = `cheat-button ${rarity}${entry.kind === "nudge" ? " nudge-cheat-button" : ""}`;
+    btn.dataset.cheatEntryId = entry.id;
     btn.disabled = tutorialCheatUseBlocked;
+    if (state.cheatChoiceAnimating?.stage === "flying" && state.cheatChoiceAnimating.targetEntryId === entry.id) {
+      btn.classList.add("is-receive-target-hidden");
+    }
 
-    btn.innerHTML = `
-      <div class=\"cheat-icon\">${getCheatIcon(cheat.name)}</div>
-      <div class=\"cheat-name\">${cheat.name}</div>
-    `;
+    btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count);
 
     let holdTimer = null;
     let held = false;
@@ -908,7 +1251,7 @@ function renderCheats() {
 
       holdTimer = setTimeout(() => {
         held = true;
-        showCheatTooltip(cheat, btn);
+        showTooltip(title, tooltipBody, btn);
       }, 300);
     };
 
@@ -928,7 +1271,7 @@ function renderCheats() {
     };
 
     btn.onmouseenter = () => {
-      showCheatTooltip(cheat, btn);
+      showTooltip(title, tooltipBody, btn);
     };
 
     btn.onmouseleave = () => {
@@ -948,14 +1291,19 @@ function renderCheats() {
         render();
         return;
       }
-      const result = cheat.use();
+      if (entry.kind === "nudge") {
+        useNudgeCharge(entry.direction);
+        return;
+      }
+
+      const result = entry.cheat.use();
       state.message = result;
       appendRunDebugLog("cheat_used", {
-        cheatId: cheat.id,
-        cheatName: cheat.name,
+        cheatId: entry.cheat.id,
+        cheatName: entry.cheat.name,
         result,
         cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
-        consumeOnUse: !!cheat.consumeOnUse,
+        consumeOnUse: !!entry.cheat.consumeOnUse,
         armedStatesAfterUse: {
           lucky7: !!state.lucky7Armed,
           fiveAlive: !!state.fiveAliveArmed,
@@ -971,13 +1319,13 @@ function renderCheats() {
           cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
         },
       });
-      if (cheat.consumeOnUse) {
-        const originalIndex = state.cheats.findIndex((c) => c === cheat);
+      if (entry.cheat.consumeOnUse) {
+        const originalIndex = state.cheats.findIndex((c) => c.id === entry.cheat.id);
         if (originalIndex >= 0) removeCheatAt(originalIndex);
         state.cheatUsesOnCurrentCard = (state.cheatUsesOnCurrentCard || 0) + 1;
       }
       if (typeof window.handleTutorialCheatUsed === "function") {
-        window.handleTutorialCheatUsed(cheat, result);
+        window.handleTutorialCheatUsed(entry.cheat, result);
       }
       render();
     };
@@ -1021,20 +1369,25 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
 function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
   const list = document.getElementById("cheat-choice-list");
-  const currentCardEl = document.getElementById("cheat-choice-current-card");
+  const infoEl = document.getElementById("cheat-choice-info");
 
-  if (!container || !list) return;
+  if (!container || !list || !infoEl) return;
 
   list.innerHTML = "";
+  container.classList.remove("is-closing", "is-flying");
 
-  if (!state.pendingCheatOptions.length) {
+  const animation = state.cheatChoiceAnimating;
+  const choiceOptions = state.pendingCheatOptions.length
+    ? state.pendingCheatOptions
+    : Array.isArray(animation?.optionsSnapshot)
+      ? animation.optionsSnapshot
+      : [];
+
+  if (!choiceOptions.length) {
     document.body.classList.remove("choice-modal-open", "cheat-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
-    if (currentCardEl) {
-      currentCardEl.innerText = "";
-      currentCardEl.classList.add("hidden");
-    }
+    renderCheatChoiceInfo(infoEl, null, "");
     return;
   }
 
@@ -1042,7 +1395,12 @@ function renderCheatChoice() {
   document.body.classList.add("choice-modal-open", "cheat-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
-  renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
+
+  if (animation?.stage === "closing") {
+    container.classList.add("is-closing");
+  } else if (animation?.stage === "flying") {
+    container.classList.add("is-flying");
+  }
 
   const tutorialChoiceLocked = typeof window.isTutorialBlockingCheatChoice === "function"
     ? window.isTutorialBlockingCheatChoice()
@@ -1051,51 +1409,52 @@ function renderCheatChoice() {
   const introToken = String(state.cheatChoiceIntroToken || 0);
   const introFresh = list.dataset.introToken !== introToken;
   list.dataset.introToken = introToken;
+  const previewIndex = animation ? animation.selectedIndex : state.cheatChoicePreviewIndex;
 
-  state.pendingCheatOptions.forEach((cheat, i) => {
+  choiceOptions.forEach((cheat, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card ${cheat.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
-    btn.disabled = choiceLocked;
+    btn.className = `choice-card cheat-choice-card cheat-button ${cheat.rarity || "common"} ${introFresh && !animation ? "choice-intro" : ""}`.trim();
+    btn.disabled = choiceLocked || !!animation;
     btn.style.setProperty("--choice-index", String(i));
+    btn.dataset.choiceIndex = String(i);
+    btn.innerHTML = buildCheatButtonMarkup(cheat.name, getCheatIcon(cheat.name), 0);
 
-    const top = document.createElement("div");
-    top.className = "choice-top";
-
-    const icon = document.createElement("div");
-    icon.className = "choice-icon";
-    icon.innerText = getCheatIcon(cheat.name);
-
-    const name = document.createElement("div");
-    name.className = "choice-name";
-    name.innerText = cheat.name;
-
-    const rarity = document.createElement("div");
-    rarity.className = "choice-rarity";
-    rarity.innerText = (cheat.rarity || "common").replace(/^\w/, (c) => c.toUpperCase());
-
-    top.appendChild(icon);
-    top.appendChild(name);
-    top.appendChild(rarity);
-
-    const desc = document.createElement("div");
-    desc.className = "choice-desc";
-    desc.innerText = getCheatDescription(cheat);
-
-    const tag = document.createElement("div");
-    tag.className = "choice-tag";
-    tag.innerText = "Tap to select";
-
-    btn.appendChild(top);
-    btn.appendChild(desc);
-    btn.appendChild(tag);
+    if (previewIndex === i) {
+      btn.classList.add("is-previewed");
+    }
+    if (animation) {
+      if (animation.selectedIndex === i) {
+        btn.classList.add("is-selected-ghost");
+      } else {
+        btn.classList.add("is-dismissing");
+      }
+    }
 
     btn.onclick = () => {
-      pickCheatFromChoice(i);
+      if (choiceLocked || state.cheatChoiceAnimating) return;
+      if (state.cheatChoicePreviewIndex !== i) {
+        state.cheatChoicePreviewIndex = i;
+        render();
+        return;
+      }
+      beginCheatChoiceSelection(i, btn);
     };
 
     list.appendChild(btn);
   });
+
+  renderCheatChoiceInfo(
+    infoEl,
+    Number.isInteger(previewIndex) && previewIndex >= 0 ? choiceOptions[previewIndex] : null,
+    "Tap a cheat to read the description."
+  );
+
+  if (animation) {
+    infoEl.classList.add("is-dismissing");
+  } else {
+    infoEl.classList.remove("is-dismissing");
+  }
 
   if (choiceLocked) {
     window.setTimeout(render, Math.max(0, (state.cheatChoiceLockedUntil || 0) - Date.now()));
@@ -1194,8 +1553,11 @@ function renderPowerChoice() {
 }
 
 function renderSeenGrid() {
+  const gridWrapEl = document.getElementById("seen-grid-wrap");
   const grid = document.getElementById("seen-grid");
-  if (!grid) return;
+  if (!grid || !gridWrapEl) return;
+
+  gridWrapEl.hidden = false;
 
   grid.innerHTML = "";
 
@@ -1235,29 +1597,19 @@ function renderSeenGrid() {
   }
 
   note.className = "seen-grid-note";
-
-  const seenCountBadge = document.getElementById("seen-count-badge");
-  if (seenCountBadge) {
-    seenCountBadge.innerText = `${state.seenCardIds.size} / 52 Tracked`;
-  }
-  note.innerText = "J = 11   •   Q = 12   •   K = 13";
+  note.hidden = true;
+  note.innerText = "";
 }
 
 function renderMessage() {
   const el = document.getElementById("message-bar");
-  const gameEl = document.getElementById("game");
-  const gameOverDetailEl = document.getElementById("game-over-detail");
   if (!el) return;
 
-  const usingBoardGameOverMessage =
-    !!gameEl &&
-    gameEl.classList.contains("game-over-effect") &&
-    !!gameOverDetailEl &&
-    !!String(gameOverDetailEl.innerText || "").trim();
+  el.classList.remove("is-game-over");
 
-  if (usingBoardGameOverMessage) {
-    el.innerText = "";
-    el.classList.remove("has-message");
+  if (state.gameOver) {
+    el.innerText = "GAME OVER";
+    el.classList.add("has-message", "is-game-over");
     return;
   }
 
@@ -1281,6 +1633,10 @@ function renderNextInfo() {
 }
 
 function render() {
+  if (!state.gameOver && state.gameOverDisplayCards) {
+    state.gameOverDisplayCards = null;
+  }
+
   renderScores();
   renderHeaderStatus();
   renderStartPowerSelector();
@@ -1299,7 +1655,5 @@ function render() {
   renderMessage();
   renderNextInfo();
   playPendingCardRevealAnimation();
+  playPendingCheatChoiceAnimation();
 }
-
-
-

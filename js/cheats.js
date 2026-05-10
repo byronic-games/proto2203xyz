@@ -1347,6 +1347,8 @@ function offerCheatChoice(reason = "") {
 
   state.cheatChoiceLockedUntil = Date.now() + CHEAT_CHOICE_LOCK_MS;
   state.cheatChoiceIntroToken = (state.cheatChoiceIntroToken || 0) + 1;
+  state.cheatChoicePreviewIndex = -1;
+  state.cheatChoiceAnimating = null;
 
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
     const pickNumber = 4 - state.sixSevenRewardChoicesRemaining;
@@ -1376,13 +1378,46 @@ function offerCheatChoice(reason = "") {
   render();
 }
 
-function pickCheatFromChoice(index) {
+function runDeferredCheatChoiceFollowup(followup) {
+  if (!followup || followup.type === "render") {
+    render();
+    return;
+  }
+
+  if (followup.type === "six_seven_next") {
+    offerCheatChoice();
+    return;
+  }
+
+  if (followup.type === "queued_cheat") {
+    if ((state.pendingCheatAwardQueue || []).length > 0 && state.pendingCheatAwardQueue[0] === followup.reason) {
+      state.pendingCheatAwardQueue.shift();
+    }
+    offerCheatChoice(followup.reason);
+    return;
+  }
+
+  if (followup.type === "resolve_rewards") {
+    if (typeof resolvePendingRewardQueues === "function" && resolvePendingRewardQueues()) {
+      return;
+    }
+    render();
+    return;
+  }
+
+  render();
+}
+
+function pickCheatFromChoice(index, options = {}) {
   if (Date.now() < (state.cheatChoiceLockedUntil || 0)) return;
   if (typeof window.isTutorialBlockingCheatChoice === "function" && window.isTutorialBlockingCheatChoice()) {
     state.message = "Choose a cheat when the tutorial asks you to.";
     render();
     return;
   }
+
+  const deferFollowup = !!options.deferFollowup;
+  const suppressRender = !!options.suppressRender;
 
   const cheat = state.pendingCheatOptions[index];
   if (!cheat) return;
@@ -1456,24 +1491,41 @@ function pickCheatFromChoice(index) {
   state.pendingCheatOptions = [];
   state.justUnlockedCheatIds = [];
   state.cheatChoiceLockedUntil = 0;
+  state.cheatChoicePreviewIndex = -1;
   state.activeCheatAwardReason = "";
   if (typeof window.handleTutorialCheatPicked === "function") {
     window.handleTutorialCheatPicked(cheat);
   }
+
+  let followup = { type: "render" };
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
     state.sixSevenRewardChoicesRemaining -= 1;
     if (state.sixSevenRewardChoicesRemaining > 0) {
-      offerCheatChoice();
+      followup = { type: "six_seven_next" };
+      if (deferFollowup) {
+        return { cheat, targetEntryId: cheat.id, followup };
+      }
+      runDeferredCheatChoiceFollowup(followup);
       return;
     }
   }
   if ((state.pendingCheatAwardQueue || []).length > 0) {
-    const nextReason = state.pendingCheatAwardQueue.shift();
-    offerCheatChoice(nextReason);
+    const nextReason = state.pendingCheatAwardQueue[0];
+    followup = { type: "queued_cheat", reason: nextReason };
+    if (deferFollowup) {
+      return { cheat, targetEntryId: cheat.id, followup };
+    }
+    runDeferredCheatChoiceFollowup(followup);
     return;
+  }
+  if (deferFollowup) {
+    followup = { type: "resolve_rewards" };
+    return { cheat, targetEntryId: cheat.id, followup };
   }
   if (typeof resolvePendingRewardQueues === "function" && resolvePendingRewardQueues()) {
     return;
   }
-  render();
+  if (!suppressRender) {
+    render();
+  }
 }

@@ -447,6 +447,8 @@ function openPowerChoice(forceRandom = false) {
   state.pendingCheatOptions = [];
   state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
+  state.cheatChoicePreviewIndex = -1;
+  state.cheatChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
@@ -474,6 +476,8 @@ function openDailyPowerChoice(dateKey = "") {
   state.pendingCheatOptions = [];
   state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
+  state.cheatChoicePreviewIndex = -1;
+  state.cheatChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
@@ -635,7 +639,10 @@ function startRunWithPower(powerId) {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    gameOverDisplayCards: null,
     cheatChoiceIntroToken: 0,
+    cheatChoicePreviewIndex: -1,
+    cheatChoiceAnimating: null,
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
