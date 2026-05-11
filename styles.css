@@ -875,31 +875,39 @@ a {
 
 #face-down-deck.reveal-flip-out,
 #reveal-overlay.reveal-flip-out {
-  animation: card-reveal-flip-out 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  animation: card-reveal-flip-out 210ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #face-down-deck.reveal-flip-in,
 #reveal-overlay.reveal-flip-in {
-  animation: card-reveal-flip-in 140ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  animation: card-reveal-flip-in 210ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #face-down-deck.reveal-flip-180,
 #reveal-overlay.reveal-flip-180 {
-  animation: card-reveal-flip-180 320ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  animation: card-reveal-flip-180 420ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
 }
 
 #face-down-deck.reveal-flip,
 #reveal-overlay.reveal-flip {
-  animation: card-reveal-flip 320ms cubic-bezier(0.22, 0.8, 0.26, 1);
+  animation: card-reveal-flip 420ms cubic-bezier(0.42, 0, 0.58, 1);
   will-change: transform, filter;
 }
 
 #face-down-deck.reveal-slide-over,
 #reveal-overlay.reveal-slide-over {
-  animation: card-reveal-slide-over 400ms ease-in-out both;
+  animation: card-reveal-slide-over 400ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
   z-index: 12;
 }
@@ -3073,7 +3081,8 @@ body.choice-modal-open #controls,
 
 .header-power-chip.common,
 .header-power-chip.normal,
-.power-choice-option.common {
+.power-choice-option.common,
+.power-choice-flyout.common {
   --power-shield-color: var(--rarity-common);
   --power-shield-deep: var(--rarity-common-deep);
   --power-shield-text: var(--rarity-common-text);
@@ -3081,7 +3090,8 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.uncommon,
-.power-choice-option.uncommon {
+.power-choice-option.uncommon,
+.power-choice-flyout.uncommon {
   --power-shield-color: var(--rarity-uncommon);
   --power-shield-deep: var(--rarity-uncommon-deep);
   --power-shield-text: var(--rarity-uncommon-text);
@@ -3089,7 +3099,8 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.rare,
-.power-choice-option.rare {
+.power-choice-option.rare,
+.power-choice-flyout.rare {
   --power-shield-color: var(--rarity-rare);
   --power-shield-deep: var(--rarity-rare-deep);
   --power-shield-text: var(--rarity-rare-text);
@@ -3097,7 +3108,8 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.legendary,
-.power-choice-option.legendary {
+.power-choice-option.legendary,
+.power-choice-flyout.legendary {
   --power-shield-color: var(--rarity-legendary);
   --power-shield-deep: var(--rarity-legendary-deep);
   --power-shield-text: var(--rarity-legendary-text);
@@ -3913,6 +3925,9 @@ body.choice-modal-open #controls,
   justify-items: center;
   align-content: start;
   gap: 10px;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
 }
 
 #power-choice-container .power-choice-option.choice-intro {
@@ -4110,6 +4125,25 @@ body.choice-modal-open #controls,
   transform: none;
 }
 
+#power-choice-container.is-closing .choice-backdrop,
+#power-choice-container.is-flying .choice-backdrop,
+#power-choice-container.is-flying .choice-modal {
+  opacity: 0;
+}
+
+#power-choice-container.is-closing .choice-modal {
+  transform: none;
+}
+
+#power-choice-container .power-choice-option.is-dismissing {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+#power-choice-container .power-choice-option.is-selected-ghost .power-choice-card {
+  opacity: 0;
+}
+
 #cheat-choice-flyout {
   position: fixed;
   z-index: 1220;
@@ -4135,6 +4169,55 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-flyout.hidden {
+  display: none !important;
+}
+
+#power-choice-flyout {
+  position: fixed;
+  z-index: 1220;
+  pointer-events: none;
+  margin: 0;
+  transform-origin: center center;
+  transition:
+    opacity 320ms ease-in-out,
+    transform 320ms cubic-bezier(0.42, 0, 0.58, 1);
+}
+
+#power-choice-flyout.power-choice-card {
+  width: var(--flyout-width) !important;
+  min-width: var(--flyout-width) !important;
+  max-width: var(--flyout-width) !important;
+  height: var(--flyout-height) !important;
+  min-height: var(--flyout-height) !important;
+  max-height: var(--flyout-height) !important;
+  aspect-ratio: 100 / 128;
+  padding: 18px 16px 24px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  color: var(--power-shield-text, var(--rarity-common-text)) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+#power-choice-flyout .choice-top {
+  position: relative;
+  z-index: 1;
+  max-width: 78%;
+  transform: translateY(-1%);
+}
+
+#power-choice-flyout .choice-icon,
+#power-choice-flyout .choice-name,
+#power-choice-flyout .choice-rarity {
+  color: var(--power-shield-text, var(--rarity-common-text)) !important;
+}
+
+#power-choice-flyout.hidden {
   display: none !important;
 }
 

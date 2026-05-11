@@ -430,6 +430,39 @@ function resolvePendingRewardQueues() {
   return false;
 }
 
+function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey = "blue", levelNumber = DEFAULT_LEVEL_NUMBER) {
+  if (!Array.isArray(deck) || deck.length === 0) return;
+
+  const normalizedDeckKey = runMode === "daily" ? "blue" : normalizeDeckKey(deckKey);
+  const normalizedLevelNumber = runMode === "daily"
+    ? DEFAULT_LEVEL_NUMBER
+    : normalizeLevelNumber(levelNumber);
+
+  state.deck = [...deck];
+  state.index = 0;
+  state.current = deck[0];
+  state.gameOver = false;
+  state.handCard = null;
+  state.currentValueModifier = 0;
+  state.nextCardValueModifier = 0;
+  state.correctAnswers = 0;
+  state.streak = 0;
+  state.seenCardIds = new Set([deck[0].id]);
+  state.cheats = [];
+  state.nudgeUpCharges = 0;
+  state.nudgeDownCharges = 0;
+  state.energy = 0;
+  state.currentDeckKey = normalizedDeckKey;
+  state.currentLevelNumber = normalizedLevelNumber;
+  state.bestScore = loadBestScore(normalizedDeckKey, normalizedLevelNumber);
+  state.selectedStartPowerId = null;
+  state.powers = [];
+  state.gameOverDisplayCards = null;
+  state.currentCardFeedback = "";
+  state.pendingRevealAnimation = null;
+  state.message = "";
+}
+
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -450,12 +483,14 @@ function openPowerChoice(forceRandom = false) {
   state.cheatChoiceLockedUntil = 0;
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
+  state.powerChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
+  previewPendingRunBehindPowerChoice(deck, "standard", state.pendingDeckKey, state.pendingLevelNumber);
   state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck Level ${state.pendingLevelNumber} run.`;
   render();
   if (typeof window.maybeStartPowerChoiceTutorial === "function") {
@@ -480,12 +515,14 @@ function openDailyPowerChoice(dateKey = "") {
   state.cheatChoiceLockedUntil = 0;
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
+  state.powerChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
+  previewPendingRunBehindPowerChoice(deck, "daily", "blue", DEFAULT_LEVEL_NUMBER);
   state.message = `Daily for ${chosenDateKey}: choose 1 power.`;
   render();
 }

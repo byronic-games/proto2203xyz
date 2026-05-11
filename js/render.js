@@ -8,6 +8,7 @@ function getDeckBackColor(deckKey) {
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
 let cheatChoiceAnimationTimer = null;
+let powerChoiceAnimationTimer = null;
 let suppressNextCheatEntryIntroId = "";
 let lastRenderedCheatCounts = new Map();
 let cheatChoiceConfirmIndex = -1;
@@ -15,9 +16,11 @@ let cheatChoiceConfirmAfter = 0;
 let cheatUseLockedUntil = 0;
 const CHEAT_CHOICE_CLOSE_MS = 140;
 const CHEAT_CHOICE_FLY_MS = 300;
+const POWER_CHOICE_CLOSE_MS = 140;
+const POWER_CHOICE_FLY_MS = 320;
 const CHEAT_CHOICE_CONFIRM_BUFFER_MS = 450;
 const CHEAT_USE_BUFFER_MS = 420;
-const REVEAL_FLIP_MS = 280;
+const REVEAL_FLIP_MS = 420;
 const REVEAL_HOLD_MS = 160;
 const REVEAL_SLIDE_MS = 400;
 const REVEAL_FAILURE_HOLD_MS = 180;
@@ -43,6 +46,17 @@ function clearPendingCheatChoiceTimer() {
     clearTimeout(cheatChoiceAnimationTimer);
     cheatChoiceAnimationTimer = null;
   }
+}
+
+function clearPendingPowerChoiceTimer() {
+  if (powerChoiceAnimationTimer) {
+    clearTimeout(powerChoiceAnimationTimer);
+    powerChoiceAnimationTimer = null;
+  }
+}
+
+function canUseHoverTooltips() {
+  return window.matchMedia?.("(hover: hover) and (pointer: fine)")?.matches === true;
 }
 
 function sanitizeRevealEffectId(effectId) {
@@ -477,6 +491,7 @@ function setupHeaderPowerTooltip(el, payload) {
   el.addEventListener("pointercancel", clearHold);
   el.addEventListener("pointerleave", clearHold);
   el.addEventListener("mouseenter", () => {
+    if (!canUseHoverTooltips()) return;
     if (el.dataset.tooltipEnabled !== "1") return;
     showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
   });
@@ -812,6 +827,7 @@ function setupDeckStatsTooltip(el, payload) {
   el.addEventListener("pointercancel", clearHold);
   el.addEventListener("pointerleave", clearHold);
   el.addEventListener("mouseenter", () => {
+    if (!canUseHoverTooltips()) return;
     if (el.dataset.tooltipEnabled !== "1") return;
     showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
   });
@@ -1085,6 +1101,26 @@ function hideCheatChoiceFlyout() {
   flyoutEl.removeAttribute("style");
 }
 
+function hidePowerChoiceFlyout() {
+  const flyoutEl = document.getElementById("power-choice-flyout");
+  if (!flyoutEl) return;
+  flyoutEl.className = "hidden";
+  flyoutEl.setAttribute("aria-hidden", "true");
+  flyoutEl.innerHTML = "";
+  flyoutEl.removeAttribute("style");
+}
+
+function buildPowerChoiceShieldMarkup(power) {
+  return `
+    ${POWER_SHIELD_SVG}
+    <div class="choice-top">
+      <div class="choice-icon">${getPowerIcon(power.id)}</div>
+      <div class="choice-name">${power.name}</div>
+      <div class="choice-rarity">${getPowerRarityLabel(power)}</div>
+    </div>
+  `;
+}
+
 function renderCheatChoiceInfo(infoEl, cheat, promptText = "") {
   if (!infoEl) return;
 
@@ -1172,6 +1208,105 @@ function getCheatChoiceFlyTargetRect(targetEntryId, fallbackEl) {
     width: targetRect.width,
     height: targetRect.height,
   };
+}
+
+function beginPowerChoiceSelection(index, buttonEl) {
+  const power = state.pendingPowerOptions[index];
+  if (!power || !buttonEl || state.powerChoiceAnimating) return;
+
+  const sourceRect = buttonEl.getBoundingClientRect();
+  state.powerChoiceAnimating = {
+    stage: "closing",
+    started: false,
+    selectedIndex: index,
+    power: { ...power },
+    optionsSnapshot: state.pendingPowerOptions.map((option) => ({ ...option })),
+    sourceRect: {
+      left: sourceRect.left,
+      top: sourceRect.top,
+      width: sourceRect.width,
+      height: sourceRect.height,
+    },
+  };
+  render();
+}
+
+function completePowerChoiceSelectionAnimation() {
+  const selectedIndex = state.powerChoiceAnimating?.selectedIndex;
+  hidePowerChoiceFlyout();
+  clearPendingPowerChoiceTimer();
+  state.powerChoiceAnimating = null;
+  if (Number.isInteger(selectedIndex)) {
+    pickPowerFromChoice(selectedIndex);
+    return;
+  }
+  render();
+}
+
+function playPendingPowerChoiceAnimation() {
+  const animation = state.powerChoiceAnimating;
+  if (!animation) {
+    hidePowerChoiceFlyout();
+    return;
+  }
+
+  if (animation.stage === "closing") {
+    if (animation.started) return;
+    animation.started = true;
+    clearPendingPowerChoiceTimer();
+    powerChoiceAnimationTimer = setTimeout(() => {
+      powerChoiceAnimationTimer = null;
+      if (!state.powerChoiceAnimating || state.powerChoiceAnimating !== animation) return;
+      state.powerChoiceAnimating.stage = "flying";
+      state.powerChoiceAnimating.started = false;
+      render();
+    }, POWER_CHOICE_CLOSE_MS);
+    return;
+  }
+
+  if (animation.stage !== "flying" || animation.started) return;
+
+  const flyoutEl = document.getElementById("power-choice-flyout");
+  const targetEl = document.getElementById("header-power-chip");
+  if (!flyoutEl || !targetEl || !animation.power) return;
+
+  animation.started = true;
+  clearPendingPowerChoiceTimer();
+
+  const rarity = animation.power.rarity || "common";
+  flyoutEl.className = `power-choice-flyout choice-card power-choice-card ${rarity}`;
+  flyoutEl.innerHTML = buildPowerChoiceShieldMarkup(animation.power);
+  flyoutEl.setAttribute("aria-hidden", "true");
+
+  const source = animation.sourceRect;
+  flyoutEl.style.left = `${source.left}px`;
+  flyoutEl.style.top = `${source.top}px`;
+  flyoutEl.style.setProperty("--flyout-width", `${source.width}px`);
+  flyoutEl.style.setProperty("--flyout-height", `${source.height}px`);
+  flyoutEl.style.opacity = "1";
+  flyoutEl.style.transform = "translate3d(0, 0, 0) scale(1)";
+
+  const targetRect = targetEl.getBoundingClientRect();
+  const sourceCenterX = source.left + (source.width / 2);
+  const sourceCenterY = source.top + (source.height / 2);
+  const targetCenterX = targetRect.left + (targetRect.width / 2);
+  const targetCenterY = targetRect.top + (targetRect.height / 2);
+  const deltaX = targetCenterX - sourceCenterX;
+  const deltaY = targetCenterY - sourceCenterY;
+  const scaleX = source.width > 0 ? targetRect.width / source.width : 1;
+  const scaleY = source.height > 0 ? targetRect.height / source.height : 1;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      flyoutEl.classList.add("is-moving");
+      flyoutEl.style.opacity = "0.94";
+      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+    });
+  });
+
+  powerChoiceAnimationTimer = setTimeout(() => {
+    completePowerChoiceSelectionAnimation();
+  }, POWER_CHOICE_FLY_MS + 20);
 }
 
 function playPendingCheatChoiceAnimation() {
@@ -1386,6 +1521,7 @@ function renderCheats() {
     };
 
     btn.onmouseenter = () => {
+      if (!canUseHoverTooltips()) return;
       hoverTimer = setTimeout(() => {
         showTooltip(title, tooltipBody, btn);
       }, 180);
@@ -1618,6 +1754,7 @@ function renderCheatChoice() {
     }
 
     btn.onmouseenter = () => {
+      if (!canUseHoverTooltips()) return;
       if (choiceLocked || state.cheatChoiceAnimating) return;
       state.cheatChoicePreviewIndex = i;
       cheatChoiceConfirmIndex = -1;
@@ -1672,9 +1809,16 @@ function renderPowerChoice() {
   if (!container || !list) return;
 
   list.innerHTML = "";
-  list.dataset.count = String(state.pendingPowerOptions.length || 0);
+  container.classList.remove("is-closing", "is-flying");
+  const animation = state.powerChoiceAnimating;
+  const choiceOptions = state.pendingPowerOptions.length
+    ? state.pendingPowerOptions
+    : Array.isArray(animation?.optionsSnapshot)
+      ? animation.optionsSnapshot
+      : [];
+  list.dataset.count = String(choiceOptions.length || 0);
 
-  if (!state.pendingPowerOptions.length) {
+  if (!choiceOptions.length) {
     document.body.classList.remove("choice-modal-open", "power-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
@@ -1689,6 +1833,12 @@ function renderPowerChoice() {
   document.body.classList.add("choice-modal-open", "power-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
+
+  if (animation?.stage === "closing") {
+    container.classList.add("is-closing");
+  } else if (animation?.stage === "flying") {
+    container.classList.add("is-flying");
+  }
 
   if (titleEl) {
     titleEl.innerText = state.activePowerAwardReason ? "Choose Your Bonus Power" : "Choose Your Power";
@@ -1708,7 +1858,7 @@ function renderPowerChoice() {
   const introFresh = list.dataset.introToken !== introToken;
   list.dataset.introToken = introToken;
 
-  state.pendingPowerOptions.forEach((power, i) => {
+  choiceOptions.forEach((power, i) => {
     const option = document.createElement("div");
     option.className = `power-choice-option ${power.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
     option.style.setProperty("--choice-index", String(i));
@@ -1716,24 +1866,9 @@ function renderPowerChoice() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `choice-card power-choice-card ${power.rarity || "common"}`.trim();
-    btn.disabled = choiceLocked;
+    btn.disabled = choiceLocked || !!animation;
     btn.setAttribute("aria-describedby", `power-choice-desc-${i}`);
-    btn.insertAdjacentHTML("afterbegin", POWER_SHIELD_SVG);
-
-    const top = document.createElement("div");
-    top.className = "choice-top";
-
-    const icon = document.createElement("div");
-    icon.className = "choice-icon";
-    icon.innerText = getPowerIcon(power.id);
-
-    const name = document.createElement("div");
-    name.className = "choice-name";
-    name.innerText = power.name;
-
-    const rarity = document.createElement("div");
-    rarity.className = "choice-rarity";
-    rarity.innerText = getPowerRarityLabel(power);
+    btn.innerHTML = buildPowerChoiceShieldMarkup(power);
 
     const desc = document.createElement("div");
     desc.className = "choice-desc";
@@ -1744,11 +1879,13 @@ function renderPowerChoice() {
     });
     desc.innerText = powerDescription;
 
-    top.appendChild(icon);
-    top.appendChild(name);
-    top.appendChild(rarity);
-
-    btn.appendChild(top);
+    if (animation) {
+      if (animation.selectedIndex === i) {
+        option.classList.add("is-selected-ghost");
+      } else {
+        option.classList.add("is-dismissing");
+      }
+    }
 
     let powerHoldTimer = null;
     let powerHoverTimer = null;
@@ -1790,6 +1927,7 @@ function renderPowerChoice() {
     };
 
     option.onmouseenter = () => {
+      if (!canUseHoverTooltips()) return;
       powerHoverTimer = setTimeout(showPowerTooltip, 180);
     };
 
@@ -1800,9 +1938,10 @@ function renderPowerChoice() {
 
     btn.onclick = () => {
       if (powerHeld) return;
+      if (choiceLocked || state.powerChoiceAnimating) return;
       clearTimeout(powerHoverTimer);
       hideCheatTooltip(true);
-      pickPowerFromChoice(i);
+      beginPowerChoiceSelection(i, btn);
     };
 
     option.appendChild(btn);
@@ -1933,4 +2072,5 @@ function render() {
   renderNextInfo();
   playPendingCardRevealAnimation();
   playPendingCheatChoiceAnimation();
+  playPendingPowerChoiceAnimation();
 }
