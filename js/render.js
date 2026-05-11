@@ -313,7 +313,19 @@ function renderScores() {
       energyCardEl.hidden = !showEnergy;
     }
     if (energyValueEl) {
-      setAnimatedText(energyValueEl, Math.max(0, Number(state.energy) || 0));
+      const nextEnergyValue = Math.max(0, Number(state.energy) || 0);
+      const previousEnergyValue = Number(energyValueEl.dataset.renderValue);
+      const wasEnergyVisible = energyCardEl?.dataset.energyVisible === "true";
+      setAnimatedText(energyValueEl, nextEnergyValue);
+      if (showEnergy && wasEnergyVisible && Number.isFinite(previousEnergyValue) && nextEnergyValue > previousEnergyValue) {
+        const popEl = energyCardEl || energyValueEl;
+        popEl.classList.remove("energy-pop");
+        void popEl.offsetWidth;
+        popEl.classList.add("energy-pop");
+      }
+      if (energyCardEl) {
+        energyCardEl.dataset.energyVisible = showEnergy ? "true" : "false";
+      }
     }
   }
 
@@ -1160,6 +1172,21 @@ function beginCheatChoiceSelection(index, buttonEl) {
   const optionsSnapshot = state.pendingCheatOptions.map((option) => ({ ...option }));
   const sourceRect = buttonEl.getBoundingClientRect();
   const selectionResult = pickCheatFromChoice(index, { deferFollowup: true, suppressRender: true });
+
+  if (cheat.id === "green_energy_boost") {
+    hideCheatChoiceFlyout();
+    clearPendingCheatChoiceTimer();
+    state.cheatChoiceAnimating = null;
+    state.cheatChoicePreviewIndex = -1;
+    cheatChoiceConfirmIndex = -1;
+    cheatChoiceConfirmAfter = 0;
+    if (typeof runDeferredCheatChoiceFollowup === "function") {
+      runDeferredCheatChoiceFollowup(selectionResult?.followup || { type: "render" });
+      return;
+    }
+    render();
+    return;
+  }
 
   state.cheatChoiceAnimating = {
     stage: "closing",
