@@ -166,7 +166,7 @@ function spawnVictoryConfetti() {
   if (!confettiEl) return;
 
   const colors = ["#9ff0ff", "#5bdbfb", "#c7ff54", "#f5ebff", "#ffcf72", "#f77df6"];
-  const piecesPerWave = 54;
+  const piecesPerWave = 70;
   const waveOffsets = [0, 320, 640];
 
   confettiEl.innerHTML = "";
@@ -177,7 +177,7 @@ function spawnVictoryConfetti() {
       piece.className = "confetti-piece";
       piece.style.setProperty("--x", `${Math.random() * 100}%`);
       piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
-      piece.style.setProperty("--fall-distance", `${280 + Math.round(Math.random() * 210)}px`);
+      piece.style.setProperty("--fall-distance", `${105 + Math.round(Math.random() * 30)}vh`);
       piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
       piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
       piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 220)}ms`);
@@ -1494,7 +1494,6 @@ function makeGuessLegacy(type) {
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
-  flashGameShell("correct");
   addMetaProgression(1);
   if (forcedNudgeDirection === "up" && forcedNudgeReward > 0) {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + forcedNudgeReward;

@@ -728,14 +728,22 @@ function setSettingsModalStatus(message = "") {
   if (status) status.innerText = message;
 }
 
+function applyVisualTheme(theme) {
+  document.body.dataset.visuals = theme === "new" ? "new" : "neon";
+}
+
 function refreshSettingsModalState() {
   const tutorialToggle = document.getElementById("settings-tutorial-toggle");
+  const visualsSelect = document.getElementById("settings-visuals-select");
   const shareLogBtn = document.getElementById("settings-share-log-btn");
   const downloadLogBtn = document.getElementById("settings-download-log-btn");
   const hasLog = getLatestRunLogEntriesForModal().length > 0;
 
   if (tutorialToggle) {
     tutorialToggle.checked = localStorage.getItem(getTutorialCompletedKey()) !== "1";
+  }
+  if (visualsSelect) {
+    visualsSelect.value = loadVisualTheme();
   }
   if (downloadLogBtn) {
     downloadLogBtn.disabled = !hasLog;
@@ -927,7 +935,6 @@ document.getElementById("howto-open-btn")?.addEventListener("click", () => {
   setHeaderMenuOpen(false);
   openHowToModal();
 });
-document.getElementById("howto-close-btn")?.addEventListener("click", closeHowToModal);
 document.getElementById("howto-close-icon-btn")?.addEventListener("click", closeHowToModal);
 document.getElementById("howto-close-backdrop")?.addEventListener("click", closeHowToModal);
 
@@ -940,6 +947,13 @@ document.getElementById("settings-close-icon-btn")?.addEventListener("click", cl
 document.getElementById("settings-close-backdrop")?.addEventListener("click", closeSettingsModal);
 document.getElementById("settings-download-log-btn")?.addEventListener("click", downloadLatestRunLogFromModal);
 document.getElementById("settings-share-log-btn")?.addEventListener("click", shareLatestRunLogFromModal);
+
+document.getElementById("settings-visuals-select")?.addEventListener("change", (event) => {
+  const theme = event.target.value === "new" ? "new" : "neon";
+  saveVisualTheme(theme);
+  applyVisualTheme(theme);
+  render();
+});
 
 document.getElementById("settings-tutorial-toggle")?.addEventListener("change", (event) => {
   if (event.target.checked) {
@@ -1276,3 +1290,5 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowUp") makeGuess("higher");
   if (e.key === "ArrowDown") makeGuess("lower");
 });
+
+applyVisualTheme(loadVisualTheme());

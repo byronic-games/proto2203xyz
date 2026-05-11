@@ -135,10 +135,26 @@ th {
   background: var(--chip);
 }
 
-.rarity-common { background: #314267; }
-.rarity-uncommon { background: #28535c; }
-.rarity-rare { background: #5a3f89; }
-.rarity-legendary { background: #7a3954; }
+.rarity-common,
+.rarity-normal {
+  background: #f8fafc;
+  color: #151923;
+}
+
+.rarity-uncommon {
+  background: #22c55e;
+  color: #f7fff9;
+}
+
+.rarity-rare {
+  background: #3b82f6;
+  color: #f8fbff;
+}
+
+.rarity-legendary {
+  background: #8b5cf6;
+  color: #fbf8ff;
+}
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260511p">
+  <link rel="stylesheet" href="styles.css?v=20260511aa">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -27,6 +27,9 @@
         <div class="header-mainline">
           <h1 id="brand-title">52!</h1>
           <button id="header-power-chip" class="header-power-chip" type="button" aria-label="Starting power details">
+            <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
+              <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
+            </svg>
             <span id="header-power-glyph">·</span>
           </button>
 
@@ -129,7 +132,6 @@
             </ul>
           </div>
 
-          <button id="howto-close-btn" class="help-close-btn" type="button">Close</button>
         </article>
       </div>
 
@@ -153,8 +155,8 @@
             <label class="settings-row" for="settings-visuals-select">
               <span>Visuals</span>
               <select id="settings-visuals-select">
-                <option value="new">NEW</option>
-                <option value="neon" selected>NEON</option>
+                <option value="new" selected>NEW</option>
+                <option value="neon">NEON</option>
               </select>
             </label>
 
@@ -259,8 +261,8 @@
   </div>
 
   <script src="js/fullscreen.js?v=20260506b"></script>
-  <script src="js/constants.js?v=20260427a"></script>
-  <script src="js/storage.js?v=20260427a"></script>
+  <script src="js/constants.js?v=20260511r"></script>
+  <script src="js/storage.js?v=20260511s"></script>
   <script src="js/state.js?v=20260506b"></script>
   <script src="js/powers.js?v=20260502a"></script>
   <script src="js/cheats.js?v=20260506b"></script>
@@ -268,9 +270,9 @@
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
-  <script src="js/logic.js?v=20260506c"></script>
-  <script src="js/render.js?v=20260511k"></script>
-  <script src="js/input.js?v=20260511b"></script>
+  <script src="js/logic.js?v=20260511u"></script>
+  <script src="js/render.js?v=20260511ag"></script>
+  <script src="js/input.js?v=20260511s"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

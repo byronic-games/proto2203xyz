@@ -320,6 +320,15 @@ function saveMetaProgression(value) {
 }
 
 
+function loadVisualTheme() {
+  const raw = localStorage.getItem(VISUAL_THEME_KEY);
+  return raw === "neon" ? "neon" : "new";
+}
+
+function saveVisualTheme(theme) {
+  localStorage.setItem(VISUAL_THEME_KEY, theme === "new" ? "new" : "neon");
+}
+
 function loadSelectedDeck() {
   return normalizeDeckKey(localStorage.getItem(SELECTED_DECK_KEY) || "blue");
 }
@@ -522,4 +531,3 @@ function resetDeckAlterations() {
     }
   }
 }
-

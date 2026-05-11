@@ -8,13 +8,24 @@ function getDeckBackColor(deckKey) {
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
 let cheatChoiceAnimationTimer = null;
+let suppressNextCheatEntryIntroId = "";
+let lastRenderedCheatCounts = new Map();
+let cheatChoiceConfirmIndex = -1;
+let cheatChoiceConfirmAfter = 0;
+let cheatUseLockedUntil = 0;
 const CHEAT_CHOICE_CLOSE_MS = 140;
 const CHEAT_CHOICE_FLY_MS = 300;
+const CHEAT_CHOICE_CONFIRM_BUFFER_MS = 450;
+const CHEAT_USE_BUFFER_MS = 420;
 const REVEAL_FLIP_MS = 280;
 const REVEAL_HOLD_MS = 160;
-const REVEAL_SUCCESS_FLASH_MS = 220;
 const REVEAL_SLIDE_MS = 400;
 const REVEAL_FAILURE_HOLD_MS = 180;
+const POWER_SHIELD_SVG = `
+  <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
+    <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
+  </svg>
+`;
 
 function clearPendingRevealTimers() {
   if (revealAnimationResetTimer) {
@@ -57,7 +68,6 @@ function removeRevealStateClasses(el) {
     "reveal-promote",
     "reveal-settle",
     "reveal-fail",
-    "reveal-win-flash",
     "reveal-slide-over"
   );
   el.style.removeProperty("--reveal-slide-x");
@@ -137,7 +147,9 @@ function finalizePendingReveal(pending) {
     const feedbackEffect = pending.feedbackEffect || pending.outcome;
     if (feedbackEffect === "correct" || feedbackEffect === "wrong") {
       if (typeof setCurrentCardFeedback === "function") setCurrentCardFeedback(feedbackEffect);
-      if (typeof flashGameShell === "function") flashGameShell(feedbackEffect);
+      if (feedbackEffect === "wrong" && typeof flashGameShell === "function") {
+        flashGameShell(feedbackEffect);
+      }
     }
   }
 
@@ -214,35 +226,11 @@ function playPendingCardRevealAnimation() {
       revealAnimationResetTimer = setTimeout(() => {
         revealAnimationResetTimer = null;
         if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
-        state.pendingRevealAnimation.phase = pending.outcome === "correct" ? "highlighting" : "finishing";
+        state.pendingRevealAnimation.phase = pending.outcome === "correct" ? "sliding" : "finishing";
         state.pendingRevealAnimation.started = false;
         render();
       }, halfFlipMs + REVEAL_HOLD_MS);
     }, halfFlipMs);
-    return;
-  }
-
-  if (pending.phase === "highlighting") {
-    if (pending.started) return;
-
-    pending.started = true;
-    clearPendingRevealTimers();
-    removeRevealStateClasses(overlayEl);
-    const highlightingOverlayEl = renderRevealOverlayCard(pending, true);
-    if (!highlightingOverlayEl) return;
-    highlightingOverlayEl.style.animation = "none";
-    void highlightingOverlayEl.offsetWidth;
-    highlightingOverlayEl.style.animation = "";
-    highlightingOverlayEl.classList.add("reveal-win-flash");
-    if (effectClass) highlightingOverlayEl.classList.add(effectClass);
-
-    revealAnimationResetTimer = setTimeout(() => {
-      revealAnimationResetTimer = null;
-      if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
-      state.pendingRevealAnimation.phase = "sliding";
-      state.pendingRevealAnimation.started = false;
-      render();
-    }, REVEAL_SUCCESS_FLASH_MS);
     return;
   }
 
@@ -399,6 +387,11 @@ function renderHeaderStatus() {
 
   if (powerChipEl && powerGlyphEl) {
     const hasPower = !!runPowerId;
+    const runPower = hasPower ? getPowerById(runPowerId) : null;
+    powerChipEl.classList.remove("common", "normal", "uncommon", "rare", "legendary");
+    if (hasPower) {
+      powerChipEl.classList.add(runPower?.rarity || "common");
+    }
     powerGlyphEl.innerText = hasPower ? getPowerIcon(runPowerId) : "·";
     powerChipEl.classList.toggle("has-power", hasPower);
     powerChipEl.setAttribute("aria-label", hasPower ? `${runPowerName} details` : "No starting power selected");
@@ -471,8 +464,9 @@ function setupHeaderPowerTooltip(el, payload) {
     hideCheatTooltip();
   };
 
-  el.addEventListener("pointerdown", () => {
+  el.addEventListener("pointerdown", (event) => {
     if (el.dataset.tooltipEnabled !== "1") return;
+    if (event.pointerType === "mouse") return;
     clearTimeout(holdTimer);
     holdTimer = setTimeout(() => {
       showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
@@ -482,7 +476,15 @@ function setupHeaderPowerTooltip(el, payload) {
   el.addEventListener("pointerup", clearHold);
   el.addEventListener("pointercancel", clearHold);
   el.addEventListener("pointerleave", clearHold);
+  el.addEventListener("mouseenter", () => {
+    if (el.dataset.tooltipEnabled !== "1") return;
+    showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+  });
   el.addEventListener("mouseleave", clearHold);
+  el.addEventListener("contextmenu", (event) => {
+    if (el.dataset.tooltipEnabled !== "1") return;
+    event.preventDefault();
+  });
 
   el.dataset.tooltipInit = "1";
   el.dataset.tooltipRole = "header-power";
@@ -491,20 +493,67 @@ function setupHeaderPowerTooltip(el, payload) {
   el.dataset.tooltipBody = payload?.description || "";
 }
 
+const CHEAT_ICON_BY_NAME = Object.freeze({
+  "Above 9?": "9↑",
+  "Below 5?": "5↓",
+  "Between 5 and 9?": "5–9",
+  "Is it an Ace?": "A?",
+  "Is it a King?": "K?",
+  "Ace ahead?": "A⋯",
+  "King ahead?": "K⋯",
+  "Number Remaining?": "#",
+  "Total of Next Two": "Σ2",
+  "Total of Next Three": "Σ3",
+  "Total Above 12?": "12↑",
+  "Total Above 20?": "20↑",
+  "Total Under 10?": "10↓",
+  "Total Under 15?": "15↓",
+  "Prime Ahead?": "ℙ",
+  "Product of Next Two": "∏2",
+  "Top Half / Bottom Half": "◐",
+  "Face Card Ahead?": "JQK",
+  "One of Next 2 Higher?": "∃↑",
+  "One of Next 2 Lower?": "∃↓",
+  "Higher of Next Two": "⇈",
+  "Lower of Next Two": "⇊",
+  "Next Card Parity": "⊕",
+  "Chance Higher": "%↑",
+  "Chance Lower": "%↓",
+  "Nudge +1": "⇧1",
+  "Nudge -1": "⇩1",
+  "Nudge +2": "⇧2",
+  "Nudge -2": "⇩2",
+  "Next Card Nudge Up": "↥",
+  "Next Card Nudge Down": "↧",
+  "Halve It": "½",
+  "Double Trouble": "2×",
+  "Odd One Out": "O!",
+  "Lucky 7": "7★",
+  "Five Alive": "5♥",
+  "6/7": "6⁄7",
+  "Twin Peek": "◉◉",
+  "Run Stopper": "⛔",
+  "Bang Average": "AVG",
+  "God Save The King": "♔",
+  "Jack Of All Trades": "J✦",
+  "Fortune Teller": "🔮",
+  "You Can Cheat A Cheater": "C²",
+  "Suits You, Sir": "♣♦",
+  "Cursed Shield": "⛨",
+  "The Higher The Better": "⇈!",
+  "The Lower The Better": "⇊!",
+  "Suited and Booted": "♠B",
+  "Always Bet On The Black": "♠♣",
+  "Locky 7s": "7🔒",
+  "Hot or Cold?": "℃",
+  "Corporate Icebreaker": "💬",
+  "Tear Corner": "◰",
+  "Swap": "⇄",
+  "+5 Energy": "⚡5",
+});
+
 function getCheatIcon(name) {
-  name = name.toLowerCase();
-
-  if (name.includes("peek")) return "👁️";
-  if (name.includes("skip")) return "⏭️";
-  if (name.includes("hint")) return "💡";
-  if (name.includes("swap")) return "🃏";
-  if (name.includes("tear")) return "✂️";
-  if (name.includes("nudge")) return "↕️";
-  if (name.includes("energy")) return "🔋";
-  if (name.includes("chance")) return "🎲";
-  if (name.includes("lucky")) return "7️⃣";
-
-  return "✨";
+  return CHEAT_ICON_BY_NAME[name] || "✦";
 }
 
 function renderRestartButton() {
@@ -635,9 +684,12 @@ function renderActivePowers() {
 function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, includeTornCorner, options = {}) {
   const showShieldBadge = !!options.showShieldBadge;
   const shownRank = isTemporarilyModified ? valueToRank(displayValue) : card.rank;
-  const shownLabel = `${shownRank}${card.suit}`;
+  const isNewTheme = document.body.dataset.visuals === "new";
+  const labelHtml = isNewTheme
+    ? `<div class="card-corner card-corner-tl"><span class="card-rank">${shownRank}</span><span class="card-suit" data-suit="${card.suit}" aria-hidden="true"></span></div><div class="card-center-suit" data-suit="${card.suit}" aria-hidden="true"></div><div class="card-corner card-corner-br" aria-hidden="true"><span class="card-rank">${shownRank}</span><span class="card-suit" data-suit="${card.suit}"></span></div>`
+    : `<span class="card-face-label">${shownRank}${card.suit}</span>`;
   return `
-    <span class="card-face-label">${shownLabel}</span>
+    ${labelHtml}
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
     ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
@@ -1016,7 +1068,7 @@ function buildCheatButtonMarkup(title, iconGlyph, count = 0) {
   return `
     <div class="cheat-icon">${iconGlyph}</div>
     <div class="cheat-name">${title}</div>
-    <div class="cheat-stack-count">${count > 1 ? `x${count}` : "&nbsp;"}</div>
+    <div class="cheat-stack-count" ${count > 1 ? "" : "hidden"}>x${count}</div>
   `;
 }
 
@@ -1042,15 +1094,19 @@ function renderCheatChoiceInfo(infoEl, cheat, promptText = "") {
   }
 
   const rarityLabel = getCheatChoiceRarityLabel(cheat);
+  const rarityClass = `rarity-${cheat?.rarity || "common"}`;
   infoEl.innerHTML = `
     <div class="cheat-choice-info-title">${cheat.name}</div>
-    <div class="cheat-choice-info-rarity">${rarityLabel}</div>
+    <div class="cheat-choice-info-rarity ${rarityClass}">${rarityLabel}</div>
     <div class="cheat-choice-info-copy">${getCheatDescription(cheat)}</div>
     <div class="cheat-choice-info-hint">Tap again to select</div>
   `;
 }
 
 function completeCheatChoiceSelectionAnimation(followup) {
+  if (state.cheatChoiceAnimating?.targetEntryId) {
+    suppressNextCheatEntryIntroId = state.cheatChoiceAnimating.targetEntryId;
+  }
   hideCheatChoiceFlyout();
   clearPendingCheatChoiceTimer();
   state.cheatChoiceAnimating = null;
@@ -1085,7 +1141,37 @@ function beginCheatChoiceSelection(index, buttonEl) {
     followup: selectionResult?.followup || { type: "render" },
   };
   state.cheatChoicePreviewIndex = -1;
+  cheatChoiceConfirmIndex = -1;
+  cheatChoiceConfirmAfter = 0;
   render();
+}
+
+function getCheatChoiceFlyTargetRect(targetEntryId, fallbackEl) {
+  const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(targetEntryId || "")}"]`);
+  const targetRect = (targetEl || fallbackEl)?.getBoundingClientRect();
+  const cheatListEl = document.getElementById("cheat-list");
+  if (!targetEl || !targetRect || !cheatListEl) return targetRect;
+
+  const coinEls = Array.from(cheatListEl.querySelectorAll(".cheat-button[data-cheat-entry-id]"));
+  const targetIndex = coinEls.findIndex((el) => el.dataset.cheatEntryId === targetEntryId);
+  if (targetIndex < 0) return targetRect;
+
+  const coinRects = coinEls.map((el) => el.getBoundingClientRect());
+  const listRect = cheatListEl.getBoundingClientRect();
+  const styles = window.getComputedStyle(cheatListEl);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
+  const totalWidth = coinRects.reduce((sum, rect) => sum + rect.width, 0) + (Math.max(0, coinRects.length - 1) * gap);
+  const centeredStart = listRect.left + ((listRect.width - totalWidth) / 2);
+  const targetLeft = centeredStart + coinRects
+    .slice(0, targetIndex)
+    .reduce((sum, rect) => sum + rect.width + gap, 0);
+
+  return {
+    left: targetLeft,
+    top: targetRect.top,
+    width: targetRect.width,
+    height: targetRect.height,
+  };
 }
 
 function playPendingCheatChoiceAnimation() {
@@ -1137,20 +1223,22 @@ function playPendingCheatChoiceAnimation() {
   flyoutEl.style.opacity = "1";
   flyoutEl.style.transform = "translate3d(0, 0, 0) scale(1)";
 
-  const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(animation.targetEntryId || "")}"]`) || cheatListEl;
-  const targetRect = targetEl.getBoundingClientRect();
+  const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
+  if (!targetRect) return;
   const sourceCenterX = source.left + (source.width / 2);
   const sourceCenterY = source.top + (source.height / 2);
   const targetCenterX = targetRect.left + (targetRect.width / 2);
   const targetCenterY = targetRect.top + (targetRect.height / 2);
   const deltaX = targetCenterX - sourceCenterX;
   const deltaY = targetCenterY - sourceCenterY;
+  const scaleX = source.width > 0 ? targetRect.width / source.width : 1;
+  const scaleY = source.height > 0 ? targetRect.height / source.height : 1;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.92";
-      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0)`;
+      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
     });
   });
 
@@ -1162,6 +1250,11 @@ function playPendingCheatChoiceAnimation() {
 function renderCheats() {
   const cheatList = document.getElementById("cheat-list");
   if (!cheatList) return;
+
+  const previousCoinRects = new Map(
+    Array.from(cheatList.querySelectorAll(".cheat-button[data-cheat-entry-id]"))
+      .map((el) => [el.dataset.cheatEntryId, el.getBoundingClientRect()])
+  );
 
   cheatList.innerHTML = "";
 
@@ -1219,9 +1312,14 @@ function renderCheats() {
     });
 
   groupedEntries.push(...groupedCheats.values());
+  const currentCheatCounts = new Map(groupedEntries.map((entry) => [entry.id, entry.count]));
 
   if (!groupedEntries.length) {
     appendCheatSlots(cheatList, 0);
+    if (!state.cheatChoiceAnimating) {
+      lastRenderedCheatCounts = currentCheatCounts;
+      suppressNextCheatEntryIntroId = "";
+    }
     return;
   }
 
@@ -1237,6 +1335,15 @@ function renderCheats() {
     btn.className = `cheat-button ${rarity}${entry.kind === "nudge" ? " nudge-cheat-button" : ""}`;
     btn.dataset.cheatEntryId = entry.id;
     btn.disabled = tutorialCheatUseBlocked;
+    const previousCount = lastRenderedCheatCounts.get(entry.id) || 0;
+    const isFreshAward = previousCount <= 0 && entry.kind === "nudge" && suppressNextCheatEntryIntroId !== entry.id;
+    const shouldPulseCount = previousCount > 0 && entry.count > previousCount && entry.count > 1;
+    if (!state.cheatChoiceAnimating && isFreshAward) {
+      btn.classList.add("is-awarded-new");
+    }
+    if (!state.cheatChoiceAnimating && shouldPulseCount) {
+      btn.classList.add("has-count-pulse");
+    }
     if (state.cheatChoiceAnimating?.stage === "flying" && state.cheatChoiceAnimating.targetEntryId === entry.id) {
       btn.classList.add("is-receive-target-hidden");
     }
@@ -1244,6 +1351,7 @@ function renderCheats() {
     btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count);
 
     let holdTimer = null;
+    let hoverTimer = null;
     let held = false;
 
     btn.onpointerdown = (e) => {
@@ -1253,34 +1361,45 @@ function renderCheats() {
       holdTimer = setTimeout(() => {
         held = true;
         showTooltip(title, tooltipBody, btn);
+        const tooltip = document.getElementById("cheat-tooltip");
+        if (tooltip) tooltip.dataset.keepOpenOnce = "1";
       }, 300);
     };
 
     btn.onpointerup = () => {
       clearTimeout(holdTimer);
-      setTimeout(hideCheatTooltip, 50);
+      if (!held) {
+        setTimeout(hideCheatTooltip, 50);
+      }
     };
 
     btn.onpointercancel = () => {
       clearTimeout(holdTimer);
-      hideCheatTooltip();
+      hideCheatTooltip(true);
     };
 
-    btn.onpointerleave = () => {
+    btn.onpointerleave = (e) => {
       clearTimeout(holdTimer);
-      hideCheatTooltip();
+      if (e.pointerType === "mouse" || !held) {
+        hideCheatTooltip(true);
+      }
     };
 
     btn.onmouseenter = () => {
-      showTooltip(title, tooltipBody, btn);
+      hoverTimer = setTimeout(() => {
+        showTooltip(title, tooltipBody, btn);
+      }, 180);
     };
 
     btn.onmouseleave = () => {
-      hideCheatTooltip();
+      clearTimeout(hoverTimer);
+      hideCheatTooltip(true);
     };
 
     btn.onclick = () => {
       if (held) return;
+      clearTimeout(hoverTimer);
+      hideCheatTooltip(true);
       if (typeof window.isTutorialBlockingCheatUse === "function" && window.isTutorialBlockingCheatUse()) {
         state.message = "Cheat use unlocks at the next tutorial step.";
         renderMessage();
@@ -1292,68 +1411,122 @@ function renderCheats() {
         render();
         return;
       }
+      const now = Date.now();
+      if (now < cheatUseLockedUntil) return;
+      cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
+
+      const useAfterOptionalDismiss = (action, shouldAnimate) => {
+        if (!shouldAnimate) {
+          action();
+          return;
+        }
+        btn.classList.add("is-consuming");
+        btn.disabled = true;
+        setTimeout(action, 220);
+      };
+
       if (entry.kind === "nudge") {
-        useNudgeCharge(entry.direction);
+        const canAnimateNudge = entry.count <= 1 && typeof canUseNudge === "function" && canUseNudge(entry.direction);
+        useAfterOptionalDismiss(() => useNudgeCharge(entry.direction), canAnimateNudge);
         return;
       }
 
-      const result = entry.cheat.use();
-      state.message = result;
-      appendRunDebugLog("cheat_used", {
-        cheatId: entry.cheat.id,
-        cheatName: entry.cheat.name,
-        result,
-        cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
-        consumeOnUse: !!entry.cheat.consumeOnUse,
-        armedStatesAfterUse: {
-          lucky7: !!state.lucky7Armed,
-          fiveAlive: !!state.fiveAliveArmed,
-          godSaveKing: !!state.godSaveKingArmed,
-          alwaysBetBlack: !!state.alwaysBetBlackArmed,
-          oddOneOut: !!state.oddOneOutArmed,
-          cursedShield: !!state.cursedShieldArmed,
-          suitedAndBooted: !!state.suitedAndBootedArmed,
-          suitedAndBootedSuit: state.suitedAndBootedSuit || "",
-          forcedNextGuess: state.forcedNextGuess || "",
-          lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
-          sixSeven: !!state.sixSevenArmed,
-          cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
-        },
-      });
-      if (entry.cheat.consumeOnUse) {
-        const originalIndex = state.cheats.findIndex((c) => c.id === entry.cheat.id);
-        if (originalIndex >= 0) removeCheatAt(originalIndex);
-        state.cheatUsesOnCurrentCard = (state.cheatUsesOnCurrentCard || 0) + 1;
-      }
-      if (typeof window.handleTutorialCheatUsed === "function") {
-        window.handleTutorialCheatUsed(entry.cheat, result);
-      }
-      render();
+      const useCheat = () => {
+        const result = entry.cheat.use();
+        state.message = result;
+        appendRunDebugLog("cheat_used", {
+          cheatId: entry.cheat.id,
+          cheatName: entry.cheat.name,
+          result,
+          cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
+          consumeOnUse: !!entry.cheat.consumeOnUse,
+          armedStatesAfterUse: {
+            lucky7: !!state.lucky7Armed,
+            fiveAlive: !!state.fiveAliveArmed,
+            godSaveKing: !!state.godSaveKingArmed,
+            alwaysBetBlack: !!state.alwaysBetBlackArmed,
+            oddOneOut: !!state.oddOneOutArmed,
+            cursedShield: !!state.cursedShieldArmed,
+            suitedAndBooted: !!state.suitedAndBootedArmed,
+            suitedAndBootedSuit: state.suitedAndBootedSuit || "",
+            forcedNextGuess: state.forcedNextGuess || "",
+            lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
+            sixSeven: !!state.sixSevenArmed,
+            cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
+          },
+        });
+        if (entry.cheat.consumeOnUse) {
+          const originalIndex = state.cheats.findIndex((c) => c.id === entry.cheat.id);
+          if (originalIndex >= 0) removeCheatAt(originalIndex);
+          state.cheatUsesOnCurrentCard = (state.cheatUsesOnCurrentCard || 0) + 1;
+        }
+        if (typeof window.handleTutorialCheatUsed === "function") {
+          window.handleTutorialCheatUsed(entry.cheat, result);
+        }
+        render();
+      };
+
+      useAfterOptionalDismiss(useCheat, entry.cheat.consumeOnUse && entry.count <= 1);
     };
 
     cheatList.appendChild(btn);
   });
 
   appendCheatSlots(cheatList, groupedEntries.length);
+  animateCheatCoinLayout(cheatList, previousCoinRects);
+  if (!state.cheatChoiceAnimating) {
+    lastRenderedCheatCounts = currentCheatCounts;
+    suppressNextCheatEntryIntroId = "";
+  }
 }
 
 function appendCheatSlots(cheatList, occupiedCount = 0) {
-  const slotCount = Math.max(0, 4 - Math.max(0, Number(occupiedCount) || 0));
-  for (let i = 0; i < slotCount; i += 1) {
-    const slot = document.createElement("div");
-    slot.className = "cheat-slot";
-    slot.setAttribute("aria-hidden", "true");
-    cheatList.appendChild(slot);
-  }
+  if ((Number(occupiedCount) || 0) > 0) return;
+  const slot = document.createElement("div");
+  slot.className = "cheat-slot";
+  slot.setAttribute("aria-hidden", "true");
+  cheatList.appendChild(slot);
+}
+
+function animateCheatCoinLayout(cheatList, previousCoinRects) {
+  if (!previousCoinRects?.size || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+
+  requestAnimationFrame(() => {
+    cheatList.querySelectorAll(".cheat-button[data-cheat-entry-id]").forEach((coin) => {
+      const previousRect = previousCoinRects.get(coin.dataset.cheatEntryId);
+      if (!previousRect) return;
+
+      const nextRect = coin.getBoundingClientRect();
+      const deltaX = previousRect.left - nextRect.left;
+      const deltaY = previousRect.top - nextRect.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+
+      coin.animate(
+        [
+          { transform: `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0)` },
+          { transform: "translate3d(0, 0, 0)" },
+        ],
+        {
+          duration: 260,
+          easing: "ease-in-out",
+        }
+      );
+    });
+  });
 }
 
 function showCheatTooltip(cheat, el) {
   showTooltip(cheat.name, getCheatDescription(cheat), el);
 }
 
-function hideCheatTooltip() {
+function hideCheatTooltip(force = false) {
   const tooltip = document.getElementById("cheat-tooltip");
   if (!tooltip) return;
+  if (!force && tooltip.dataset.keepOpenOnce === "1") {
+    delete tooltip.dataset.keepOpenOnce;
+    return;
+  }
+  delete tooltip.dataset.keepOpenOnce;
   tooltip.classList.add("hidden");
 }
 
@@ -1444,13 +1617,28 @@ function renderCheatChoice() {
       }
     }
 
+    btn.onmouseenter = () => {
+      if (choiceLocked || state.cheatChoiceAnimating) return;
+      state.cheatChoicePreviewIndex = i;
+      cheatChoiceConfirmIndex = -1;
+      cheatChoiceConfirmAfter = 0;
+      list.querySelectorAll(".cheat-choice-card.is-previewed").forEach((el) => {
+        el.classList.remove("is-previewed");
+      });
+      btn.classList.add("is-previewed");
+      renderCheatChoiceInfo(infoEl, cheat, "");
+    };
+
     btn.onclick = () => {
       if (choiceLocked || state.cheatChoiceAnimating) return;
       if (state.cheatChoicePreviewIndex !== i) {
         state.cheatChoicePreviewIndex = i;
+        cheatChoiceConfirmIndex = i;
+        cheatChoiceConfirmAfter = Date.now() + CHEAT_CHOICE_CONFIRM_BUFFER_MS;
         render();
         return;
       }
+      if (cheatChoiceConfirmIndex === i && Date.now() < cheatChoiceConfirmAfter) return;
       beginCheatChoiceSelection(i, btn);
     };
 
@@ -1521,11 +1709,16 @@ function renderPowerChoice() {
   list.dataset.introToken = introToken;
 
   state.pendingPowerOptions.forEach((power, i) => {
+    const option = document.createElement("div");
+    option.className = `power-choice-option ${power.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
+    option.style.setProperty("--choice-index", String(i));
+
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card power-choice-card ${power.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
+    btn.className = `choice-card power-choice-card ${power.rarity || "common"}`.trim();
     btn.disabled = choiceLocked;
-    btn.style.setProperty("--choice-index", String(i));
+    btn.setAttribute("aria-describedby", `power-choice-desc-${i}`);
+    btn.insertAdjacentHTML("afterbegin", POWER_SHIELD_SVG);
 
     const top = document.createElement("div");
     top.className = "choice-top";
@@ -1544,20 +1737,77 @@ function renderPowerChoice() {
 
     const desc = document.createElement("div");
     desc.className = "choice-desc";
-    desc.innerText = getPowerDescription(power, {
+    desc.id = `power-choice-desc-${i}`;
+    const powerDescription = getPowerDescription(power, {
       deckKey: state.pendingDeckKey || state.selectedDeckKey || loadSelectedDeck(),
       levelNumber: state.pendingLevelNumber || state.selectedLevelNumber || loadSelectedLevel(),
     });
+    desc.innerText = powerDescription;
 
     top.appendChild(icon);
     top.appendChild(name);
     top.appendChild(rarity);
 
     btn.appendChild(top);
-    btn.appendChild(desc);
-    btn.onclick = () => pickPowerFromChoice(i);
 
-    list.appendChild(btn);
+    let powerHoldTimer = null;
+    let powerHoverTimer = null;
+    let powerHeld = false;
+
+    const showPowerTooltip = () => {
+      showTooltip(power.name, powerDescription, btn);
+    };
+
+    btn.onpointerdown = (e) => {
+      powerHeld = false;
+      if (e.pointerType === "mouse") return;
+
+      powerHoldTimer = setTimeout(() => {
+        powerHeld = true;
+        showPowerTooltip();
+        const tooltip = document.getElementById("cheat-tooltip");
+        if (tooltip) tooltip.dataset.keepOpenOnce = "1";
+      }, 300);
+    };
+
+    btn.onpointerup = () => {
+      clearTimeout(powerHoldTimer);
+      if (!powerHeld) {
+        setTimeout(hideCheatTooltip, 50);
+      }
+    };
+
+    btn.onpointercancel = () => {
+      clearTimeout(powerHoldTimer);
+      hideCheatTooltip(true);
+    };
+
+    btn.onpointerleave = (e) => {
+      clearTimeout(powerHoldTimer);
+      if (e.pointerType === "mouse" || !powerHeld) {
+        hideCheatTooltip(true);
+      }
+    };
+
+    option.onmouseenter = () => {
+      powerHoverTimer = setTimeout(showPowerTooltip, 180);
+    };
+
+    option.onmouseleave = () => {
+      clearTimeout(powerHoverTimer);
+      hideCheatTooltip(true);
+    };
+
+    btn.onclick = () => {
+      if (powerHeld) return;
+      clearTimeout(powerHoverTimer);
+      hideCheatTooltip(true);
+      pickPowerFromChoice(i);
+    };
+
+    option.appendChild(btn);
+    option.appendChild(desc);
+    list.appendChild(option);
   });
 
   if (choiceLocked) {
@@ -1595,10 +1845,22 @@ function renderSeenGrid() {
       cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed(card) ? "red" : "black"}`.trim();
       cell.setAttribute("aria-label", `${describeCard(card)} ${seen ? "found" : "not found"}`);
       if (seen) {
-        const label = document.createElement("span");
-        label.className = "memory-card-label";
-        label.innerText = `${card.rank}${card.suit}`;
-        cell.appendChild(label);
+        if (document.body.dataset.visuals === "new") {
+          const rank = document.createElement("span");
+          rank.className = "memory-card-rank";
+          rank.innerText = card.rank;
+          const suit = document.createElement("span");
+          suit.className = "memory-card-suit";
+          suit.dataset.suit = card.suit;
+          suit.setAttribute("aria-hidden", "true");
+          cell.appendChild(rank);
+          cell.appendChild(suit);
+        } else {
+          const label = document.createElement("span");
+          label.className = "memory-card-label";
+          label.innerText = `${card.rank}${card.suit}`;
+          cell.appendChild(label);
+        }
       }
       grid.appendChild(cell);
     }
