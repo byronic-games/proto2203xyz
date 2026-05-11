@@ -16,7 +16,7 @@ let cheatChoiceConfirmAfter = 0;
 let cheatUseLockedUntil = 0;
 const CHEAT_CHOICE_CLOSE_MS = 140;
 const CHEAT_CHOICE_FLY_MS = 300;
-const POWER_CHOICE_CLOSE_MS = 140;
+const POWER_CHOICE_CLOSE_MS = 180;
 const POWER_CHOICE_FLY_MS = 320;
 const CHEAT_CHOICE_CONFIRM_BUFFER_MS = 450;
 const CHEAT_USE_BUFFER_MS = 420;
@@ -711,12 +711,22 @@ function renderActivePowers() {
 function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, includeTornCorner, options = {}) {
   const showShieldBadge = !!options.showShieldBadge;
   const shownRank = isTemporarilyModified ? valueToRank(displayValue) : card.rank;
+  const nudgeFromRank = Number.isFinite(options.nudgeFromValue)
+    ? valueToRank(options.nudgeFromValue)
+    : "";
+  const nudgeValueActive = !!nudgeFromRank && nudgeFromRank !== shownRank;
   const isNewTheme = document.body.dataset.visuals === "new";
   const labelHtml = isNewTheme
-    ? `<div class="card-corner card-corner-tl"><span class="card-rank">${shownRank}</span><span class="card-suit" data-suit="${card.suit}" aria-hidden="true"></span></div><div class="card-center-suit" data-suit="${card.suit}" aria-hidden="true"></div><div class="card-corner card-corner-br" aria-hidden="true"><span class="card-rank">${shownRank}</span><span class="card-suit" data-suit="${card.suit}"></span></div>`
-    : `<span class="card-face-label">${shownRank}${card.suit}</span>`;
+    ? `<div class="card-corner card-corner-tl"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span><span class="card-suit" data-suit="${card.suit}" aria-hidden="true"></span></div><div class="card-center-suit" data-suit="${card.suit}" aria-hidden="true"></div><div class="card-corner card-corner-br" aria-hidden="true"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span><span class="card-suit" data-suit="${card.suit}"></span></div>`
+    : `<span class="card-face-label ${nudgeValueActive ? "card-nudge-new-label" : ""}">${shownRank}${card.suit}</span>`;
+  const nudgeOldRankHtml = nudgeValueActive
+    ? isNewTheme
+      ? `<span class="card-nudge-old-rank card-nudge-old-rank-tl">${nudgeFromRank}</span><span class="card-nudge-old-rank card-nudge-old-rank-br" aria-hidden="true">${nudgeFromRank}</span>`
+      : `<span class="card-nudge-old-label">${nudgeFromRank}${card.suit}</span>`
+    : "";
   return `
     ${labelHtml}
+    ${nudgeOldRankHtml}
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
     ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
@@ -758,8 +768,14 @@ function renderCurrentCard() {
   const feedbackClass = state.currentCardFeedback
     ? `feedback-${state.currentCardFeedback}`
     : "";
+  const nudgeAnimation = state.currentNudgeAnimation?.cardId === cardToRender.id
+    ? state.currentNudgeAnimation
+    : null;
+  const nudgeClass = nudgeAnimation
+    ? `nudge-animate nudge-${nudgeAnimation.direction === "down" ? "down" : "up"}`
+    : "";
 
-  currentCardEl.className = `card-face ${isRed(cardToRender) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass}${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
+  currentCardEl.className = `card-face ${isRed(cardToRender) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass} ${nudgeClass}${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
   currentCardEl.innerHTML = renderCardFaceMarkup(
     cardToRender,
     effectiveValue,
@@ -767,6 +783,7 @@ function renderCurrentCard() {
     backStatus.tornCorner,
     {
       showShieldBadge: !!state.cursedShieldArmed,
+      nudgeFromValue: nudgeAnimation?.fromValue,
     }
   );
 
@@ -1169,6 +1186,16 @@ function beginCheatChoiceSelection(index, buttonEl) {
   const cheat = state.pendingCheatOptions[index];
   if (!cheat || !buttonEl || state.cheatChoiceAnimating) return;
 
+  const choiceCards = Array.from(document.querySelectorAll("#cheat-choice-list .cheat-choice-card"));
+  choiceCards.forEach((el) => {
+    el.style.animation = "none";
+    el.style.transition = "none";
+    el.style.transform = "none";
+    el.style.opacity = "1";
+    el.classList.remove("choice-intro");
+  });
+  void buttonEl.offsetWidth;
+
   const optionsSnapshot = state.pendingCheatOptions.map((option) => ({ ...option }));
   const sourceRect = buttonEl.getBoundingClientRect();
   const selectionResult = pickCheatFromChoice(index, { deferFollowup: true, suppressRender: true });
@@ -1241,6 +1268,16 @@ function beginPowerChoiceSelection(index, buttonEl) {
   const power = state.pendingPowerOptions[index];
   if (!power || !buttonEl || state.powerChoiceAnimating) return;
 
+  const optionEls = Array.from(document.querySelectorAll("#power-choice-list .power-choice-option"));
+  optionEls.forEach((el) => {
+    el.style.animation = "none";
+    el.style.transition = "none";
+    el.style.transform = "none";
+    el.style.opacity = "1";
+    el.classList.remove("choice-intro");
+  });
+  void buttonEl.offsetWidth;
+
   const sourceRect = buttonEl.getBoundingClientRect();
   state.powerChoiceAnimating = {
     stage: "closing",
@@ -1256,6 +1293,18 @@ function beginPowerChoiceSelection(index, buttonEl) {
     },
   };
   render();
+}
+
+function getChoiceFlyoutHostRect(flyoutEl) {
+  const hostEl = flyoutEl.closest("#game");
+  if (!hostEl) {
+    return { left: 0, top: 0 };
+  }
+  const rect = hostEl.getBoundingClientRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+  };
 }
 
 function completePowerChoiceSelectionAnimation() {
@@ -1295,6 +1344,7 @@ function playPendingPowerChoiceAnimation() {
 
   const flyoutEl = document.getElementById("power-choice-flyout");
   const targetEl = document.getElementById("header-power-chip");
+  const targetShieldEl = targetEl?.querySelector(".power-shield-svg");
   if (!flyoutEl || !targetEl || !animation.power) return;
 
   animation.started = true;
@@ -1306,28 +1356,26 @@ function playPendingPowerChoiceAnimation() {
   flyoutEl.setAttribute("aria-hidden", "true");
 
   const source = animation.sourceRect;
-  flyoutEl.style.left = `${source.left}px`;
-  flyoutEl.style.top = `${source.top}px`;
+  const hostRect = getChoiceFlyoutHostRect(flyoutEl);
+  flyoutEl.style.left = `${source.left - hostRect.left}px`;
+  flyoutEl.style.top = `${source.top - hostRect.top}px`;
   flyoutEl.style.setProperty("--flyout-width", `${source.width}px`);
   flyoutEl.style.setProperty("--flyout-height", `${source.height}px`);
   flyoutEl.style.opacity = "1";
-  flyoutEl.style.transform = "translate3d(0, 0, 0) scale(1)";
+  flyoutEl.style.transform = "none";
+  flyoutEl.classList.remove("is-moving");
 
-  const targetRect = targetEl.getBoundingClientRect();
-  const sourceCenterX = source.left + (source.width / 2);
-  const sourceCenterY = source.top + (source.height / 2);
-  const targetCenterX = targetRect.left + (targetRect.width / 2);
-  const targetCenterY = targetRect.top + (targetRect.height / 2);
-  const deltaX = targetCenterX - sourceCenterX;
-  const deltaY = targetCenterY - sourceCenterY;
-  const scaleX = source.width > 0 ? targetRect.width / source.width : 1;
-  const scaleY = source.height > 0 ? targetRect.height / source.height : 1;
+  const targetRect = (targetShieldEl || targetEl).getBoundingClientRect();
+  void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.94";
-      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
+      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
+      flyoutEl.style.width = `${targetRect.width}px`;
+      flyoutEl.style.height = `${targetRect.height}px`;
     });
   });
 
@@ -1378,29 +1426,29 @@ function playPendingCheatChoiceAnimation() {
   flyoutEl.setAttribute("aria-hidden", "true");
 
   const source = animation.sourceRect;
-  flyoutEl.style.left = `${source.left}px`;
-  flyoutEl.style.top = `${source.top}px`;
+  const hostRect = getChoiceFlyoutHostRect(flyoutEl);
+  flyoutEl.style.left = `${source.left - hostRect.left}px`;
+  flyoutEl.style.top = `${source.top - hostRect.top}px`;
+  flyoutEl.style.removeProperty("width");
+  flyoutEl.style.removeProperty("height");
   flyoutEl.style.setProperty("--flyout-width", `${source.width}px`);
   flyoutEl.style.setProperty("--flyout-height", `${source.height}px`);
   flyoutEl.style.opacity = "1";
-  flyoutEl.style.transform = "translate3d(0, 0, 0) scale(1)";
+  flyoutEl.style.transform = "none";
+  flyoutEl.classList.remove("is-moving");
 
   const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
   if (!targetRect) return;
-  const sourceCenterX = source.left + (source.width / 2);
-  const sourceCenterY = source.top + (source.height / 2);
-  const targetCenterX = targetRect.left + (targetRect.width / 2);
-  const targetCenterY = targetRect.top + (targetRect.height / 2);
-  const deltaX = targetCenterX - sourceCenterX;
-  const deltaY = targetCenterY - sourceCenterY;
-  const scaleX = source.width > 0 ? targetRect.width / source.width : 1;
-  const scaleY = source.height > 0 ? targetRect.height / source.height : 1;
+  void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.92";
-      flyoutEl.style.transform = `translate3d(${Math.round(deltaX)}px, ${Math.round(deltaY)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
+      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
+      flyoutEl.style.setProperty("--flyout-width", `${targetRect.width}px`);
+      flyoutEl.style.setProperty("--flyout-height", `${targetRect.height}px`);
     });
   });
 
@@ -1578,19 +1626,19 @@ function renderCheats() {
       if (now < cheatUseLockedUntil) return;
       cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
 
-      const useAfterOptionalDismiss = (action, shouldAnimate) => {
-        if (!shouldAnimate) {
+      const useAfterOptionalDismiss = (action, shouldDiminish, shouldPulse = true) => {
+        if (!shouldPulse) {
           action();
           return;
         }
-        btn.classList.add("is-consuming");
+        btn.classList.add(shouldDiminish ? "is-consuming" : "is-click-pulsing");
         btn.disabled = true;
-        setTimeout(action, 220);
+        setTimeout(action, shouldDiminish ? 280 : 180);
       };
 
       if (entry.kind === "nudge") {
-        const canAnimateNudge = entry.count <= 1 && typeof canUseNudge === "function" && canUseNudge(entry.direction);
-        useAfterOptionalDismiss(() => useNudgeCharge(entry.direction), canAnimateNudge);
+        const canAnimateNudge = typeof canUseNudge === "function" && canUseNudge(entry.direction);
+        useAfterOptionalDismiss(() => useNudgeCharge(entry.direction), entry.count <= 1 && canAnimateNudge, canAnimateNudge);
         return;
       }
 
@@ -1629,7 +1677,7 @@ function renderCheats() {
         render();
       };
 
-      useAfterOptionalDismiss(useCheat, entry.cheat.consumeOnUse && entry.count <= 1);
+      useAfterOptionalDismiss(useCheat, entry.cheat.consumeOnUse && entry.count <= 1, true);
     };
 
     cheatList.appendChild(btn);
@@ -1909,6 +1957,8 @@ function renderPowerChoice() {
     if (animation) {
       if (animation.selectedIndex === i) {
         option.classList.add("is-selected-ghost");
+      } else if (animation.stage === "flying") {
+        option.classList.add("is-dismissed");
       } else {
         option.classList.add("is-dismissing");
       }

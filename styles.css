@@ -720,6 +720,94 @@ a {
     card-throb 520ms ease-out;
 }
 
+.card-face.nudge-animate {
+  transform-origin: center;
+  will-change: transform;
+  animation: card-nudge-bounce 360ms cubic-bezier(0.2, 0.95, 0.25, 1.24);
+}
+
+.card-nudge-new-rank,
+.card-nudge-new-label {
+  display: inline-block;
+  animation: card-nudge-new-value 300ms cubic-bezier(0.2, 0.95, 0.25, 1.24) both;
+}
+
+.card-nudge-old-rank,
+.card-nudge-old-label {
+  --card-nudge-old-rotate: 0deg;
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  color: currentColor;
+  animation: card-nudge-old-value 240ms ease-out both;
+}
+
+.card-nudge-old-label {
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+body[data-visuals="new"] .card-nudge-old-rank {
+  font-weight: 800;
+  line-height: 1;
+}
+
+body[data-visuals="new"] .card-nudge-old-rank-tl {
+  top: 5cqw;
+  left: 6cqw;
+}
+
+body[data-visuals="new"] .card-nudge-old-rank-br {
+  right: 6cqw;
+  bottom: 5cqw;
+  --card-nudge-old-rotate: 180deg;
+  transform-origin: center;
+}
+
+@keyframes card-nudge-bounce {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  34% {
+    transform: scale(1.045) translateY(-2px);
+  }
+  68% {
+    transform: scale(0.985) translateY(1px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes card-nudge-old-value {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+    transform: rotate(var(--card-nudge-old-rotate)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(2px);
+    transform: rotate(var(--card-nudge-old-rotate)) translateY(-0.24em) scale(0.82);
+  }
+}
+
+@keyframes card-nudge-new-value {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.34);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes card-throb {
   0% {
     transform: scale(1);
@@ -2030,7 +2118,7 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-modal,
-#power-choice-container:not(.hidden) .choice-modal,
+#power-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-modal,
 #game-howto-modal:not(.hidden):not(.is-closing) .help-dialog,
 #game-settings-modal:not(.hidden):not(.is-closing) .help-dialog {
   transform-origin: center center;
@@ -2038,7 +2126,7 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-backdrop,
-#power-choice-container:not(.hidden) .choice-backdrop,
+#power-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-backdrop,
 #game-howto-modal:not(.hidden):not(.is-closing) .help-backdrop,
 #game-settings-modal:not(.hidden):not(.is-closing) .help-backdrop {
   animation: choice-backdrop-pop 260ms ease-out both;
@@ -3822,10 +3910,18 @@ body.choice-modal-open #controls,
   opacity: 0;
 }
 
+.cheat-button.is-click-pulsing,
 .cheat-button.is-consuming {
   pointer-events: none;
   transform-origin: center center;
-  animation: cheat-coin-consume 220ms ease-in-out both;
+}
+
+.cheat-button.is-click-pulsing {
+  animation: cheat-coin-click-pulse 180ms ease-in-out both;
+}
+
+.cheat-button.is-consuming {
+  animation: cheat-coin-consume 280ms ease-in-out both;
 }
 
 .cheat-button.is-awarded-new {
@@ -3837,9 +3933,25 @@ body.choice-modal-open #controls,
     opacity: 1;
     transform: scale(1);
   }
+  42% {
+    opacity: 1;
+    transform: scale(1.14);
+  }
   100% {
     opacity: 0;
     transform: scale(0);
+  }
+}
+
+@keyframes cheat-coin-click-pulse {
+  0% {
+    transform: scale(1);
+  }
+  48% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -3947,6 +4059,13 @@ body.choice-modal-open #controls,
   transition:
     opacity 150ms ease,
     transform 150ms ease;
+}
+
+#power-choice-container .choice-backdrop,
+#power-choice-container .choice-modal {
+  transition:
+    opacity 320ms ease-in-out,
+    transform 320ms ease-in-out;
 }
 
 #power-choice-container .power-choice-option.choice-intro {
@@ -4144,7 +4263,6 @@ body.choice-modal-open #controls,
   transform: none;
 }
 
-#power-choice-container.is-closing .choice-backdrop,
 #power-choice-container.is-flying .choice-backdrop,
 #power-choice-container.is-flying .choice-modal {
   opacity: 0;
@@ -4155,12 +4273,36 @@ body.choice-modal-open #controls,
 }
 
 #power-choice-container .power-choice-option.is-dismissing {
+  transform-origin: center;
+  animation: power-choice-dismiss 180ms ease-in-out both;
+}
+
+#power-choice-container .power-choice-option.is-dismissed {
   opacity: 0;
-  transform: scale(0.92);
+  transform: scale(0);
 }
 
 #power-choice-container .power-choice-option.is-selected-ghost .power-choice-card {
+  opacity: 1;
+}
+
+#power-choice-container.is-flying .power-choice-option.is-selected-ghost .power-choice-card {
   opacity: 0;
+}
+
+@keyframes power-choice-dismiss {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  36% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
 }
 
 #cheat-choice-flyout {
@@ -4169,8 +4311,16 @@ body.choice-modal-open #controls,
   pointer-events: none;
   margin: 0;
   transform-origin: center center;
+  transition: none;
+}
+
+#cheat-choice-flyout.is-moving {
   transition:
     opacity 300ms ease-in-out,
+    left 300ms ease-in-out,
+    top 300ms ease-in-out,
+    width 300ms ease-in-out,
+    height 300ms ease-in-out,
     transform 300ms ease-in-out;
 }
 
@@ -4197,18 +4347,26 @@ body.choice-modal-open #controls,
   pointer-events: none;
   margin: 0;
   transform-origin: center center;
+  transition: none;
+}
+
+#power-choice-flyout.is-moving {
   transition:
     opacity 320ms ease-in-out,
+    left 320ms cubic-bezier(0.42, 0, 0.58, 1),
+    top 320ms cubic-bezier(0.42, 0, 0.58, 1),
+    width 320ms cubic-bezier(0.42, 0, 0.58, 1),
+    height 320ms cubic-bezier(0.42, 0, 0.58, 1),
     transform 320ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 
 #power-choice-flyout.power-choice-card {
-  width: var(--flyout-width) !important;
-  min-width: var(--flyout-width) !important;
-  max-width: var(--flyout-width) !important;
-  height: var(--flyout-height) !important;
-  min-height: var(--flyout-height) !important;
-  max-height: var(--flyout-height) !important;
+  width: var(--flyout-width);
+  min-width: 0 !important;
+  max-width: none !important;
+  height: var(--flyout-height);
+  min-height: 0 !important;
+  max-height: none !important;
   aspect-ratio: 100 / 128;
   padding: 18px 16px 24px !important;
   display: flex;

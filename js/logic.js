@@ -41,6 +41,7 @@ function buildDailyRun(dateKey) {
 }
 
 let currentCardFeedbackTimer = null;
+let currentCardNudgeAnimationTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
 let victoryEffectTimer = null;
@@ -274,6 +275,36 @@ function setCurrentCardFeedback(effect) {
   }, 520);
 }
 
+function setCurrentCardNudgeAnimation(direction, fromValue, toValue) {
+  if (!state.current || !Number.isFinite(fromValue) || !Number.isFinite(toValue) || fromValue === toValue) {
+    state.currentNudgeAnimation = null;
+    return;
+  }
+
+  const animation = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    cardId: state.current.id,
+    direction: direction === "down" ? "down" : "up",
+    fromValue,
+    toValue,
+  };
+
+  state.currentNudgeAnimation = animation;
+
+  if (currentCardNudgeAnimationTimer) {
+    clearTimeout(currentCardNudgeAnimationTimer);
+    currentCardNudgeAnimationTimer = null;
+  }
+
+  currentCardNudgeAnimationTimer = setTimeout(() => {
+    if (state.currentNudgeAnimation?.id === animation.id) {
+      state.currentNudgeAnimation = null;
+      render();
+    }
+    currentCardNudgeAnimationTimer = null;
+  }, 360);
+}
+
 function describeCardForDebug(card) {
   if (!card) return null;
 
@@ -459,6 +490,7 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.powers = [];
   state.gameOverDisplayCards = null;
   state.currentCardFeedback = "";
+  state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
   state.message = "";
 }
@@ -679,6 +711,7 @@ function startRunWithPower(powerId) {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    currentNudgeAnimation: null,
     gameOverDisplayCards: null,
     cheatChoiceIntroToken: 0,
     powerChoiceIntroToken: 0,
@@ -1054,6 +1087,7 @@ function useNudgeCharge(direction) {
   }
 
   recordCurrentCardNudge(state.current, direction);
+  setCurrentCardNudgeAnimation(direction, currentValue, targetValue);
   if (isGreenDeckRun()) {
     state.energy = Math.max(0, (state.energy || 0) - 1);
   }
