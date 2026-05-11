@@ -1561,13 +1561,12 @@ function renderCheats() {
     btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count);
 
     let holdTimer = null;
-    let hoverTimer = null;
     let held = false;
 
-    btn.onpointerdown = (e) => {
-      held = false;
-      if (e.pointerType === "mouse") return;
+    btn.oncontextmenu = (e) => e.preventDefault();
 
+    btn.onpointerdown = () => {
+      held = false;
       holdTimer = setTimeout(() => {
         held = true;
         showTooltip(title, tooltipBody, btn);
@@ -1588,28 +1587,15 @@ function renderCheats() {
       hideCheatTooltip(true);
     };
 
-    btn.onpointerleave = (e) => {
+    btn.onpointerleave = () => {
       clearTimeout(holdTimer);
-      if (e.pointerType === "mouse" || !held) {
+      if (!held) {
         hideCheatTooltip(true);
       }
     };
 
-    btn.onmouseenter = () => {
-      if (!canUseHoverTooltips()) return;
-      hoverTimer = setTimeout(() => {
-        showTooltip(title, tooltipBody, btn);
-      }, 180);
-    };
-
-    btn.onmouseleave = () => {
-      clearTimeout(hoverTimer);
-      hideCheatTooltip(true);
-    };
-
     btn.onclick = () => {
       if (held) return;
-      clearTimeout(hoverTimer);
       hideCheatTooltip(true);
       if (typeof window.isTutorialBlockingCheatUse === "function" && window.isTutorialBlockingCheatUse()) {
         state.message = "Cheat use unlocks at the next tutorial step.";
@@ -1965,17 +1951,16 @@ function renderPowerChoice() {
     }
 
     let powerHoldTimer = null;
-    let powerHoverTimer = null;
     let powerHeld = false;
 
     const showPowerTooltip = () => {
       showTooltip(power.name, powerDescription, btn);
     };
 
-    btn.onpointerdown = (e) => {
-      powerHeld = false;
-      if (e.pointerType === "mouse") return;
+    btn.oncontextmenu = (e) => e.preventDefault();
 
+    btn.onpointerdown = () => {
+      powerHeld = false;
       powerHoldTimer = setTimeout(() => {
         powerHeld = true;
         showPowerTooltip();
@@ -1996,27 +1981,16 @@ function renderPowerChoice() {
       hideCheatTooltip(true);
     };
 
-    btn.onpointerleave = (e) => {
+    btn.onpointerleave = () => {
       clearTimeout(powerHoldTimer);
-      if (e.pointerType === "mouse" || !powerHeld) {
+      if (!powerHeld) {
         hideCheatTooltip(true);
       }
-    };
-
-    option.onmouseenter = () => {
-      if (!canUseHoverTooltips()) return;
-      powerHoverTimer = setTimeout(showPowerTooltip, 180);
-    };
-
-    option.onmouseleave = () => {
-      clearTimeout(powerHoverTimer);
-      hideCheatTooltip(true);
     };
 
     btn.onclick = () => {
       if (powerHeld) return;
       if (choiceLocked || state.powerChoiceAnimating) return;
-      clearTimeout(powerHoverTimer);
       hideCheatTooltip(true);
       beginPowerChoiceSelection(i, btn);
     };
