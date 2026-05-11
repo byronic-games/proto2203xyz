@@ -392,6 +392,7 @@ function offerRewardPowerChoice(reason = "bonus") {
 
   state.pendingPowerOptions = powerOptions;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = String(reason || "bonus");
   state.message = state.activePowerAwardReason === "brucie_bonus"
     ? "Brucie Bonus! Choose 1 power:"
@@ -450,6 +451,7 @@ function openPowerChoice(forceRandom = false) {
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
@@ -479,6 +481,7 @@ function openDailyPowerChoice(dateKey = "") {
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
@@ -641,6 +644,7 @@ function startRunWithPower(powerId) {
     currentCardFeedback: "",
     gameOverDisplayCards: null,
     cheatChoiceIntroToken: 0,
+    powerChoiceIntroToken: 0,
     cheatChoicePreviewIndex: -1,
     cheatChoiceAnimating: null,
     recentlySeenCardId: "",

@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260507d">
+  <link rel="stylesheet" href="styles.css?v=20260511k">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -30,19 +30,7 @@
             <span id="header-power-glyph">·</span>
           </button>
 
-          <div class="header-metrics">
-            <div class="header-metric">
-              <div class="header-metric-label">Best</div>
-              <div id="best-score" class="header-metric-value">0</div>
-            </div>
-            <div class="header-metric">
-              <div class="header-metric-label">Cleared</div>
-              <div id="score" class="header-metric-value">0</div>
-            </div>
-            <div class="header-metric">
-              <div class="header-metric-label">Remaining</div>
-              <div id="cards-remaining-value" class="header-metric-value">52</div>
-            </div>
+          <div class="header-metrics" aria-live="polite">
             <div id="header-energy-metric" class="header-metric" hidden>
               <div class="header-metric-label">Energy</div>
               <div id="energy-value" class="header-metric-value">0</div>
@@ -64,6 +52,7 @@
       </header>
 
       <main id="main-layout">
+        <div class="layout-spacer layout-spacer-cards-top" aria-hidden="true"></div>
         <section id="play-area">
           <div id="card-row">
             <div class="play-stack play-stack-current">
@@ -90,14 +79,12 @@
             <div id="game-over-detail" aria-live="polite"></div>
           </div>
         </section>
+        <div class="layout-spacer layout-spacer-cards-bottom" aria-hidden="true"></div>
 
         <div id="message-bar"></div>
+        <div class="layout-gap layout-gap-info-cheats" aria-hidden="true"></div>
 
         <section id="cheats-panel">
-          <div class="section-bar">
-            <div class="section-title">Cheats</div>
-            <div class="section-scroll-hint">Swipe</div>
-          </div>
           <div id="cheat-list"></div>
         </section>
 
@@ -106,9 +93,14 @@
           <button id="lower-btn" type="button">Lower</button>
           <button id="higher-btn" type="button">Higher</button>
         </div>
+        <div class="layout-spacer layout-spacer-buttons-bottom" aria-hidden="true"></div>
 
         <section id="memory-panel">
           <div id="seen-grid-wrap">
+            <div id="seen-grid-stats">
+              <div id="seen-grid-label">FOUND: 0/52</div>
+              <div id="best-score">BEST: 0</div>
+            </div>
             <div id="seen-grid"></div>
           </div>
         </section>
@@ -159,7 +151,7 @@
           <div class="help-block">
             <h3>What You See</h3>
             <ul>
-              <li>The top HUD shows your current deck and level, your starting power, best run for that deck and level, cards cleared, and cards remaining.</li>
+              <li>The top HUD shows your current deck and level and starting power. The bottom grid tracks found cards and the best run for that deck and level.</li>
               <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
               <li>The tracked grid records which cards you have already seen this run.</li>
             </ul>
@@ -209,7 +201,7 @@
           <div id="power-choice-title" class="choice-title">Choose Your Power</div>
           <div id="power-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="power-choice-list"></div>
-          <div id="power-choice-footer" class="choice-footer">Pick 1 before the run begins.</div>
+          <div id="power-choice-footer" class="choice-footer" hidden></div>
         </div>
       </div>
 
@@ -265,7 +257,7 @@
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
   <script src="js/logic.js?v=20260506c"></script>
-  <script src="js/render.js?v=20260507d"></script>
+  <script src="js/render.js?v=20260511k"></script>
   <script src="js/input.js?v=20260506a"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>

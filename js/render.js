@@ -304,7 +304,7 @@ function renderScores() {
 
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
-  if (bestScoreEl) setAnimatedText(bestScoreEl, state.bestScore);
+  if (bestScoreEl) setAnimatedText(bestScoreEl, `BEST: ${state.bestScore}`);
   {
     const showEnergy = !state.gameOver && !!state.current && hudDeckKey === "green";
     if (energyCardEl) {
@@ -940,9 +940,10 @@ function renderButtons() {
   const showRestartButton = !runIsActive;
   const hideControls = showingChoiceModal;
 
-  controls.hidden = hideControls;
+  controls.hidden = false;
   controls.setAttribute("aria-hidden", hideControls ? "true" : "false");
-  controls.style.display = hideControls ? "none" : "";
+  controls.style.display = "";
+  controls.classList.toggle("is-modal-hidden", hideControls);
   controls.classList.toggle("controls-single", showRestartButton);
 
   restartBtn.hidden = !showRestartButton;
@@ -1220,7 +1221,7 @@ function renderCheats() {
   groupedEntries.push(...groupedCheats.values());
 
   if (!groupedEntries.length) {
-    cheatList.innerHTML = `<div class=\"cheat-button common is-placeholder\"><div class=\"cheat-empty-mark\">X</div></div>`;
+    appendCheatSlots(cheatList, 0);
     return;
   }
 
@@ -1332,6 +1333,18 @@ function renderCheats() {
 
     cheatList.appendChild(btn);
   });
+
+  appendCheatSlots(cheatList, groupedEntries.length);
+}
+
+function appendCheatSlots(cheatList, occupiedCount = 0) {
+  const slotCount = Math.max(0, 4 - Math.max(0, Number(occupiedCount) || 0));
+  for (let i = 0; i < slotCount; i += 1) {
+    const slot = document.createElement("div");
+    slot.className = "cheat-slot";
+    slot.setAttribute("aria-hidden", "true");
+    cheatList.appendChild(slot);
+  }
 }
 
 function showCheatTooltip(cheat, el) {
@@ -1493,7 +1506,8 @@ function renderPowerChoice() {
     titleEl.innerText = state.activePowerAwardReason ? "Choose Your Bonus Power" : "Choose Your Power";
   }
   if (footerEl) {
-    footerEl.innerText = state.activePowerAwardReason ? "Pick 1 power to gain." : "Pick 1 before the run begins.";
+    footerEl.innerText = "";
+    footerEl.hidden = true;
   }
   const powerCardLabel = state.activePowerAwardReason ? "Current card" : "Starting card";
   renderChoiceCurrentCard(currentCardEl, "power", powerCardLabel);
@@ -1502,12 +1516,16 @@ function renderPowerChoice() {
     ? window.isTutorialBlockingPowerPick()
     : false;
   const choiceLocked = Date.now() < (state.powerChoiceLockedUntil || 0) || tutorialChoiceLocked;
+  const introToken = String(state.powerChoiceIntroToken || 0);
+  const introFresh = list.dataset.introToken !== introToken;
+  list.dataset.introToken = introToken;
 
   state.pendingPowerOptions.forEach((power, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card ${power.rarity || "common"}`;
+    btn.className = `choice-card power-choice-card ${power.rarity || "common"} ${introFresh ? "choice-intro" : ""}`.trim();
     btn.disabled = choiceLocked;
+    btn.style.setProperty("--choice-index", String(i));
 
     const top = document.createElement("div");
     top.className = "choice-top";
@@ -1531,17 +1549,12 @@ function renderPowerChoice() {
       levelNumber: state.pendingLevelNumber || state.selectedLevelNumber || loadSelectedLevel(),
     });
 
-    const tag = document.createElement("div");
-    tag.className = "choice-tag";
-    tag.innerText = state.activePowerAwardReason ? "Tap to gain" : "Tap to start";
-
     top.appendChild(icon);
     top.appendChild(name);
     top.appendChild(rarity);
 
     btn.appendChild(top);
     btn.appendChild(desc);
-    btn.appendChild(tag);
     btn.onclick = () => pickPowerFromChoice(i);
 
     list.appendChild(btn);
@@ -1555,36 +1568,38 @@ function renderPowerChoice() {
 function renderSeenGrid() {
   const gridWrapEl = document.getElementById("seen-grid-wrap");
   const grid = document.getElementById("seen-grid");
+  const labelEl = document.getElementById("seen-grid-label");
   if (!grid || !gridWrapEl) return;
 
   gridWrapEl.hidden = false;
 
   grid.innerHTML = "";
+  const foundCount = state.seenCardIds instanceof Set ? state.seenCardIds.size : 0;
 
-  const topLeft = document.createElement("div");
-  topLeft.className = "grid-header";
-  grid.appendChild(topLeft);
-
-  for (const rank of RANKS) {
-    const cell = document.createElement("div");
-    cell.className = "grid-header";
-    cell.innerText = rank.r;
-    grid.appendChild(cell);
+  if (labelEl) {
+    setAnimatedText(labelEl, `FOUND: ${foundCount}/52`);
   }
 
   for (const suit of SUITS) {
-    const suitCell = document.createElement("div");
-    suitCell.className = `grid-suit ${isRed({ suit }) ? "red" : "black"}`;
-    suitCell.innerText = suit;
-    grid.appendChild(suitCell);
-
     for (const rank of RANKS) {
+      const card = {
+        id: getCardId(suit, rank.r),
+        suit,
+        rank: rank.r,
+        value: rank.v,
+      };
       const cardId = getCardId(suit, rank.r);
       const seen = state.seenCardIds.has(cardId);
       const isFresh = state.recentlySeenCardId === cardId;
       const cell = document.createElement("div");
-      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed({ suit }) ? "red" : "black"}`.trim();
-      cell.innerText = seen ? "✓" : "";
+      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed(card) ? "red" : "black"}`.trim();
+      cell.setAttribute("aria-label", `${describeCard(card)} ${seen ? "found" : "not found"}`);
+      if (seen) {
+        const label = document.createElement("span");
+        label.className = "memory-card-label";
+        label.innerText = `${card.rank}${card.suit}`;
+        cell.appendChild(label);
+      }
       grid.appendChild(cell);
     }
   }

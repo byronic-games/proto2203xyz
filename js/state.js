@@ -103,6 +103,7 @@ function createEmptyState() {
     pendingRevealAnimation: null,
     gameOverDisplayCards: null,
     cheatChoiceIntroToken: 0,
+    powerChoiceIntroToken: 0,
     cheatChoicePreviewIndex: -1,
     cheatChoiceAnimating: null,
     recentlySeenCardId: "",
