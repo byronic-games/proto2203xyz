@@ -611,20 +611,284 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
-function closeHowToModal() {
-  const modal = document.getElementById("game-howto-modal");
-  if (!modal) return;
-  modal.classList.add("hidden");
+const MENU_MODAL_CLOSE_MS = 220;
+const menuModalCloseTimers = new Map();
+
+function syncBodyModalOpenClass() {
+  const visibleModalIds = [
+    "game-howto-modal",
+    "game-settings-modal",
+    "victory-modal",
+  ];
+  const hasVisibleModal = visibleModalIds.some((id) => {
+    const modal = document.getElementById(id);
+    return modal && !modal.classList.contains("hidden");
+  });
+  document.body.classList.toggle("modal-open", hasVisibleModal);
+}
+
+function openMenuModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return null;
+  const closeTimer = menuModalCloseTimers.get(modalId);
+  if (closeTimer) {
+    clearTimeout(closeTimer);
+    menuModalCloseTimers.delete(modalId);
+  }
+  modal.classList.remove("hidden", "is-closing");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  return modal;
+}
+
+function closeMenuModal(modalId, onCloseStart) {
+  const modal = document.getElementById(modalId);
+  if (!modal || modal.classList.contains("hidden")) return;
+  if (modal.classList.contains("is-closing")) return;
+
+  onCloseStart?.();
+  modal.classList.add("is-closing");
   modal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
+
+  const closeTimer = setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("is-closing");
+    menuModalCloseTimers.delete(modalId);
+    syncBodyModalOpenClass();
+  }, MENU_MODAL_CLOSE_MS);
+  menuModalCloseTimers.set(modalId, closeTimer);
+}
+
+function closeHowToModal() {
+  closeMenuModal("game-howto-modal");
 }
 
 function openHowToModal() {
-  const modal = document.getElementById("game-howto-modal");
-  if (!modal) return;
-  modal.classList.remove("hidden");
-  modal.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
+  openMenuModal("game-howto-modal");
+}
+
+const SETTINGS_RESET_HOLD_MS = 5000;
+let settingsResetHoldTimer = null;
+let settingsResetHoldRaf = 0;
+let settingsResetHoldStartedAt = 0;
+let settingsResetTriggered = false;
+
+function getTutorialCompletedKey() {
+  return typeof TUTORIAL_COMPLETED_KEY === "string"
+    ? TUTORIAL_COMPLETED_KEY
+    : "hl_prototype_tutorial_completed_v1";
+}
+
+function getTutorialForceReplayKey() {
+  return typeof TUTORIAL_FORCE_REPLAY_KEY === "string"
+    ? TUTORIAL_FORCE_REPLAY_KEY
+    : "hl_prototype_tutorial_force_replay_v1";
+}
+
+function getLatestRunLogEntriesForModal() {
+  const entries = loadRunDebugLog();
+  return Array.isArray(entries) ? entries : [];
+}
+
+function buildRunLogDownloadPayloadForModal() {
+  const entries = getLatestRunLogEntriesForModal();
+  if (!entries.length) return null;
+
+  const latestEntry = entries[entries.length - 1] || {};
+  return {
+    exportedAt: new Date().toISOString(),
+    gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : "",
+    seed: latestEntry.runSeed || "",
+    runMode: latestEntry.runMode || "standard",
+    deck: latestEntry.deck || "blue",
+    level: latestEntry.level || DEFAULT_LEVEL_NUMBER,
+    eventCount: entries.length,
+    userAgent: navigator.userAgent,
+    entries,
+  };
+}
+
+function buildRunLogFilenameForModal(payload) {
+  const seedPart = String(payload.seed || "unknown").replace(/[^A-Z0-9_-]+/gi, "-");
+  const deckPart = String(payload.deck || "blue");
+  const levelPart = `L${Number(payload.level || DEFAULT_LEVEL_NUMBER)}`;
+  return `52-run-log-${deckPart}-${levelPart}-${seedPart}.json`;
+}
+
+function buildRunLogFileForModal(payload) {
+  return new File(
+    [JSON.stringify(payload, null, 2)],
+    buildRunLogFilenameForModal(payload),
+    { type: "application/json" }
+  );
+}
+
+function setSettingsModalStatus(message = "") {
+  const status = document.getElementById("settings-modal-status");
+  if (status) status.innerText = message;
+}
+
+function refreshSettingsModalState() {
+  const tutorialToggle = document.getElementById("settings-tutorial-toggle");
+  const shareLogBtn = document.getElementById("settings-share-log-btn");
+  const downloadLogBtn = document.getElementById("settings-download-log-btn");
+  const hasLog = getLatestRunLogEntriesForModal().length > 0;
+
+  if (tutorialToggle) {
+    tutorialToggle.checked = localStorage.getItem(getTutorialCompletedKey()) !== "1";
+  }
+  if (downloadLogBtn) {
+    downloadLogBtn.disabled = !hasLog;
+  }
+  if (shareLogBtn) {
+    shareLogBtn.disabled = !hasLog || typeof navigator.share !== "function";
+  }
+  setSettingsModalStatus(hasLog ? "" : "No run log found yet. Start a run first.");
+}
+
+function closeSettingsModal() {
+  closeMenuModal("game-settings-modal", () => {
+    stopSettingsResetHold();
+    resetSettingsResetHoldVisuals();
+  });
+}
+
+function openSettingsModal() {
+  refreshSettingsModalState();
+  openMenuModal("game-settings-modal");
+}
+
+function downloadLatestRunLogFromModal() {
+  const payload = buildRunLogDownloadPayloadForModal();
+  if (!payload) {
+    setSettingsModalStatus("No run log found yet. Start a run first.");
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = buildRunLogFilenameForModal(payload);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setSettingsModalStatus("Run log downloaded.");
+}
+
+async function shareLatestRunLogFromModal() {
+  const payload = buildRunLogDownloadPayloadForModal();
+  if (!payload) {
+    setSettingsModalStatus("No run log found yet. Start a run first.");
+    return;
+  }
+
+  if (typeof navigator.share !== "function") {
+    downloadLatestRunLogFromModal();
+    return;
+  }
+
+  const file = buildRunLogFileForModal(payload);
+  const shareData = {
+    title: "52! Run Log",
+    text: `52! run log for ${payload.deck} Level ${payload.level}, seed ${payload.seed || "unknown"}.`,
+    files: [file],
+  };
+
+  try {
+    if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+      await navigator.share(shareData);
+      setSettingsModalStatus("Run log shared.");
+      return;
+    }
+
+    await navigator.share({
+      title: shareData.title,
+      text: `${shareData.text} Downloading the log file instead.`,
+    });
+    downloadLatestRunLogFromModal();
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      setSettingsModalStatus("Share cancelled.");
+      return;
+    }
+    downloadLatestRunLogFromModal();
+  }
+}
+
+function setSettingsResetHoldProgress(progress) {
+  const fill = document.getElementById("settings-reset-deck-fill");
+  if (fill) {
+    fill.style.width = `${Math.max(0, Math.min(100, progress * 100))}%`;
+  }
+}
+
+function resetSettingsResetHoldVisuals() {
+  const label = document.getElementById("settings-reset-deck-label");
+  setSettingsResetHoldProgress(0);
+  if (label) {
+    label.innerText = "Reset Deck";
+  }
+}
+
+function stopSettingsResetHold() {
+  if (settingsResetHoldTimer) {
+    clearTimeout(settingsResetHoldTimer);
+    settingsResetHoldTimer = null;
+  }
+  if (settingsResetHoldRaf) {
+    cancelAnimationFrame(settingsResetHoldRaf);
+    settingsResetHoldRaf = 0;
+  }
+}
+
+function updateSettingsResetHoldProgress() {
+  if (!settingsResetHoldStartedAt || settingsResetTriggered) return;
+  const label = document.getElementById("settings-reset-deck-label");
+  const elapsed = performance.now() - settingsResetHoldStartedAt;
+  const progress = Math.min(1, elapsed / SETTINGS_RESET_HOLD_MS);
+  setSettingsResetHoldProgress(progress);
+  if (label) {
+    label.innerText = progress >= 1
+      ? "Deck Reset"
+      : `Hold ${Math.max(0, Math.ceil((SETTINGS_RESET_HOLD_MS - elapsed) / 1000))}s`;
+  }
+  if (progress < 1) {
+    settingsResetHoldRaf = requestAnimationFrame(updateSettingsResetHoldProgress);
+  }
+}
+
+function triggerSettingsDeckReset() {
+  settingsResetTriggered = true;
+  stopSettingsResetHold();
+  resetDeckAlterations();
+  state.cardBackStatuses = {};
+  setSettingsResetHoldProgress(1);
+  const label = document.getElementById("settings-reset-deck-label");
+  if (label) {
+    label.innerText = "Deck Reset";
+  }
+  setSettingsModalStatus("Deck physical changes cleared.");
+  render();
+}
+
+function beginSettingsResetHold(event) {
+  if (event?.button !== undefined && event.button !== 0) return;
+  stopSettingsResetHold();
+  settingsResetTriggered = false;
+  settingsResetHoldStartedAt = performance.now();
+  setSettingsModalStatus("Keep holding to reset the deck.");
+  settingsResetHoldTimer = setTimeout(triggerSettingsDeckReset, SETTINGS_RESET_HOLD_MS);
+  settingsResetHoldRaf = requestAnimationFrame(updateSettingsResetHoldProgress);
+}
+
+function cancelSettingsResetHold() {
+  if (settingsResetTriggered) return;
+  stopSettingsResetHold();
+  settingsResetHoldStartedAt = 0;
+  resetSettingsResetHoldVisuals();
+  refreshSettingsModalState();
 }
 
 const headerMenuEl = document.getElementById("header-menu");
@@ -655,6 +919,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     setHeaderMenuOpen(false);
     closeHowToModal();
+    closeSettingsModal();
   }
 });
 
@@ -668,10 +933,34 @@ document.getElementById("howto-close-backdrop")?.addEventListener("click", close
 
 document.getElementById("settings-menu-btn")?.addEventListener("click", () => {
   setHeaderMenuOpen(false);
-  saveGameStateSnapshot(state);
-  saveSettingsReturnUrl(`game.html?resume=1`);
-  window.location.href = "settings.html?v=20260405h";
+  openSettingsModal();
 });
+
+document.getElementById("settings-close-icon-btn")?.addEventListener("click", closeSettingsModal);
+document.getElementById("settings-close-backdrop")?.addEventListener("click", closeSettingsModal);
+document.getElementById("settings-download-log-btn")?.addEventListener("click", downloadLatestRunLogFromModal);
+document.getElementById("settings-share-log-btn")?.addEventListener("click", shareLatestRunLogFromModal);
+
+document.getElementById("settings-tutorial-toggle")?.addEventListener("change", (event) => {
+  if (event.target.checked) {
+    localStorage.removeItem(getTutorialCompletedKey());
+    sessionStorage.setItem(getTutorialForceReplayKey(), "1");
+    window.tutorialController = createTutorialController();
+    setSettingsModalStatus("Tutorial enabled for the next run.");
+    return;
+  }
+
+  localStorage.setItem(getTutorialCompletedKey(), "1");
+  sessionStorage.removeItem(getTutorialForceReplayKey());
+  window.tutorialController?.closeAndComplete?.();
+  setSettingsModalStatus("Tutorial disabled.");
+});
+
+const settingsResetDeckBtn = document.getElementById("settings-reset-deck-btn");
+settingsResetDeckBtn?.addEventListener("pointerdown", beginSettingsResetHold);
+settingsResetDeckBtn?.addEventListener("pointerup", cancelSettingsResetHold);
+settingsResetDeckBtn?.addEventListener("pointercancel", cancelSettingsResetHold);
+settingsResetDeckBtn?.addEventListener("pointerleave", cancelSettingsResetHold);
 
 document.getElementById("exit-btn")?.addEventListener("click", () => {
   setHeaderMenuOpen(false);

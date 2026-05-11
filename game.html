@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260511k">
+  <link rel="stylesheet" href="styles.css?v=20260511p">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -126,38 +126,50 @@
               <li>Pick <strong>Higher</strong> or <strong>Lower</strong> for the next face-down card.</li>
               <li>Equal values are safe, so your run continues on a match. Aces are usually low unless a power changes that.</li>
               <li>A wrong guess ends the run immediately.</li>
-              <li><strong>Blue Deck</strong> can award Nudges on correct guesses. <strong>Red Deck</strong> does not award Nudges, but the next card back shows live history for that face-up card.</li>
-              <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Levels 2 and 3 slow cheat rewards, and Blue Level 4 slows them further.</li>
-              <li>Unlock path: clear Blue 1 to open Green 1, clear Blue 2 to open Red 1. Green and Red higher levels unlock by clearing the previous level in that same deck.</li>
-              <li>Clear the full deck to record a winning run on the heroes board.</li>
-            </ul>
-          </div>
-
-          <div class="help-block">
-            <h3>Powers, Nudges, And Cheats</h3>
-            <ul>
-              <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
-              <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
-              <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, Level 3 starts at 6, and Level 4 starts at 5. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
-              <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
-              <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
-              <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
-              <li><strong>Daily:</strong> The Daily unlocks after your first run, gives everyone the same seeded deck and offers for the date, and currently always plays as Blue Deck Level 1.</li>
-              <li><strong>Power Reminder:</strong> Hold the deck / level / starting power text in the top bar during a run to reread your active power.</li>
-              <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
-            </ul>
-          </div>
-
-          <div class="help-block">
-            <h3>What You See</h3>
-            <ul>
-              <li>The top HUD shows your current deck and level and starting power. The bottom grid tracks found cards and the best run for that deck and level.</li>
-              <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
-              <li>The tracked grid records which cards you have already seen this run.</li>
             </ul>
           </div>
 
           <button id="howto-close-btn" class="help-close-btn" type="button">Close</button>
+        </article>
+      </div>
+
+      <div id="game-settings-modal" class="hidden" aria-hidden="true">
+        <div class="help-backdrop" id="settings-close-backdrop"></div>
+        <article class="help-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <button id="settings-close-icon-btn" class="help-close-icon" type="button" aria-label="Close Settings">&#215;</button>
+          <h2 id="settings-title">Settings</h2>
+
+          <div class="settings-form">
+            <label class="settings-row" for="settings-sound-toggle">
+              <span>Sound</span>
+              <input id="settings-sound-toggle" type="checkbox" checked>
+            </label>
+
+            <label class="settings-row" for="settings-tutorial-toggle">
+              <span>Tutorial</span>
+              <input id="settings-tutorial-toggle" type="checkbox">
+            </label>
+
+            <label class="settings-row" for="settings-visuals-select">
+              <span>Visuals</span>
+              <select id="settings-visuals-select">
+                <option value="new">NEW</option>
+                <option value="neon" selected>NEON</option>
+              </select>
+            </label>
+
+            <div class="settings-action-block">
+              <button id="settings-reset-deck-btn" class="settings-action-btn" type="button">
+                <span id="settings-reset-deck-label">Reset Deck</span>
+                <span id="settings-reset-deck-fill" class="settings-hold-fill"></span>
+              </button>
+              <p class="settings-help">Hold for 5 seconds to clear physical changes</p>
+            </div>
+
+            <button id="settings-download-log-btn" class="settings-action-btn" type="button">Download Run Log</button>
+            <button id="settings-share-log-btn" class="settings-action-btn" type="button">Share Run Log</button>
+            <p id="settings-modal-status" class="settings-modal-status"></p>
+          </div>
         </article>
       </div>
 
@@ -258,7 +270,7 @@
 <script src="js/daily.js?v=20260429a"></script>
   <script src="js/logic.js?v=20260506c"></script>
   <script src="js/render.js?v=20260511k"></script>
-  <script src="js/input.js?v=20260506a"></script>
+  <script src="js/input.js?v=20260511b"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

@@ -1873,6 +1873,7 @@ body.choice-modal-open #controls,
 }
 
 #game-howto-modal,
+#game-settings-modal,
 #victory-modal,
 #cheat-choice-container,
 #power-choice-container,
@@ -1896,6 +1897,7 @@ body.choice-modal-open #controls,
 }
 
 #game-howto-modal.hidden,
+#game-settings-modal.hidden,
 #victory-modal.hidden,
 #cheat-choice-container.hidden,
 #power-choice-container.hidden,
@@ -2047,14 +2049,34 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-modal,
-#power-choice-container:not(.hidden) .choice-modal {
+#power-choice-container:not(.hidden) .choice-modal,
+#game-howto-modal:not(.hidden):not(.is-closing) .help-dialog,
+#game-settings-modal:not(.hidden):not(.is-closing) .help-dialog {
   transform-origin: center center;
   animation: choice-modal-pop 480ms linear both;
 }
 
 #cheat-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-backdrop,
-#power-choice-container:not(.hidden) .choice-backdrop {
+#power-choice-container:not(.hidden) .choice-backdrop,
+#game-howto-modal:not(.hidden):not(.is-closing) .help-backdrop,
+#game-settings-modal:not(.hidden):not(.is-closing) .help-backdrop {
   animation: choice-backdrop-pop 260ms ease-out both;
+}
+
+#game-howto-modal.is-closing,
+#game-settings-modal.is-closing {
+  pointer-events: none;
+}
+
+#game-howto-modal.is-closing .help-dialog,
+#game-settings-modal.is-closing .help-dialog {
+  transform-origin: center center;
+  animation: menu-modal-close 220ms cubic-bezier(0.34, 0.01, 0.58, 1) both;
+}
+
+#game-howto-modal.is-closing .help-backdrop,
+#game-settings-modal.is-closing .help-backdrop {
+  animation: menu-backdrop-close 220ms ease-in both;
 }
 
 @keyframes choice-modal-pop {
@@ -2081,9 +2103,33 @@ body.choice-modal-open #controls,
 @keyframes choice-backdrop-pop {
   0% {
     opacity: 0;
+    backdrop-filter: blur(0);
   }
   100% {
     opacity: 1;
+    backdrop-filter: blur(10px);
+  }
+}
+
+@keyframes menu-modal-close {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+}
+
+@keyframes menu-backdrop-close {
+  0% {
+    opacity: 1;
+    backdrop-filter: blur(10px);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0);
   }
 }
 
@@ -2150,6 +2196,92 @@ body.choice-modal-open #controls,
   padding: 0 14px;
   border: 0;
   border-radius: 10px;
+}
+
+.settings-dialog {
+  width: min(92vw, 440px);
+}
+
+.settings-form {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-row {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-row input[type="checkbox"] {
+  width: 26px;
+  height: 26px;
+  accent-color: var(--cyan);
+}
+
+.settings-row select {
+  min-width: 112px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: rgba(17, 12, 24, 0.96);
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 800;
+  text-align: center;
+}
+
+.settings-action-block {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-action-btn {
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: linear-gradient(180deg, #f67aea, #d76de0);
+  color: #4a1254;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.settings-action-btn:disabled {
+  opacity: 0.48;
+}
+
+.settings-hold-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: rgba(199,255,84,0.34);
+  pointer-events: none;
+}
+
+#settings-reset-deck-label {
+  position: relative;
+  z-index: 1;
+}
+
+.settings-help,
+.settings-modal-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .help-close-btn,
@@ -2892,15 +3024,19 @@ body.choice-modal-open #controls,
 }
 
 #game-shell {
-  padding: 8px !important;
+  padding: 0 !important;
 }
 
 #game {
   width: min(100%, 460px) !important;
-  height: calc(var(--app-height) - 16px) !important;
-  min-height: calc(var(--app-height) - 16px) !important;
+  height: var(--app-height) !important;
+  min-height: var(--app-height) !important;
   padding: 10px !important;
   gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 #app-header {
@@ -3978,6 +4114,41 @@ body.choice-modal-open #controls,
 
 #seen-grid {
   min-height: 0;
+}
+
+#game-shell {
+  padding: 0 !important;
+}
+
+#game {
+  height: var(--app-height) !important;
+  min-height: var(--app-height) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#app-header,
+.header-mainline {
+  align-items: center !important;
+}
+
+.header-mainline {
+  grid-template-columns: auto auto minmax(0, 1fr);
+}
+
+#brand-title {
+  font-size: 3.35rem !important;
+  line-height: 0.76 !important;
+  align-self: center !important;
+}
+
+.header-power-chip,
+.menu-button {
+  width: 44px !important;
+  height: 44px !important;
+  align-self: center !important;
 }
 
 @media (max-height: 760px) {
