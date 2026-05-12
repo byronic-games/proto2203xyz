@@ -451,6 +451,7 @@ function grantPowerToCurrentRun(powerId, source = "bonus") {
 
 function getLockySevenCarryModifier(card, nextComparisonValue, nextCardModifier) {
   if (!state.lockySevensActive || !card) return 0;
+  if (isJokerCard(card) || !Number.isFinite(card.value)) return 0;
   if (nextComparisonValue !== 7) return 0;
   if ((nextCardModifier || 0) === 0 && card.value !== 7) return 0;
   return 7 - card.value;
@@ -1516,8 +1517,9 @@ function makeGuessLegacy(type) {
 
   let next = peekNext();
   if (!next) return;
+  const currentIsJoker = isJokerCard(state.current);
 
-  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next)) {
+  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next) && !currentIsJoker) {
     state.message = state.forcedNextGuess === "higher"
       ? "The Higher The Better is active - you must guess Higher."
       : "The Lower The Better is active - you must guess Lower.";
@@ -1567,6 +1569,7 @@ function makeGuessLegacy(type) {
   let correct = false;
   let match = false;
   let cheatSpecial = false;
+  const jokerAutoCorrect = currentIsJoker;
   let rescuedBySuitSave = false;
   let rescuedByAlwaysBetBlack = false;
   let rescuedByCursedShield = false;
@@ -1578,7 +1581,7 @@ function makeGuessLegacy(type) {
       : forcedNextGuessDirection === "lower"
         ? "down"
         : "";
-  const forcedNudgeReward = forcedNudgeDirection
+  const forcedNudgeReward = forcedNudgeDirection && Number.isFinite(nextComparisonValue) && Number.isFinite(currentComparisonValue)
     ? Math.abs(nextComparisonValue - currentComparisonValue)
     : 0;
 
@@ -1637,6 +1640,11 @@ function makeGuessLegacy(type) {
     isAceWildAutoCorrect(currentComparisonValue, next);
 
   if (aceAutoWin) {
+    cheatSpecial = true;
+    correct = true;
+  }
+
+  if (jokerAutoCorrect) {
     cheatSpecial = true;
     correct = true;
   }
@@ -1848,7 +1856,9 @@ function makeGuessLegacy(type) {
     state.streak = 0;
     // Show detailed result before pause
     let pauseMsg = "✅ Correct!";
-    if (match) {
+    if (jokerAutoCorrect) {
+      pauseMsg = `✅ Correct! Joker keeps any guess safe - it was ${describeCard(next)}.`;
+    } else if (match) {
       pauseMsg = `✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`;
     } else {
       pauseMsg = `✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)}!`;
@@ -2007,8 +2017,9 @@ function makeGuess(type) {
 
   let next = peekNext();
   if (!next) return;
+  const currentIsJoker = isJokerCard(state.current);
 
-  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next)) {
+  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next) && !currentIsJoker) {
     state.message = state.forcedNextGuess === "higher"
       ? "The Higher The Better is active - you must guess Higher."
       : "The Lower The Better is active - you must guess Lower.";
@@ -2044,8 +2055,8 @@ function makeGuess(type) {
 
   if (isJokerCard(next)) {
     const prevCard = state.current;
-    state.index += 1;
-    state.cheatUsesOnCurrentCard = 0;
+    advanceToCard(next);
+    state.currentValueModifier = 0;
     const jokerMessage = applyYellowJokerEffect(next);
     state.streak = 0;
     state.lastJokerMessage = jokerMessage;
@@ -2126,6 +2137,7 @@ function makeGuess(type) {
   let correct = false;
   let match = false;
   let cheatSpecial = false;
+  const jokerAutoCorrect = currentIsJoker;
   let rescuedBySuitSave = false;
   let rescuedByAlwaysBetBlack = false;
   let rescuedByCursedShield = false;
@@ -2137,7 +2149,7 @@ function makeGuess(type) {
       : forcedNextGuessDirection === "lower"
         ? "down"
         : "";
-  const forcedNudgeReward = forcedNudgeDirection
+  const forcedNudgeReward = forcedNudgeDirection && Number.isFinite(nextComparisonValue) && Number.isFinite(currentComparisonValue)
     ? Math.abs(nextComparisonValue - currentComparisonValue)
     : 0;
 
@@ -2211,6 +2223,11 @@ function makeGuess(type) {
     isAceWildAutoCorrect(currentComparisonValue, next);
 
   if (aceAutoWin) {
+    cheatSpecial = true;
+    correct = true;
+  }
+
+  if (jokerAutoCorrect) {
     cheatSpecial = true;
     correct = true;
   }
@@ -2480,7 +2497,9 @@ function makeGuess(type) {
   if (state.streak >= getCheatRewardThreshold()) {
     state.streak = 0;
     let pauseMsg = "✅ Correct!";
-    if (match) {
+    if (jokerAutoCorrect) {
+      pauseMsg = `✅ Correct! Joker keeps any guess safe - it was ${describeCard(next)}.`;
+    } else if (match) {
       pauseMsg = `✅ Correct! Cards match! (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`;
     } else {
       pauseMsg = `✅ Correct! ${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)}!`;
@@ -2519,6 +2538,17 @@ function makeGuess(type) {
       offerCheatChoice(nextReason);
       render();
     }, 1000);
+    return;
+  }
+
+  if (jokerAutoCorrect && powerAwards.length > 0) {
+    state.message = appendEnergyFeedback(`✅ Correct! Joker keeps any guess safe - it was ${describeCard(next)}. Power gained: ${powerAwards.join(", ")}.`, revealDistance);
+    render();
+    return;
+  }
+  if (jokerAutoCorrect) {
+    state.message = appendEnergyFeedback(`✅ Correct! Joker keeps any guess safe - it was ${describeCard(next)}.`, revealDistance);
+    render();
     return;
   }
 

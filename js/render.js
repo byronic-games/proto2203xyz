@@ -293,6 +293,7 @@ function playPendingCardRevealAnimation() {
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
+  const jokerCountEl = document.getElementById("joker-count");
   const energyCardEl = document.getElementById("header-energy-metric");
   const energyValueEl = document.getElementById("energy-value");
   const hudDeckKey = state.gameOver
@@ -308,6 +309,14 @@ function renderScores() {
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, `BEST: ${state.bestScore}`);
+  if (jokerCountEl) {
+    const showJokerCount = hudDeckKey === "yellow";
+    const remainingJokers = showJokerCount && typeof getRemainingJokerCount === "function"
+      ? getRemainingJokerCount()
+      : 0;
+    setAnimatedText(jokerCountEl, showJokerCount ? `JOKERS: ${remainingJokers}` : "");
+    jokerCountEl.setAttribute("aria-hidden", showJokerCount ? "false" : "true");
+  }
   {
     const showEnergy = !state.gameOver && !!state.current && hudDeckKey === "green";
     if (energyCardEl) {
@@ -2103,20 +2112,6 @@ function renderMessage() {
 function renderNextInfo() {
   const el = document.getElementById("next-info");
   if (!el) return;
-
-  if (!state.current) {
-    el.innerText = "";
-    return;
-  }
-
-  if (normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey) === "yellow") {
-    const remainingJokers = typeof getRemainingJokerCount === "function" ? getRemainingJokerCount() : 0;
-    el.innerText = remainingJokers > 0
-      ? `Jokers left: ${remainingJokers}`
-      : "No Jokers left";
-    return;
-  }
-
   el.innerText = "";
 }
 

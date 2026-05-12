@@ -1839,13 +1839,14 @@ body.choice-modal-open #controls,
 }
 
 #seen-grid-stats {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
   align-items: center;
   gap: 8px;
 }
 
 #seen-grid-label,
+#joker-count,
 #best-score {
   color: #dff5ff;
   font-family: "Space Grotesk", sans-serif;
@@ -1858,6 +1859,14 @@ body.choice-modal-open #controls,
   text-shadow:
     0 0 8px rgba(95, 228, 255, 0.45),
     0 0 16px rgba(95, 228, 255, 0.25);
+}
+
+#seen-grid-label {
+  text-align: left;
+}
+
+#joker-count {
+  text-align: center;
 }
 
 #best-score {
