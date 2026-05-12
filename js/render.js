@@ -1261,29 +1261,7 @@ function beginCheatChoiceSelection(index, buttonEl) {
 function getCheatChoiceFlyTargetRect(targetEntryId, fallbackEl) {
   const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(targetEntryId || "")}"]`);
   const targetRect = (targetEl || fallbackEl)?.getBoundingClientRect();
-  const cheatListEl = document.getElementById("cheat-list");
-  if (!targetEl || !targetRect || !cheatListEl) return targetRect;
-
-  const coinEls = Array.from(cheatListEl.querySelectorAll(".cheat-button[data-cheat-entry-id]"));
-  const targetIndex = coinEls.findIndex((el) => el.dataset.cheatEntryId === targetEntryId);
-  if (targetIndex < 0) return targetRect;
-
-  const coinRects = coinEls.map((el) => el.getBoundingClientRect());
-  const listRect = cheatListEl.getBoundingClientRect();
-  const styles = window.getComputedStyle(cheatListEl);
-  const gap = Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
-  const totalWidth = coinRects.reduce((sum, rect) => sum + rect.width, 0) + (Math.max(0, coinRects.length - 1) * gap);
-  const centeredStart = listRect.left + ((listRect.width - totalWidth) / 2);
-  const targetLeft = centeredStart + coinRects
-    .slice(0, targetIndex)
-    .reduce((sum, rect) => sum + rect.width + gap, 0);
-
-  return {
-    left: targetLeft,
-    top: targetRect.top,
-    width: targetRect.width,
-    height: targetRect.height,
-  };
+  return targetRect;
 }
 
 function beginPowerChoiceSelection(index, buttonEl) {
@@ -1482,6 +1460,7 @@ function playPendingCheatChoiceAnimation() {
 function renderCheats() {
   const cheatList = document.getElementById("cheat-list");
   if (!cheatList) return;
+  const previousScrollLeft = cheatList.scrollLeft;
 
   const previousCoinRects = new Map(
     Array.from(cheatList.querySelectorAll(".cheat-button[data-cheat-entry-id]"))
@@ -1696,6 +1675,10 @@ function renderCheats() {
 
   appendCheatSlots(cheatList, groupedEntries.length);
   animateCheatCoinLayout(cheatList, previousCoinRects);
+  window.requestAnimationFrame(() => {
+    const maxScrollLeft = Math.max(0, cheatList.scrollWidth - cheatList.clientWidth);
+    cheatList.scrollLeft = Math.max(0, Math.min(previousScrollLeft, maxScrollLeft));
+  });
   if (!state.cheatChoiceAnimating) {
     lastRenderedCheatCounts = currentCheatCounts;
     suppressNextCheatEntryIntroId = "";

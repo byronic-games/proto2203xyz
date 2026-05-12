@@ -4251,7 +4251,7 @@ body.choice-modal-open #controls,
   z-index: 1;
   width: min(100%, 88%);
   max-width: 88%;
-  margin-top: 13%;
+  margin-top: 24%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4264,7 +4264,7 @@ body.choice-modal-open #controls,
   position: relative;
   z-index: 1;
   margin-top: auto;
-  margin-bottom: 17%;
+  margin-bottom: 7%;
   display: grid;
   place-items: center;
   width: 100%;
@@ -4324,11 +4324,11 @@ body.choice-modal-open #controls,
   #power-choice-container .choice-top {
     width: min(100%, 92%);
     max-width: 92%;
-    margin-top: 11%;
+    margin-top: 22%;
   }
 
   #power-choice-container .choice-bottom {
-    margin-bottom: 15%;
+    margin-bottom: 6%;
   }
 
   #power-choice-container .choice-desc {
@@ -4547,7 +4547,7 @@ body.choice-modal-open #controls,
   z-index: 1;
   width: min(100%, 88%);
   max-width: 88%;
-  margin-top: 13%;
+  margin-top: 24%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4560,7 +4560,7 @@ body.choice-modal-open #controls,
   position: relative;
   z-index: 1;
   margin-top: auto;
-  margin-bottom: 17%;
+  margin-bottom: 7%;
   display: grid;
   place-items: center;
   width: 100%;
@@ -4787,8 +4787,9 @@ body.choice-modal-open #controls,
 }
 
 #cheat-list {
-  justify-content: center !important;
+  justify-content: flex-start !important;
   gap: clamp(8px, 3cqw, 14px) !important;
+  padding-inline: clamp(4px, 2cqw, 10px);
   scroll-snap-type: none !important;
 }
 
