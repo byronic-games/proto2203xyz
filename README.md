@@ -30,6 +30,13 @@ Mobile-first browser card game (higher/lower) with deck progression, powers, che
 - After JS/CSS edits, bump asset query strings in HTML entry pages.
 - HTML revalidation is now enforced in `.htaccess`, but JS/CSS still rely on versioned asset URLs.
 
+## Visual Layout Notes
+- `game.html` owns the gameplay layout skeleton. The main screen is an explicit vertical stack: top spacer, card area, lower spacer, message bar, cheat gap, cheat panel, controls, bottom spacer, memory grid.
+- `styles.css` owns the sizing system for that stack. The late-file "Structured vertical layout system" uses container queries and fixed row variables (`--header-height`, `--info-height`, `--cheats-height`, `--buttons-height`) so mobile screens fit without scrolling.
+- `js/fullscreen.js` updates `--app-height` from `visualViewport.height`; layout checks should include Android browser chrome and standalone/home-screen mode.
+- The `NEW` visuals mode is the default in `game.html` settings. `js/render.js` emits different card markup for `body[data-visuals="new"]`, and `styles.css` maps suit icons from `images/Suits/`.
+- Cheat inventory and cheat-choice items are styled as circular rarity coins. Power choice and the header power indicator use shield-shaped SVG styling.
+
 ## Current Priority
 - Fix Android reveal animation where card rotates but face does not appear during flip.
 
