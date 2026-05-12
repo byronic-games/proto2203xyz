@@ -32,6 +32,7 @@ Required permissions:
 
 ## Crown Rules (Current)
 - Blue/Green/Red crowns derive from clear booleans.
+- Yellow clears are local-only for now; do not send `yellow_cleared` unless the Supabase schema is deliberately extended.
 - Gold crown derives from daily clear signal + legacy fallback path.
 - Daily board crown display should be based on row enrichment, not viewer-local profile state.
 

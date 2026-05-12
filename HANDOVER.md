@@ -11,14 +11,17 @@
 ## Product Snapshot
 - Mobile-first static web app.
 - Main surfaces: `index.html`, `game.html`, `daily.html`, `heroes.html`, `profile.html`, `settings.html`.
-- Deck progression order: Blue -> Green -> Red.
-- Levels: 1-4 currently wired for Blue, Green, Red.
+- Deck progression order: Blue -> Green -> Red -> Yellow.
+- Levels: 1-4 currently wired for Blue, Green, Red, and Yellow.
+- Yellow Level 1 unlocks after Blue Level 3. Yellow levels add Joker hazards: Tearless, Nudgeless, Cheatless, then Powerless.
+- Settings include an Unlock Decks toggle for testing Level 1 of locked decks without changing clear history, plus a button-order preference for Lower / Higher vs Higher / Lower.
 - Daily and Heroes use Supabase when online; local fallback exists.
 - Daily leaderboard loads now retry-upload a completed local Daily attempt if the matching `date_key` + `player_id` row is missing online.
 - Daily now has a share button on the result panel, but it is intentionally code-gated off for now with `DAILY_SHARE_ENABLED = false` in `js/daily-page.js`.
 - Android standalone/home-screen sizing was tightened using `visualViewport.height` plus short-screen CSS compression.
 - The gameplay screen has a structured fixed-height vertical layout: `game.html` supplies spacer/gap rows, while `styles.css` uses container-query grid rows to fit the header, cards, message bar, cheat coins, controls, and memory grid into `--app-height`.
 - The default `NEW` visual mode renders white card faces with image suit icons, circular rarity cheat coins, and shield-shaped power cards/header chip.
+- Yellow runs display remaining Jokers in the compact `next-info` area; Joker effect copy uses the existing message bar to avoid crowding mobile.
 - Mobile cache behavior is now split:
   - HTML / manifest-style files revalidate via `.htaccess`
   - versioned JS / CSS assets remain aggressively cacheable
@@ -66,7 +69,7 @@
 
 ## Crown/Leaderboard Rules (Current)
 - Daily board should render crowns from row-backed enrichment only (not viewer-local state).
-- Blue/Green/Red crowns from clear booleans.
+- Blue/Green/Red crowns from clear booleans. Yellow clears are tracked locally, but the current Supabase crown schema has not been extended for Yellow.
 - Gold daily crown from durable daily clear signal and legacy fallback logic.
 
 ## Quick "Do First" For New AI

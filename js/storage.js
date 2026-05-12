@@ -188,6 +188,7 @@ function normalizeDeckKey(deckKey = "blue") {
   const normalized = String(deckKey || "").trim().toLowerCase();
   if (normalized === "red") return "red";
   if (normalized === "green") return "green";
+  if (normalized === "yellow") return "yellow";
   return "blue";
 }
 
@@ -196,6 +197,7 @@ function normalizeDeckWins(wins = {}) {
     blue: Number.isFinite(wins.blue) ? wins.blue : 0,
     red: Number.isFinite(wins.red) ? wins.red : 0,
     green: Number.isFinite(wins.green) ? wins.green : 0,
+    yellow: Number.isFinite(wins.yellow) ? wins.yellow : 0,
   };
 }
 
@@ -208,6 +210,7 @@ function normalizeProfileStats(stats = {}) {
     blueRunsStarted: Number.isFinite(stats.blueRunsStarted) ? stats.blueRunsStarted : 0,
     redRunsStarted: Number.isFinite(stats.redRunsStarted) ? stats.redRunsStarted : 0,
     greenRunsStarted: Number.isFinite(stats.greenRunsStarted) ? stats.greenRunsStarted : 0,
+    yellowRunsStarted: Number.isFinite(stats.yellowRunsStarted) ? stats.yellowRunsStarted : 0,
     totalDecksCleared: Number.isFinite(stats.totalDecksCleared) ? stats.totalDecksCleared : 0,
     decksClearedByColor: normalizeDeckWins(stats.decksClearedByColor),
     dailyAttempts: Number.isFinite(stats.dailyAttempts) ? stats.dailyAttempts : 0,
@@ -329,6 +332,43 @@ function saveVisualTheme(theme) {
   localStorage.setItem(VISUAL_THEME_KEY, theme === "new" ? "new" : "neon");
 }
 
+function loadUnlockDecks() {
+  return localStorage.getItem(UNLOCK_DECKS_KEY) === "1" || loadUnlockAll();
+}
+
+function saveUnlockDecks(enabled) {
+  if (enabled) {
+    localStorage.setItem(UNLOCK_DECKS_KEY, "1");
+    return;
+  }
+  localStorage.removeItem(UNLOCK_DECKS_KEY);
+}
+
+function loadUnlockAll() {
+  return localStorage.getItem(UNLOCK_ALL_KEY) === "1";
+}
+
+function saveUnlockAll(enabled) {
+  if (enabled) {
+    localStorage.setItem(UNLOCK_ALL_KEY, "1");
+    return;
+  }
+  localStorage.removeItem(UNLOCK_ALL_KEY);
+}
+
+function loadGuessButtonOrder() {
+  return localStorage.getItem(GUESS_BUTTON_ORDER_KEY) === "higher-lower"
+    ? "higher-lower"
+    : "lower-higher";
+}
+
+function saveGuessButtonOrder(order) {
+  localStorage.setItem(
+    GUESS_BUTTON_ORDER_KEY,
+    order === "higher-lower" ? "higher-lower" : "lower-higher"
+  );
+}
+
 function loadSelectedDeck() {
   return normalizeDeckKey(localStorage.getItem(SELECTED_DECK_KEY) || "blue");
 }
@@ -362,6 +402,33 @@ function recordDeckWin(deckKey) {
 function getDeckWinCount(deckKey) {
   const wins = loadDeckWins();
   return wins[normalizeDeckKey(deckKey)] || 0;
+}
+
+function hasVerifiedDeckLevelClear(deckKey, level = DEFAULT_LEVEL_NUMBER) {
+  const bucketKey = getBestScoreBucketKey(deckKey, level);
+  const clears = loadDeckLevelClears();
+  if ((clears[bucketKey] || 0) <= 0) return false;
+  const bestScore = loadBestScore(deckKey, level);
+  return Number.isFinite(bestScore) && bestScore >= 51;
+}
+
+function isDeckUnlocked(deckKey) {
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  if (loadUnlockDecks()) return true;
+  if (normalizedDeckKey === "blue") return true;
+  if (normalizedDeckKey === "green") return hasVerifiedDeckLevelClear("blue", 1);
+  if (normalizedDeckKey === "red") return hasVerifiedDeckLevelClear("blue", 2);
+  if (normalizedDeckKey === "yellow") return hasVerifiedDeckLevelClear("blue", 3);
+  return false;
+}
+
+function isDeckLevelUnlocked(deckKey, level = DEFAULT_LEVEL_NUMBER) {
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  const normalizedLevel = normalizeLevelNumber(level);
+  if (loadUnlockAll()) return true;
+  if (normalizedLevel === 1) return isDeckUnlocked(normalizedDeckKey);
+  if (normalizedLevel > 4) return false;
+  return isDeckUnlocked(normalizedDeckKey) && hasVerifiedDeckLevelClear(normalizedDeckKey, normalizedLevel - 1);
 }
 
 function loadRedDeckDebugUnlock() {
@@ -411,6 +478,8 @@ function recordRunStarted(deckKey, runMode = "standard") {
       stats.redRunsStarted += 1;
     } else if (normalizedDeckKey === "green") {
       stats.greenRunsStarted += 1;
+    } else if (normalizedDeckKey === "yellow") {
+      stats.yellowRunsStarted += 1;
     } else {
       stats.blueRunsStarted += 1;
     }

@@ -3,7 +3,55 @@ const ENABLE_GAME_OVER_EFFECTS = true;
 const ENABLE_VICTORY_EFFECTS = true;
 const RUN_DEBUG_LOG_LIMIT = 150;
 
-function buildRunFromControls(forceRandom = false) {
+function getYellowJokersForLevel(levelNumber = DEFAULT_LEVEL_NUMBER) {
+  const normalizedLevel = normalizeLevelNumber(levelNumber);
+  return YELLOW_JOKERS
+    .filter((joker) => normalizedLevel >= normalizeLevelNumber(joker.unlockLevel))
+    .map((joker) => ({
+      ...joker,
+      type: "joker",
+      suit: "Joker",
+      rank: joker.shortName || joker.name,
+      value: null,
+    }));
+}
+
+function isJokerCard(card) {
+  return !!card && card.type === "joker";
+}
+
+function getJokerName(card) {
+  return card?.name || "Joker";
+}
+
+function buildYellowDeck(baseDeck, seedString, levelNumber = DEFAULT_LEVEL_NUMBER) {
+  const jokers = getYellowJokersForLevel(levelNumber);
+  if (!jokers.length) return baseDeck;
+
+  const safeOpening = baseDeck.slice(0, 4);
+  const hazardPool = [
+    ...baseDeck.slice(4),
+    ...jokers.map((joker, index) => ({
+      ...joker,
+      id: `${joker.id}_${index + 1}`,
+      jokerId: joker.id,
+    })),
+  ];
+
+  seededShuffle(hazardPool, `${seedString}|yellow-jokers|L${normalizeLevelNumber(levelNumber)}`);
+  return [...safeOpening, ...hazardPool];
+}
+
+function buildRunDeck(seedString, deckKey = "blue", levelNumber = DEFAULT_LEVEL_NUMBER) {
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  const normalizedLevelNumber = normalizeLevelNumber(levelNumber);
+  const deck = createDeck(seedString);
+  return normalizedDeckKey === "yellow"
+    ? buildYellowDeck(deck, seedString, normalizedLevelNumber)
+    : deck;
+}
+
+function buildRunFromControls(forceRandom = false, deckKey = loadSelectedDeck(), levelNumber = loadSelectedLevel()) {
   const seedInput = document.getElementById("run-seed-input");
   let chosenSeed = "";
 
@@ -15,11 +63,13 @@ function buildRunFromControls(forceRandom = false) {
     if (seedInput) seedInput.value = chosenSeed;
   }
 
-  const deck = createDeck(chosenSeed);
+  const normalizedDeckKey = normalizeDeckKey(deckKey);
+  const normalizedLevelNumber = normalizeLevelNumber(levelNumber);
+  const deck = buildRunDeck(chosenSeed, normalizedDeckKey, normalizedLevelNumber);
 
   // Onboard new players: always start with a protected card (A,2,3,4,9,10,J,Q,K)
   const metaProgression = loadMetaProgression();
-  if ((metaProgression ?? 0) <= 20) {
+  if ((metaProgression ?? 0) <= 20 && normalizedDeckKey !== "yellow") {
     // Find first protected card in the deck (by value)
     const protectedValues = [1, 2, 3, 4, 9, 10, 11, 12, 13];
     let foundIdx = deck.findIndex(card => protectedValues.includes(card.value));
@@ -36,7 +86,7 @@ function buildRunFromControls(forceRandom = false) {
 function buildDailyRun(dateKey) {
   const chosenDateKey = String(dateKey || "").trim() || getCurrentDailyDateKey();
   const chosenSeed = getDailySeedForDate(chosenDateKey);
-  const deck = createDeck(chosenSeed);
+  const deck = buildRunDeck(chosenSeed, "blue", DEFAULT_LEVEL_NUMBER);
   return { chosenDateKey, chosenSeed, deck };
 }
 
@@ -317,6 +367,7 @@ function describeCardForDebug(card) {
 }
 
 function getNextComparisonValueForGuess(nextCard = peekNext()) {
+  if (isJokerCard(nextCard)) return null;
   if (!nextCard) return null;
   return clampCardValue(nextCard.value + (state.nextCardValueModifier || 0));
 }
@@ -483,6 +534,7 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.nudgeUpCharges = 0;
   state.nudgeDownCharges = 0;
   state.energy = 0;
+  state.lastJokerMessage = "";
   state.currentDeckKey = normalizedDeckKey;
   state.currentLevelNumber = normalizedLevelNumber;
   state.bestScore = loadBestScore(normalizedDeckKey, normalizedLevelNumber);
@@ -498,7 +550,9 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
-  const { chosenSeed, deck } = buildRunFromControls(forceRandom);
+  const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
+  const { chosenSeed, deck } = buildRunFromControls(forceRandom, selectedDeckKey, selectedLevelNumber);
 
   state.pendingRunSeed = chosenSeed;
   state.pendingRunDeck = deck;
@@ -508,8 +562,8 @@ function openPowerChoice(forceRandom = false) {
     : getRandomPowerOptions(2, chosenSeed);
   state.pendingRunMode = "standard";
   state.pendingDailyDateKey = "";
-  state.pendingDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
-  state.pendingLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
+  state.pendingDeckKey = selectedDeckKey;
+  state.pendingLevelNumber = selectedLevelNumber;
   state.pendingCheatOptions = [];
   state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
@@ -723,6 +777,7 @@ function startRunWithPower(powerId) {
     energy: greenRun
       ? (currentLevelNumber >= 4 ? 5 : (currentLevelNumber >= 3 ? 6 : (currentLevelNumber === 2 ? 8 : 10)))
       : 0,
+    lastJokerMessage: "",
     lucky7Armed: false,
     fiveAliveArmed: false,
     godSaveKingArmed: false,
@@ -850,6 +905,7 @@ function peekNext() {
 }
 
 function isRed(card) {
+  if (isJokerCard(card)) return false;
   return card && (card.suit === "♥" || card.suit === "♦");
 }
 
@@ -858,13 +914,13 @@ function isPictureCard(card) {
 }
 
 function markCardSeen(card) {
-  if (!card) return;
+  if (!card || isJokerCard(card)) return;
   state.seenCardIds.add(card.id);
   setRecentlySeenCard(card.id);
 }
 
 function unmarkCardSeen(card) {
-  if (!card) return;
+  if (!card || isJokerCard(card)) return;
   state.seenCardIds.delete(card.id);
 }
 
@@ -881,6 +937,7 @@ function removeCheatAt(index) {
 
 function describeCard(card) {
   if (!card) return "?";
+  if (isJokerCard(card)) return getJokerName(card);
   return `${card.rank}${card.suit}`;
 }
 
@@ -898,6 +955,7 @@ function formatNextValueForMessage(card, effectiveValue = card?.value) {
 
 function buildComparisonSnippet(currentCard, effectiveValue, nextCard, nextEffectiveValue = nextCard?.value) {
   if (!currentCard || !nextCard) return "";
+  if (isJokerCard(nextCard)) return getJokerName(nextCard);
   if (nextEffectiveValue === effectiveValue) {
     return `${formatCurrentJudgedValueForMessage(currentCard, effectiveValue)} = ${formatNextValueForMessage(nextCard, nextEffectiveValue)}`;
   }
@@ -934,6 +992,7 @@ function buildWrongGuessMessage(type, currentCard, currentEffectiveValue, nextCa
 
 function getEffectiveValueForModifier(card, modifier = 0) {
   if (!card) return null;
+  if (isJokerCard(card)) return null;
 
   if (runHasPower("aces_wild")) {
     const zeroIndexed = card.value - 1;
@@ -994,7 +1053,7 @@ function countUnseenCardsOfRank(rank) {
 
   let count = 0;
   for (let i = state.index + 1; i < state.deck.length; i += 1) {
-    if (state.deck[i].rank === rank) count += 1;
+    if (!isJokerCard(state.deck[i]) && state.deck[i].rank === rank) count += 1;
   }
   return count;
 }
@@ -1123,7 +1182,7 @@ function getGuessContextKey() {
 }
 
 function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
-  if (!card) return;
+  if (!card || isJokerCard(card)) return;
   const entry = getCardStatsEntry(card.id);
   const guessBucket = entry.guessStats[getGuessContextKey()];
   entry.attempts += 1;
@@ -1144,7 +1203,7 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
 }
 
 function recordCurrentCardNudge(card, direction) {
-  if (!card) return;
+  if (!card || isJokerCard(card)) return;
   if (normalizeDeckKey(state.currentDeckKey) !== "blue") return;
   const entry = getCardStatsEntry(card.id);
   if (!entry.nudgeStats) {
@@ -1175,7 +1234,7 @@ function addMetaProgression(amount = 1) {
 }
 
 function recordFaceDownOutcome(card, endedRun, currentWasBase = true) {
-  if (!card) return;
+  if (!card || isJokerCard(card)) return;
   const entry = getCardStatsEntry(card.id);
   if (endedRun) {
     entry.endedRun += 1;
@@ -1210,6 +1269,94 @@ function setCardBackStatus(cardId, patch) {
 
 function getFaceDownCount() {
   return Math.max(0, state.deck.length - (state.index + 1));
+}
+
+function getRemainingJokerCount() {
+  if (!Array.isArray(state.deck)) return 0;
+  let count = 0;
+  for (let i = (Number(state.index) || 0) + 1; i < state.deck.length; i += 1) {
+    if (isJokerCard(state.deck[i])) count += 1;
+  }
+  return count;
+}
+
+function getTotalTornCardCount() {
+  return Object.values(state.cardBackStatuses || {})
+    .filter((status) => !!status?.tornCorner)
+    .length;
+}
+
+function applyTearlessJoker() {
+  const totalTorn = getTotalTornCardCount();
+  if (totalTorn <= 4) {
+    return "Tearless found no spare torn corner to remove.";
+  }
+
+  const unseenTornCard = Array.isArray(state.deck)
+    ? state.deck
+        .slice((Number(state.index) || 0) + 1)
+        .find((card) => !isJokerCard(card) && getCardBackStatus(card.id).tornCorner)
+    : null;
+
+  if (!unseenTornCard) {
+    return "Tearless found the torn cards, but none still hidden in this run.";
+  }
+
+  setCardBackStatus(unseenTornCard.id, { tornCorner: false });
+  return `Tearless repaired ${describeCard(unseenTornCard)}. Persistent torn corners now: ${Math.max(0, totalTorn - 1)}.`;
+}
+
+function clearArmedPowerEffects() {
+  state.lucky7Armed = false;
+  state.fiveAliveArmed = false;
+  state.godSaveKingArmed = false;
+  state.alwaysBetBlackArmed = false;
+  state.lockySevensActive = false;
+  state.oddOneOutArmed = false;
+  state.cursedShieldArmed = false;
+  state.suitedAndBootedArmed = false;
+  state.suitedAndBootedSuit = "";
+  state.forcedNextGuess = "";
+  state.lockCurrentCardForForcedGuess = false;
+  state.cheatACheaterRemaining = 0;
+  state.sixSevenArmed = false;
+  state.sixSevenRewardChoicesRemaining = 0;
+}
+
+function applyYellowJokerEffect(jokerCard) {
+  const jokerId = jokerCard?.jokerId || jokerCard?.id || "";
+  if (jokerId.includes("tearless")) {
+    return applyTearlessJoker();
+  }
+  if (jokerId.includes("nudgeless")) {
+    const removed = (Number(state.nudgeUpCharges) || 0) + (Number(state.nudgeDownCharges) || 0);
+    state.nudgeUpCharges = 0;
+    state.nudgeDownCharges = 0;
+    return removed > 0
+      ? `Nudgeless removed ${removed} banked Nudge${removed === 1 ? "" : "s"}.`
+      : "Nudgeless found no banked Nudges.";
+  }
+  if (jokerId.includes("cheatless")) {
+    const removed = Array.isArray(state.cheats) ? state.cheats.length : 0;
+    state.cheats = [];
+    return removed > 0
+      ? `Cheatless discarded ${removed} banked Cheat${removed === 1 ? "" : "s"}.`
+      : "Cheatless found no banked Cheats.";
+  }
+  if (jokerId.includes("powerless")) {
+    const removedPowers = Array.isArray(state.powers)
+      ? state.powers.filter((powerId) => powerId && powerId !== "nudge_engine").length
+      : 0;
+    state.powers = ["nudge_engine"];
+    state.selectedStartPowerId = null;
+    state.currentValueModifier = 0;
+    state.nextCardValueModifier = 0;
+    clearArmedPowerEffects();
+    return removedPowers > 0
+      ? `Powerless stripped ${removedPowers} persistent Power${removedPowers === 1 ? "" : "s"}.`
+      : "Powerless cleared active effects, but no persistent Power was left.";
+  }
+  return `${getJokerName(jokerCard)} did nothing.`;
 }
 
 function addMissingCheatsForDebug() {
@@ -1278,6 +1425,9 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(SELECTED_DECK_KEY);
   localStorage.removeItem(DECK_WINS_KEY);
   localStorage.removeItem(DECK_LEVEL_CLEARS_KEY);
+  localStorage.removeItem(UNLOCK_DECKS_KEY);
+  localStorage.removeItem(UNLOCK_ALL_KEY);
+  localStorage.removeItem(GUESS_BUTTON_ORDER_KEY);
   localStorage.removeItem(RUN_DEBUG_LOG_KEY);
   sessionStorage.removeItem(RED_DECK_DEBUG_UNLOCK_KEY);
 
@@ -1364,7 +1514,10 @@ function makeGuessLegacy(type) {
     return;
   }
 
-  if (state.forcedNextGuess && type !== state.forcedNextGuess) {
+  let next = peekNext();
+  if (!next) return;
+
+  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next)) {
     state.message = state.forcedNextGuess === "higher"
       ? "The Higher The Better is active - you must guess Higher."
       : "The Lower The Better is active - you must guess Lower.";
@@ -1375,7 +1528,7 @@ function makeGuessLegacy(type) {
   // Soft onboarding protection for early players
   maybeBiasUpcomingCardForNewPlayers();
 
-  const next = peekNext();
+  next = peekNext();
   if (!next) return;
 
   const currentComparisonValue = getCurrentEffectiveValue();
@@ -1852,7 +2005,10 @@ function makeGuess(type) {
     return;
   }
 
-  if (state.forcedNextGuess && type !== state.forcedNextGuess) {
+  let next = peekNext();
+  if (!next) return;
+
+  if (state.forcedNextGuess && type !== state.forcedNextGuess && !isJokerCard(next)) {
     state.message = state.forcedNextGuess === "higher"
       ? "The Higher The Better is active - you must guess Higher."
       : "The Lower The Better is active - you must guess Lower.";
@@ -1861,13 +2017,16 @@ function makeGuess(type) {
   }
 
   maybeBiasUpcomingCardForNewPlayers();
-
-  const next = peekNext();
-  if (!next) return;
+  if (!isJokerCard(next)) {
+    next = peekNext();
+    if (!next) return;
+  }
 
   const currentComparisonValue = getCurrentEffectiveValue();
   const nextComparisonValue = getNextComparisonValueForGuess(next);
-  const revealDistance = Math.abs(nextComparisonValue - currentComparisonValue);
+  const revealDistance = Number.isFinite(nextComparisonValue) && Number.isFinite(currentComparisonValue)
+    ? Math.abs(nextComparisonValue - currentComparisonValue)
+    : 0;
   const formatEnergyFeedback = (delta) => {
     return "";
   };
@@ -1882,6 +2041,64 @@ function makeGuess(type) {
   const el = document.getElementById("next-info");
   if (el) el.innerText = "";
   state.nextCardValueModifier = 0;
+
+  if (isJokerCard(next)) {
+    const prevCard = state.current;
+    state.index += 1;
+    state.cheatUsesOnCurrentCard = 0;
+    const jokerMessage = applyYellowJokerEffect(next);
+    state.streak = 0;
+    state.lastJokerMessage = jokerMessage;
+    queueCardRevealAnimation({
+      outcome: "correct",
+      fromCard: prevCard,
+      fromEffectiveValue: currentComparisonValue,
+      revealCard: next,
+      revealEffectiveValue: null,
+      effectId: "joker",
+      feedbackEffect: "correct",
+    });
+    appendRunDebugLog("yellow_joker_resolved", {
+      guess: type,
+      jokerId: next.jokerId || next.id,
+      jokerName: getJokerName(next),
+      outcome: "hazard_resolved",
+      message: jokerMessage,
+      remainingJokers: getRemainingJokerCount(),
+      nudgeUpCharges: state.nudgeUpCharges || 0,
+      nudgeDownCharges: state.nudgeDownCharges || 0,
+      cheatsHeld: Array.isArray(state.cheats) ? state.cheats.length : 0,
+      powers: Array.isArray(state.powers) ? [...state.powers] : [],
+    });
+
+    if (state.index >= state.deck.length - 1) {
+      if (state.runMode !== "daily") {
+        state.deckWins = recordDeckWin(state.currentDeckKey);
+        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+        recordDeckClearProgress(state.currentDeckKey);
+      } else {
+        recordDailyClearProgress();
+      }
+      state.message = `Yellow Joker: ${jokerMessage} YOU CLEARED THE DECK!`;
+      state.gameOver = true;
+      render();
+      triggerVictoryEffect();
+      handleRunFinished(state.correctAnswers);
+      if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+        if (state.runMode === "daily") return;
+        state.victoryPromptShown = true;
+        window.setTimeout(() => {
+          window.promptHeroNameForVictory();
+        }, 900);
+      }
+      return;
+    }
+
+    state.message = `Yellow Joker: ${jokerMessage}`;
+    updateBestScoreIfNeeded();
+    render();
+    return;
+  }
 
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;

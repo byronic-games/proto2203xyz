@@ -31,14 +31,19 @@
 - Daily unlocks after first run started.
 - Green L1 unlocks after Blue L1 clear.
 - Red L1 unlocks after Blue L2 clear.
+- Yellow L1 unlocks after Blue L3 clear.
 - Higher levels unlock by clearing previous level in same deck.
-- Level cap currently 4 on Blue/Green/Red.
+- Level cap currently 4 on Blue/Green/Red/Yellow.
+- Settings include an Unlock Decks toggle (`hl_prototype_unlock_decks`) for testing Level 1 of every deck without changing recorded wins. A separate `hl_prototype_unlock_all` helper still exists for full level bypasses.
+- Settings also include `hl_prototype_guess_button_order`, which swaps the visual order of the existing Higher/Lower buttons without changing their styling.
 
 ## Gameplay Notes
 - Aces are low.
 - Equal-value comparisons continue the run.
 - Cards-cleared model is now "start at 1" (starting face-up card counts).
 - Nudges use separate + / - charge pools.
+- Yellow runs insert level-gated Joker hazard cards after the first four deck positions, so they can only appear after three correct guesses. A Joker consumes the next-card reveal without caring whether the player guessed Higher or Lower, applies its negative effect, resets streak, and leaves the current normal card in play.
+- Yellow Joker levels: L1 Tearless repairs one persistent torn corner from a remaining card if total torn cards are above four; L2 adds Nudgeless to clear banked Nudges; L3 adds Cheatless to clear held Cheat cards; L4 adds Powerless to clear persistent power effects.
 - Daily/Heroes support Supabase + local fallback behavior.
 
 ## Main Code Ownership

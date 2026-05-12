@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="settings.css?v=20260405h">
+  <link rel="stylesheet" href="settings.css?v=20260512z">
 </head>
 <body class="settings-page">
   <main class="settings-shell">
@@ -31,6 +31,31 @@
         </button>
 
         <p id="settings-status" class="settings-status">Deck stats on the red back stay untouched.</p>
+      </section>
+
+      <section class="settings-panel">
+        <div class="section-title">Progression</div>
+        <p class="section-copy">Unlock Level 1 of every deck on this device without changing recorded wins.</p>
+
+        <label class="toggle-row" for="unlock-decks-toggle">
+          <span>Unlock Decks</span>
+          <input id="unlock-decks-toggle" type="checkbox">
+        </label>
+
+        <p id="unlock-decks-status" class="settings-status">Normal deck progression is active.</p>
+      </section>
+
+      <section class="settings-panel">
+        <div class="section-title">Controls</div>
+        <p class="section-copy">Choose which guess button appears on the left.</p>
+
+        <label class="toggle-row" for="button-order-select">
+          <span>Button Order</span>
+          <select id="button-order-select">
+            <option value="lower-higher">Lower / Higher</option>
+            <option value="higher-lower">Higher / Lower</option>
+          </select>
+        </label>
       </section>
 
       <section class="settings-panel">
@@ -66,8 +91,8 @@
   </main>
 
   <script src="js/fullscreen.js?v=20260425b"></script>
-  <script src="js/constants.js?v=20260425b"></script>
-  <script src="js/storage.js?v=20260405h"></script>
-  <script src="js/settings.js?v=20260425b"></script>
+  <script src="js/constants.js?v=20260512z"></script>
+  <script src="js/storage.js?v=20260512z"></script>
+  <script src="js/settings.js?v=20260512z"></script>
 </body>
 </html>

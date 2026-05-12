@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260511al">
+  <link rel="stylesheet" href="styles.css?v=20260512z">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -160,6 +160,14 @@
               </select>
             </label>
 
+            <label class="settings-row" for="settings-button-order-select">
+              <span>Buttons</span>
+              <select id="settings-button-order-select">
+                <option value="lower-higher" selected>Lower / Higher</option>
+                <option value="higher-lower">Higher / Lower</option>
+              </select>
+            </label>
+
             <div class="settings-action-block">
               <button id="settings-reset-deck-btn" class="settings-action-btn" type="button">
                 <span id="settings-reset-deck-label">Reset Deck</span>
@@ -167,6 +175,11 @@
               </button>
               <p class="settings-help">Hold for 5 seconds to clear physical changes</p>
             </div>
+
+            <label class="settings-row" for="settings-unlock-decks-toggle">
+              <span>Unlock Decks</span>
+              <input id="settings-unlock-decks-toggle" type="checkbox">
+            </label>
 
             <button id="settings-download-log-btn" class="settings-action-btn" type="button">Download Run Log</button>
             <button id="settings-share-log-btn" class="settings-action-btn" type="button">Share Run Log</button>
@@ -262,18 +275,18 @@
   </div>
 
   <script src="js/fullscreen.js?v=20260506b"></script>
-  <script src="js/constants.js?v=20260511r"></script>
-  <script src="js/storage.js?v=20260511s"></script>
-  <script src="js/state.js?v=20260506b"></script>
-  <script src="js/powers.js?v=20260502a"></script>
+  <script src="js/constants.js?v=20260512z"></script>
+  <script src="js/storage.js?v=20260512z"></script>
+  <script src="js/state.js?v=20260512y"></script>
+  <script src="js/powers.js?v=20260512y"></script>
   <script src="js/cheats.js?v=20260506b"></script>
   <script src="js/cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
-  <script src="js/logic.js?v=20260511w"></script>
-  <script src="js/render.js?v=20260511ar"></script>
-  <script src="js/input.js?v=20260511s"></script>
+  <script src="js/logic.js?v=20260512z"></script>
+  <script src="js/render.js?v=20260512z"></script>
+  <script src="js/input.js?v=20260512z"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

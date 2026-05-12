@@ -34,6 +34,9 @@ const GAME_STATE_SNAPSHOT_KEY = "hl_prototype_game_state_snapshot";
     const SELECTED_LEVEL_KEY = "hl_prototype_selected_level";
     const DECK_WINS_KEY = "hl_prototype_deck_wins";
     const DECK_LEVEL_CLEARS_KEY = "hl_prototype_deck_level_clears";
+    const UNLOCK_DECKS_KEY = "hl_prototype_unlock_decks";
+    const UNLOCK_ALL_KEY = "hl_prototype_unlock_all";
+    const GUESS_BUTTON_ORDER_KEY = "hl_prototype_guess_button_order";
     const RED_DECK_DEBUG_UNLOCK_KEY = "hl_prototype_red_deck_debug_unlock";
     const PROFILE_STATS_KEY = "hl_prototype_profile_stats";
     const RUN_SEED_KEY = "hl_prototype_last_seed";
@@ -52,6 +55,41 @@ const CHEAT_UNLOCKS_KEY = "hl_prototype_cheat_unlocks";;
 const TUTORIAL_COMPLETED_KEY = "hl_prototype_tutorial_completed_v1";
 const TUTORIAL_FORCE_REPLAY_KEY = "hl_prototype_tutorial_force_replay_v1";
 const VISUAL_THEME_KEY = "hl_prototype_visual_theme";
+
+const YELLOW_JOKERS = [
+  {
+    id: "yellow_joker_tearless",
+    name: "Tearless",
+    shortName: "Tearless",
+    icon: "T",
+    unlockLevel: 1,
+    description: "Removes one torn corner from an unseen card if more than four cards are torn.",
+  },
+  {
+    id: "yellow_joker_nudgeless",
+    name: "Nudgeless",
+    shortName: "Nudge-less",
+    icon: "N",
+    unlockLevel: 2,
+    description: "Removes all banked Nudge charges.",
+  },
+  {
+    id: "yellow_joker_cheatless",
+    name: "Cheatless",
+    shortName: "Cheat-less",
+    icon: "C",
+    unlockLevel: 3,
+    description: "Removes all banked Cheat cards.",
+  },
+  {
+    id: "yellow_joker_powerless",
+    name: "Powerless",
+    shortName: "Power-less",
+    icon: "P",
+    unlockLevel: 4,
+    description: "Removes persistent powers and clears armed power/cheat effects.",
+  },
+];
 
 function mulberry32(a) {
       return function () {
@@ -99,4 +137,3 @@ function clamp(value, min, max) {
 function getCardId(suit, rank) {
       return `${SUIT_NAMES[suit]}_${rank}`;
     }
-

@@ -9,6 +9,9 @@ const shareLogBtn = document.getElementById("share-log-btn");
 const logExportStatus = document.getElementById("log-export-status");
 const replayTutorialBtn = document.getElementById("replay-tutorial-btn");
 const tutorialReplayStatus = document.getElementById("tutorial-replay-status");
+const unlockDecksToggle = document.getElementById("unlock-decks-toggle");
+const unlockDecksStatus = document.getElementById("unlock-decks-status");
+const buttonOrderSelect = document.getElementById("button-order-select");
 const closeSettingsBtn = document.getElementById("settings-close-btn");
 
 let holdStartedAt = 0;
@@ -66,6 +69,24 @@ function refreshRunLogExportState() {
     logExportStatus.innerText = hasLog
       ? "Share or download the latest run log for support or bug reports."
       : "No run log found yet. Start a run first.";
+  }
+}
+
+function refreshUnlockDecksState() {
+  const enabled = loadUnlockDecks();
+  if (unlockDecksToggle) {
+    unlockDecksToggle.checked = enabled;
+  }
+  if (unlockDecksStatus) {
+    unlockDecksStatus.innerText = enabled
+      ? "Level 1 is unlocked for every deck on this device."
+      : "Normal deck progression is active.";
+  }
+}
+
+function refreshButtonOrderState() {
+  if (buttonOrderSelect) {
+    buttonOrderSelect.value = loadGuessButtonOrder();
   }
 }
 
@@ -267,4 +288,15 @@ resetDeckBtn?.addEventListener("pointercancel", cancelResetHold);
 closeSettingsBtn?.addEventListener("click", closeSettings);
 replayTutorialBtn?.addEventListener("click", replayTutorialFromSettings);
 
+unlockDecksToggle?.addEventListener("change", (event) => {
+  saveUnlockDecks(!!event.target.checked);
+  refreshUnlockDecksState();
+});
+
+buttonOrderSelect?.addEventListener("change", (event) => {
+  saveGuessButtonOrder(event.target.value);
+});
+
 refreshRunLogExportState();
+refreshUnlockDecksState();
+refreshButtonOrderState();

@@ -144,6 +144,7 @@ function getDeckName(deckKey = state?.currentDeckKey || state?.selectedDeckKey |
   const normalizedDeck = normalizeDeckKey(deckKey);
   if (normalizedDeck === "red") return "Red";
   if (normalizedDeck === "green") return "Green";
+  if (normalizedDeck === "yellow") return "Yellow";
   return "Blue";
 }
 
@@ -354,4 +355,3 @@ function awardOnCorrectGuessPowers(guessType) {
 
   return awardedNames;
 }
-

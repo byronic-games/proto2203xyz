@@ -2,6 +2,7 @@ function getDeckBackColor(deckKey) {
   const normalizedDeck = normalizeDeckKey(deckKey || "blue");
   if (normalizedDeck === "red") return "pink";
   if (normalizedDeck === "green") return "green";
+  if (normalizedDeck === "yellow") return "yellow";
   return "blue";
 }
 
@@ -116,7 +117,7 @@ function renderRevealOverlayCard(pending, showFace) {
 
   overlayEl.innerHTML = "";
   if (showFace) {
-    overlayEl.className = `reveal-overlay card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
+    overlayEl.className = `reveal-overlay card-face ${isJokerCard(revealCard) ? "joker-card-face" : (isRed(revealCard) ? "red" : "black")} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}`.trim();
     overlayEl.innerHTML = renderCardFaceMarkup(
       revealCard,
       revealValue,
@@ -709,6 +710,14 @@ function renderActivePowers() {
 }
 
 function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, includeTornCorner, options = {}) {
+  if (isJokerCard(card)) {
+    return `
+      <div class="joker-card-corner">JOKER</div>
+      <div class="joker-card-icon">${card.icon || "!"}</div>
+      <div class="joker-card-name">${getJokerName(card)}</div>
+      <div class="joker-card-copy">${card.description || "Yellow hazard"}</div>
+    `;
+  }
   const showShieldBadge = !!options.showShieldBadge;
   const shownRank = isTemporarilyModified ? valueToRank(displayValue) : card.rank;
   const nudgeFromRank = Number.isFinite(options.nudgeFromValue)
@@ -775,7 +784,7 @@ function renderCurrentCard() {
     ? `nudge-animate nudge-${nudgeAnimation.direction === "down" ? "down" : "up"}`
     : "";
 
-  currentCardEl.className = `card-face ${isRed(cardToRender) ? "red" : "black"} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass} ${nudgeClass}${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
+  currentCardEl.className = `card-face ${isJokerCard(cardToRender) ? "joker-card-face" : (isRed(cardToRender) ? "red" : "black")} ${backStatus.tornCorner ? "torn-corner-face" : ""} ${isTemporarilyModified ? "temporary-value" : ""} ${feedbackClass} ${nudgeClass}${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
   currentCardEl.innerHTML = renderCardFaceMarkup(
     cardToRender,
     effectiveValue,
@@ -927,7 +936,7 @@ function renderFaceDownDeck() {
       : revealCard.value;
     const revealIsTemp = !!gameOverCards.rightIsTemp;
 
-    deckEl.className = `card-face ${isRed(revealCard) ? "red" : "black"} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
+    deckEl.className = `card-face ${isJokerCard(revealCard) ? "joker-card-face" : (isRed(revealCard) ? "red" : "black")} ${revealStatus.tornCorner ? "torn-corner-face" : ""} ${revealIsTemp ? "temporary-value" : ""}${getPreservedTutorialFocusClass(deckEl)}`.trim();
     deckEl.innerHTML = renderCardFaceMarkup(
       revealCard,
       revealValue,
@@ -1042,6 +1051,7 @@ function renderButtons() {
   controls.style.display = "";
   controls.classList.toggle("is-modal-hidden", hideControls);
   controls.classList.toggle("controls-single", showRestartButton);
+  controls.classList.toggle("button-order-higher-lower", loadGuessButtonOrder() === "higher-lower");
 
   restartBtn.hidden = !showRestartButton;
   higherBtn.hidden = showRestartButton;
@@ -2096,7 +2106,18 @@ function renderNextInfo() {
 
   if (!state.current) {
     el.innerText = "";
+    return;
   }
+
+  if (normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey) === "yellow") {
+    const remainingJokers = typeof getRemainingJokerCount === "function" ? getRemainingJokerCount() : 0;
+    el.innerText = remainingJokers > 0
+      ? `Jokers left: ${remainingJokers}`
+      : "No Jokers left";
+    return;
+  }
+
+  el.innerText = "";
 }
 
 function render() {

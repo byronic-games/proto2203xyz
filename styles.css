@@ -936,6 +936,60 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
   z-index: 3;
 }
 
+.joker-card-face {
+  display: grid !important;
+  grid-template-rows: auto 1fr auto auto;
+  align-items: center;
+  justify-items: center;
+  padding: clamp(9px, 5cqw, 18px);
+  color: #301f00 !important;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.55), transparent 34%),
+    linear-gradient(180deg, #ffe371 0%, #f8bd3e 56%, #d98c20 100%) !important;
+  box-shadow:
+    inset 0 0 0 var(--card-border-width) rgba(85, 48, 0, 0.42),
+    0 0 24px rgba(255, 202, 65, 0.22) !important;
+  text-align: center;
+}
+
+.joker-card-corner {
+  width: 100%;
+  font-size: clamp(0.48rem, 2.3cqw, 0.72rem);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-align: left;
+}
+
+.joker-card-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(38px, 34cqw, 82px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(48, 31, 0, 0.92);
+  color: #ffe371;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.8rem, 14cqw, 3.5rem);
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.34);
+}
+
+.joker-card-name {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(0.78rem, 5.4cqw, 1.35rem);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.joker-card-copy {
+  max-width: 100%;
+  font-size: clamp(0.48rem, 2.5cqw, 0.68rem);
+  line-height: 1.16;
+  font-weight: 800;
+}
+
 .card-back {
   display: flex;
   align-items: center;
@@ -1084,6 +1138,10 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 
 .card-back.card-back-green {
   background: linear-gradient(180deg, rgba(92, 165, 129, 0.96), rgba(43, 107, 77, 0.98));
+}
+
+.card-back.card-back-yellow {
+  background: linear-gradient(180deg, rgba(255, 216, 86, 0.98), rgba(210, 142, 34, 0.98));
 }
 
 .card-back-symbol {
@@ -1546,6 +1604,14 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 8px;
+}
+
+#controls.button-order-higher-lower #higher-btn {
+  order: 1;
+}
+
+#controls.button-order-higher-lower #lower-btn {
+  order: 2;
 }
 
 body.choice-modal-open #main-layout {
@@ -3092,6 +3158,10 @@ body.choice-modal-open #controls,
 
 #game[data-deck="green"] {
   --deck-accent: #b7ff5d;
+}
+
+#game[data-deck="yellow"] {
+  --deck-accent: #ffd64c;
 }
 
 #game[data-deck="red"] {
@@ -4936,6 +5006,10 @@ body[data-visuals="new"] .card-back-pink {
 
 body[data-visuals="new"] .card-back-green {
   background-color: #15803d;
+}
+
+body[data-visuals="new"] .card-back-yellow {
+  background-color: #d99b20;
 }
 
 /* --- Seen grid cells --- */

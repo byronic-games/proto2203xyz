@@ -735,6 +735,8 @@ function applyVisualTheme(theme) {
 function refreshSettingsModalState() {
   const tutorialToggle = document.getElementById("settings-tutorial-toggle");
   const visualsSelect = document.getElementById("settings-visuals-select");
+  const buttonOrderSelect = document.getElementById("settings-button-order-select");
+  const unlockDecksToggle = document.getElementById("settings-unlock-decks-toggle");
   const shareLogBtn = document.getElementById("settings-share-log-btn");
   const downloadLogBtn = document.getElementById("settings-download-log-btn");
   const hasLog = getLatestRunLogEntriesForModal().length > 0;
@@ -744,6 +746,12 @@ function refreshSettingsModalState() {
   }
   if (visualsSelect) {
     visualsSelect.value = loadVisualTheme();
+  }
+  if (buttonOrderSelect) {
+    buttonOrderSelect.value = loadGuessButtonOrder();
+  }
+  if (unlockDecksToggle) {
+    unlockDecksToggle.checked = loadUnlockDecks();
   }
   if (downloadLogBtn) {
     downloadLogBtn.disabled = !hasLog;
@@ -968,6 +976,21 @@ document.getElementById("settings-tutorial-toggle")?.addEventListener("change", 
   sessionStorage.removeItem(getTutorialForceReplayKey());
   window.tutorialController?.closeAndComplete?.();
   setSettingsModalStatus("Tutorial disabled.");
+});
+
+document.getElementById("settings-button-order-select")?.addEventListener("change", (event) => {
+  saveGuessButtonOrder(event.target.value);
+  render();
+  setSettingsModalStatus(event.target.value === "higher-lower"
+    ? "Guess buttons set to Higher / Lower."
+    : "Guess buttons set to Lower / Higher.");
+});
+
+document.getElementById("settings-unlock-decks-toggle")?.addEventListener("change", (event) => {
+  saveUnlockDecks(!!event.target.checked);
+  setSettingsModalStatus(event.target.checked
+    ? "Level 1 unlocked for every deck on this device."
+    : "Normal deck progression restored.");
 });
 
 const settingsResetDeckBtn = document.getElementById("settings-reset-deck-btn");

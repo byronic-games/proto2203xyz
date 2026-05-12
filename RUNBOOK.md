@@ -8,9 +8,22 @@
 1. Start Blue run.
 2. Confirm `Cards Cleared` starts at 1 and `Cards Remaining` at 51.
 3. Make one correct guess and one wrong guess path.
-4. Confirm deck picker order is Blue, Green, Red.
+4. Confirm deck picker order is Blue, Green, Red, Yellow.
 5. Confirm locked decks/levels are visibly greyed out.
 6. Open `daily.html`, `heroes.html`, `profile.html` and confirm no load errors.
+
+## Yellow Deck Check
+1. Enable Settings -> Unlock Decks and confirm Yellow Level 1 can be selected without clearing Blue 3.
+2. Start Yellow Level 1 and confirm `Jokers left: 1` appears in the compact next-card info area.
+3. Make enough guesses for the Joker to appear; either Higher or Lower should resolve the Joker and show a Yellow Joker message.
+4. Repeat Level 4 and confirm `Jokers left: 4` at run start.
+5. Trigger each effect if possible: Tearless repairs a torn corner only when more than four torn cards exist, Nudgeless clears banked Nudges, Cheatless clears held Cheats, and Powerless clears persistent power effects.
+6. Turn Unlock Decks off and confirm normal progression gates return.
+
+## Settings Check
+1. In both `game.html` Settings and `settings.html`, confirm Unlock Decks is visible and only opens Level 1 for locked decks.
+2. Switch button order to Higher / Lower and confirm the green Higher button moves left while preserving its styling.
+3. Switch back to Lower / Higher and confirm the pink Lower button returns to the left.
 
 ## Tutorial / Modal Check
 1. Replay tutorial from Settings if needed.
