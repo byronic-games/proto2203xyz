@@ -41,6 +41,7 @@ function buildDailyRun(dateKey) {
 }
 
 let currentCardFeedbackTimer = null;
+let currentCardNudgeAnimationTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
 let victoryEffectTimer = null;
@@ -166,7 +167,7 @@ function spawnVictoryConfetti() {
   if (!confettiEl) return;
 
   const colors = ["#9ff0ff", "#5bdbfb", "#c7ff54", "#f5ebff", "#ffcf72", "#f77df6"];
-  const piecesPerWave = 54;
+  const piecesPerWave = 70;
   const waveOffsets = [0, 320, 640];
 
   confettiEl.innerHTML = "";
@@ -177,7 +178,7 @@ function spawnVictoryConfetti() {
       piece.className = "confetti-piece";
       piece.style.setProperty("--x", `${Math.random() * 100}%`);
       piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
-      piece.style.setProperty("--fall-distance", `${280 + Math.round(Math.random() * 210)}px`);
+      piece.style.setProperty("--fall-distance", `${105 + Math.round(Math.random() * 30)}vh`);
       piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
       piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
       piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 220)}ms`);
@@ -272,6 +273,36 @@ function setCurrentCardFeedback(effect) {
     currentCardFeedbackTimer = null;
     render();
   }, 520);
+}
+
+function setCurrentCardNudgeAnimation(direction, fromValue, toValue) {
+  if (!state.current || !Number.isFinite(fromValue) || !Number.isFinite(toValue) || fromValue === toValue) {
+    state.currentNudgeAnimation = null;
+    return;
+  }
+
+  const animation = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    cardId: state.current.id,
+    direction: direction === "down" ? "down" : "up",
+    fromValue,
+    toValue,
+  };
+
+  state.currentNudgeAnimation = animation;
+
+  if (currentCardNudgeAnimationTimer) {
+    clearTimeout(currentCardNudgeAnimationTimer);
+    currentCardNudgeAnimationTimer = null;
+  }
+
+  currentCardNudgeAnimationTimer = setTimeout(() => {
+    if (state.currentNudgeAnimation?.id === animation.id) {
+      state.currentNudgeAnimation = null;
+      render();
+    }
+    currentCardNudgeAnimationTimer = null;
+  }, 360);
 }
 
 function describeCardForDebug(card) {
@@ -392,6 +423,7 @@ function offerRewardPowerChoice(reason = "bonus") {
 
   state.pendingPowerOptions = powerOptions;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = String(reason || "bonus");
   state.message = state.activePowerAwardReason === "brucie_bonus"
     ? "Brucie Bonus! Choose 1 power:"
@@ -429,6 +461,40 @@ function resolvePendingRewardQueues() {
   return false;
 }
 
+function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey = "blue", levelNumber = DEFAULT_LEVEL_NUMBER) {
+  if (!Array.isArray(deck) || deck.length === 0) return;
+
+  const normalizedDeckKey = runMode === "daily" ? "blue" : normalizeDeckKey(deckKey);
+  const normalizedLevelNumber = runMode === "daily"
+    ? DEFAULT_LEVEL_NUMBER
+    : normalizeLevelNumber(levelNumber);
+
+  state.deck = [...deck];
+  state.index = 0;
+  state.current = deck[0];
+  state.gameOver = false;
+  state.handCard = null;
+  state.currentValueModifier = 0;
+  state.nextCardValueModifier = 0;
+  state.correctAnswers = 0;
+  state.streak = 0;
+  state.seenCardIds = new Set([deck[0].id]);
+  state.cheats = [];
+  state.nudgeUpCharges = 0;
+  state.nudgeDownCharges = 0;
+  state.energy = 0;
+  state.currentDeckKey = normalizedDeckKey;
+  state.currentLevelNumber = normalizedLevelNumber;
+  state.bestScore = loadBestScore(normalizedDeckKey, normalizedLevelNumber);
+  state.selectedStartPowerId = null;
+  state.powers = [];
+  state.gameOverDisplayCards = null;
+  state.currentCardFeedback = "";
+  state.currentNudgeAnimation = null;
+  state.pendingRevealAnimation = null;
+  state.message = "";
+}
+
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
   clearVictoryEffects();
@@ -447,11 +513,16 @@ function openPowerChoice(forceRandom = false) {
   state.pendingCheatOptions = [];
   state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
+  state.cheatChoicePreviewIndex = -1;
+  state.cheatChoiceAnimating = null;
+  state.powerChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
+  previewPendingRunBehindPowerChoice(deck, "standard", state.pendingDeckKey, state.pendingLevelNumber);
   state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck Level ${state.pendingLevelNumber} run.`;
   render();
   if (typeof window.maybeStartPowerChoiceTutorial === "function") {
@@ -474,11 +545,16 @@ function openDailyPowerChoice(dateKey = "") {
   state.pendingCheatOptions = [];
   state.pendingPowerAwardQueue = [];
   state.cheatChoiceLockedUntil = 0;
+  state.cheatChoicePreviewIndex = -1;
+  state.cheatChoiceAnimating = null;
+  state.powerChoiceAnimating = null;
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
+  previewPendingRunBehindPowerChoice(deck, "daily", "blue", DEFAULT_LEVEL_NUMBER);
   state.message = `Daily for ${chosenDateKey}: choose 1 power.`;
   render();
 }
@@ -635,7 +711,12 @@ function startRunWithPower(powerId) {
     deckStatsTooltipOpen: false,
     victoryPromptShown: false,
     currentCardFeedback: "",
+    currentNudgeAnimation: null,
+    gameOverDisplayCards: null,
     cheatChoiceIntroToken: 0,
+    powerChoiceIntroToken: 0,
+    cheatChoicePreviewIndex: -1,
+    cheatChoiceAnimating: null,
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
@@ -1006,6 +1087,7 @@ function useNudgeCharge(direction) {
   }
 
   recordCurrentCardNudge(state.current, direction);
+  setCurrentCardNudgeAnimation(direction, currentValue, targetValue);
   if (isGreenDeckRun()) {
     state.energy = Math.max(0, (state.energy || 0) - 1);
   }
@@ -1483,7 +1565,6 @@ function makeGuessLegacy(type) {
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
-  flashGameShell("correct");
   addMetaProgression(1);
   if (forcedNudgeDirection === "up" && forcedNudgeReward > 0) {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + forcedNudgeReward;
