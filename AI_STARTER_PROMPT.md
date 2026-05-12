@@ -17,10 +17,16 @@ You are taking over project `52!` in folder `USETHIS`.
 - Use minimal targeted patches (avoid broad refactors).
 - Bump HTML query versions after JS/CSS edits.
 
+## Layout Context
+- Gameplay layout is split between `game.html` spacer/gap rows and late-file `styles.css` grid/container-query rules.
+- `js/fullscreen.js` writes `--app-height` from `visualViewport.height`; Android browser/standalone sizing matters.
+- `js/render.js` emits NEW-theme card markup and toggles choice modal body classes.
+
 ## Current Priority
 - Fix Android reveal animation where card rotates but face does not appear.
 
 ## First Actions
 1. Run smoke checks from `RUNBOOK.md`.
 2. Reproduce reveal issue on Android profile.
-3. Patch and re-test Daily/Heroes/Profile regressions.
+3. Check the gameplay layout on a short mobile viewport before and after UI/CSS changes.
+4. Patch and re-test Daily/Heroes/Profile regressions.

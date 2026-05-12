@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260429a">
+  <link rel="stylesheet" href="styles.css?v=20260511al">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -24,70 +24,44 @@
 
     <div id="game">
       <header id="app-header">
-        <div class="brand-lockup">
-          <h1>52!</h1>
-        </div>
-
-        <div id="header-run-status" class="header-run-status" aria-live="polite" hidden>
-          <div id="header-run-title" class="header-run-title"></div>
-          <div id="header-run-power" class="header-run-power"></div>
-        </div>
-
-        <div class="header-meta">
-          <div class="header-best">
-            <div class="hud-label">Highest Run</div>
-            <div id="best-score">0</div>
-          </div>
-
-          <button id="settings-btn" class="icon-button" type="button" aria-label="Settings">
-            <span class="gear-icon" aria-hidden="true">&#9881;</span>
+        <div class="header-mainline">
+          <h1 id="brand-title">52!</h1>
+          <button id="header-power-chip" class="header-power-chip" type="button" aria-label="Starting power details">
+            <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
+              <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
+            </svg>
+            <span id="header-power-glyph">·</span>
           </button>
+
+          <div class="header-metrics" aria-live="polite">
+            <div id="header-energy-metric" class="header-metric" hidden>
+              <div class="header-metric-label">Energy</div>
+              <div id="energy-value" class="header-metric-value">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-menu-wrap">
+          <button id="menu-btn" class="icon-button menu-button" type="button" aria-label="Open menu" aria-expanded="false">
+            <span class="menu-icon" aria-hidden="true">&#9776;</span>
+          </button>
+          <div id="header-menu" class="header-menu hidden" aria-hidden="true">
+            <button id="howto-open-btn" class="header-menu-action" type="button">How To Play</button>
+            <a class="header-menu-action" href="heroes.html?v=20260419a">High Scores</a>
+            <button id="settings-menu-btn" class="header-menu-action" type="button">Settings</button>
+            <button id="exit-btn" class="header-menu-action" type="button">Exit</button>
+          </div>
         </div>
       </header>
 
       <main id="main-layout">
-        <section id="hud-row">
-          <article class="hud-card hud-card-score">
-            <div class="hud-label">Cards Cleared<br><span class="hud-label-break" aria-hidden="true">&nbsp;</span></div>
-            <div class="hud-value-wrap">
-              <div id="score">0</div>
-            </div>
-          </article>
-
-          <article id="energy-card" class="hud-card hud-card-energy" hidden>
-            <div class="hud-label">Energy<br><span class="hud-label-break" aria-hidden="true">&nbsp;</span></div>
-            <div class="hud-value-wrap">
-              <div id="energy-value">0</div>
-            </div>
-          </article>
-
-          <article class="hud-card hud-card-remaining">
-            <div class="hud-label">Cards Remaining</div>
-            <div class="hud-value-wrap">
-              <div id="cards-remaining-value">52</div>
-              <div id="face-down-count"></div>
-            </div>
-          </article>
-        </section>
-
+        <div class="layout-spacer layout-spacer-cards-top" aria-hidden="true"></div>
         <section id="play-area">
           <div id="card-row">
             <div class="play-stack play-stack-current">
               <div class="card-column">
-                <div class="pile-label">Current Card</div>
-                <div class="current-card-wrap">
-                <div id="current-card" class="card-face">?</div>
-                  <div class="nudge-stack" aria-label="Nudge controls">
-                    <button id="nudge-up-btn" class="nudge-arrow nudge-up" type="button" aria-label="Use Nudge Up">
-                      <span class="nudge-symbol">&#9650;</span>
-                      <span id="nudge-up-count" class="nudge-count">0</span>
-                    </button>
-                    <div class="nudge-label">Nudges</div>
-                    <button id="nudge-down-btn" class="nudge-arrow nudge-down" type="button" aria-label="Use Nudge Down">
-                      <span class="nudge-symbol">&#9660;</span>
-                      <span id="nudge-down-count" class="nudge-count">0</span>
-                    </button>
-                  </div>
+                <div class="current-card-wrap card-slot">
+                  <div id="current-card" class="card-face">?</div>
                 </div>
                 <div id="current-effective-value"></div>
               </div>
@@ -95,8 +69,11 @@
 
             <div class="play-stack play-stack-next">
               <div class="card-column">
-                <div class="pile-label">Next Card</div>
-                <div id="face-down-deck" class="card-back"></div>
+                <div class="card-slot">
+                  <div id="face-down-deck" class="card-back"></div>
+                  <div id="reveal-overlay" class="reveal-overlay hidden" aria-hidden="true"></div>
+                </div>
+                <div id="next-info"></div>
               </div>
             </div>
 
@@ -104,58 +81,33 @@
             <div id="victory-confetti" aria-hidden="true"></div>
             <div id="game-over-detail" aria-live="polite"></div>
           </div>
-
-          <div id="next-info"></div>
-
         </section>
+        <div class="layout-spacer layout-spacer-cards-bottom" aria-hidden="true"></div>
 
         <div id="message-bar"></div>
+        <div class="layout-gap layout-gap-info-cheats" aria-hidden="true"></div>
 
         <section id="cheats-panel">
-          <div class="section-bar">
-            <div class="section-title">Cheats - hold for info</div>
-            <div class="section-scroll-hint">Swipe</div>
-          </div>
           <div id="cheat-list"></div>
         </section>
 
         <div id="controls">
-          <button id="higher-btn" type="button">Higher</button>
+          <button id="restart-btn" class="launch-run-btn" type="button">Start Run</button>
           <button id="lower-btn" type="button">Lower</button>
+          <button id="higher-btn" type="button">Higher</button>
         </div>
+        <div class="layout-spacer layout-spacer-buttons-bottom" aria-hidden="true"></div>
 
         <section id="memory-panel">
-          <div class="section-bar">
-            <div class="section-title">Cards Seen This Run</div>
-            <div id="seen-count-badge" class="section-chip">0 / 52 Tracked</div>
-          </div>
           <div id="seen-grid-wrap">
+            <div id="seen-grid-stats">
+              <div id="seen-grid-label">FOUND: 0/52</div>
+              <div id="best-score">BEST: 0</div>
+            </div>
             <div id="seen-grid"></div>
           </div>
         </section>
       </main>
-
-      <nav id="bottom-bar" aria-label="Game navigation">
-        <button id="restart-btn" class="nav-action nav-action-primary" type="button">
-          <span class="nav-icon">&#9654;</span>
-          <span class="nav-label">Start Run</span>
-        </button>
-
-        <button id="howto-open-btn" class="nav-action" type="button">
-          <span class="nav-icon">?</span>
-          <span class="nav-label">How To Play</span>
-        </button>
-
-          <a class="nav-action" href="heroes.html?v=20260419a">
-          <span class="nav-icon">&#9638;</span>
-          <span class="nav-label">High Scores</span>
-        </a>
-
-        <button id="exit-btn" class="nav-action" type="button">
-          <span class="nav-icon">&#8617;</span>
-          <span class="nav-label">Exit</span>
-        </button>
-      </nav>
 
       <div id="game-howto-modal" class="hidden" aria-hidden="true">
         <div class="help-backdrop" id="howto-close-backdrop"></div>
@@ -177,38 +129,49 @@
               <li>Pick <strong>Higher</strong> or <strong>Lower</strong> for the next face-down card.</li>
               <li>Equal values are safe, so your run continues on a match. Aces are usually low unless a power changes that.</li>
               <li>A wrong guess ends the run immediately.</li>
-              <li><strong>Blue Deck</strong> can award Nudges on correct guesses. <strong>Red Deck</strong> does not award Nudges, but the next card back shows live history for that face-up card.</li>
-              <li>After choosing a deck, choose that deck's level. Blue Level 1 is the standard pacing, Blue Levels 2 and 3 slow cheat rewards, and Blue Level 4 slows them further.</li>
-              <li>Unlock path: clear Blue 1 to open Green 1, clear Blue 2 to open Red 1. Green and Red higher levels unlock by clearing the previous level in that same deck.</li>
-              <li>Clear the full deck to record a winning run on the heroes board.</li>
             </ul>
           </div>
 
-          <div class="help-block">
-            <h3>Powers, Nudges, And Cheats</h3>
-            <ul>
-              <li><strong>Start Power:</strong> Before each run, pick 1 Power from a choice of 2.</li>
-              <li><strong>Blue Deck Nudges:</strong> In Blue, every correct <strong>Higher</strong> guess adds an up nudge and every correct <strong>Lower</strong> guess adds a down nudge.</li>
-              <li><strong>Green Deck Energy:</strong> Green Level 1 starts at 10 Energy, Level 2 starts at 8, Level 3 starts at 6, and Level 4 starts at 5. Each nudge costs 1 Energy, and a Green-only <strong>+5 Energy</strong> cheat appears frequently in offers.</li>
-              <li><strong>Nudges:</strong> Use the up/down buttons beside the current card to temporarily change its judged value before your next guess.</li>
-              <li><strong>Cheats:</strong> Build streaks to earn Cheats. Some cheats act instantly, while others arm protection or a delayed reward for the next card or next few correct guesses.</li>
-              <li><strong>Quick Fingers:</strong> This power speeds up Cheat rewards for the level you are playing.</li>
-              <li><strong>Daily:</strong> The Daily unlocks after your first run, gives everyone the same seeded deck and offers for the date, and currently always plays as Blue Deck Level 1.</li>
-              <li><strong>Power Reminder:</strong> Hold the deck / level / starting power text in the top bar during a run to reread your active power.</li>
-              <li><strong>On mobile:</strong> Swipe the cheat row sideways if your cheats run off the screen.</li>
-            </ul>
-          </div>
+        </article>
+      </div>
 
-          <div class="help-block">
-            <h3>What You See</h3>
-            <ul>
-              <li>The top HUD shows your current deck and level, your starting power, best run for that deck and level, cards cleared, and cards remaining.</li>
-              <li>The center play area shows the current card, your nudge counts, and the next face-down card.</li>
-              <li>The tracked grid records which cards you have already seen this run.</li>
-            </ul>
-          </div>
+      <div id="game-settings-modal" class="hidden" aria-hidden="true">
+        <div class="help-backdrop" id="settings-close-backdrop"></div>
+        <article class="help-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <button id="settings-close-icon-btn" class="help-close-icon" type="button" aria-label="Close Settings">&#215;</button>
+          <h2 id="settings-title">Settings</h2>
 
-          <button id="howto-close-btn" class="help-close-btn" type="button">Close</button>
+          <div class="settings-form">
+            <label class="settings-row" for="settings-sound-toggle">
+              <span>Sound</span>
+              <input id="settings-sound-toggle" type="checkbox" checked>
+            </label>
+
+            <label class="settings-row" for="settings-tutorial-toggle">
+              <span>Tutorial</span>
+              <input id="settings-tutorial-toggle" type="checkbox">
+            </label>
+
+            <label class="settings-row" for="settings-visuals-select">
+              <span>Visuals</span>
+              <select id="settings-visuals-select">
+                <option value="new" selected>NEW</option>
+                <option value="neon">NEON</option>
+              </select>
+            </label>
+
+            <div class="settings-action-block">
+              <button id="settings-reset-deck-btn" class="settings-action-btn" type="button">
+                <span id="settings-reset-deck-label">Reset Deck</span>
+                <span id="settings-reset-deck-fill" class="settings-hold-fill"></span>
+              </button>
+              <p class="settings-help">Hold for 5 seconds to clear physical changes</p>
+            </div>
+
+            <button id="settings-download-log-btn" class="settings-action-btn" type="button">Download Run Log</button>
+            <button id="settings-share-log-btn" class="settings-action-btn" type="button">Share Run Log</button>
+            <p id="settings-modal-status" class="settings-modal-status"></p>
+          </div>
         </article>
       </div>
 
@@ -240,11 +203,12 @@
         <div class="choice-backdrop"></div>
         <div class="choice-modal">
           <div class="choice-title">Choose Your Cheat</div>
-          <div id="cheat-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="cheat-choice-list"></div>
-          <div class="choice-footer">Tap to select.</div>
+          <div id="cheat-choice-info" class="cheat-choice-info" aria-live="polite"></div>
         </div>
       </div>
+      <div id="cheat-choice-flyout" class="hidden" aria-hidden="true"></div>
+      <div id="power-choice-flyout" class="hidden" aria-hidden="true"></div>
 
       <div id="power-choice-container" class="hidden" aria-hidden="true">
         <div class="choice-backdrop"></div>
@@ -252,7 +216,7 @@
           <div id="power-choice-title" class="choice-title">Choose Your Power</div>
           <div id="power-choice-current-card" class="choice-current-card hidden" aria-live="polite"></div>
           <div id="power-choice-list"></div>
-          <div id="power-choice-footer" class="choice-footer">Pick 1 before the run begins.</div>
+          <div id="power-choice-footer" class="choice-footer" hidden></div>
         </div>
       </div>
 
@@ -297,19 +261,19 @@
     </div>
   </div>
 
-  <script src="js/fullscreen.js?v=20260427a"></script>
-  <script src="js/constants.js?v=20260427a"></script>
-  <script src="js/storage.js?v=20260427a"></script>
-  <script src="js/state.js?v=20260423a"></script>
-  <script src="js/powers.js?v=20260425b"></script>
-  <script src="js/cheats.js?v=20260425b"></script>
+  <script src="js/fullscreen.js?v=20260506b"></script>
+  <script src="js/constants.js?v=20260511r"></script>
+  <script src="js/storage.js?v=20260511s"></script>
+  <script src="js/state.js?v=20260506b"></script>
+  <script src="js/powers.js?v=20260502a"></script>
+  <script src="js/cheats.js?v=20260506b"></script>
   <script src="js/cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/apply-cheat-balance-overrides.js?v=20260414a"></script>
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
-  <script src="js/logic.js?v=20260427b"></script>
-  <script src="js/render.js?v=20260428d"></script>
-  <script src="js/input.js?v=20260428c"></script>
+  <script src="js/logic.js?v=20260511w"></script>
+  <script src="js/render.js?v=20260511ar"></script>
+  <script src="js/input.js?v=20260511s"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

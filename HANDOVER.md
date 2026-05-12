@@ -17,6 +17,8 @@
 - Daily leaderboard loads now retry-upload a completed local Daily attempt if the matching `date_key` + `player_id` row is missing online.
 - Daily now has a share button on the result panel, but it is intentionally code-gated off for now with `DAILY_SHARE_ENABLED = false` in `js/daily-page.js`.
 - Android standalone/home-screen sizing was tightened using `visualViewport.height` plus short-screen CSS compression.
+- The gameplay screen has a structured fixed-height vertical layout: `game.html` supplies spacer/gap rows, while `styles.css` uses container-query grid rows to fit the header, cards, message bar, cheat coins, controls, and memory grid into `--app-height`.
+- The default `NEW` visual mode renders white card faces with image suit icons, circular rarity cheat coins, and shield-shaped power cards/header chip.
 - Mobile cache behavior is now split:
   - HTML / manifest-style files revalidate via `.htaccess`
   - versioned JS / CSS assets remain aggressively cacheable
@@ -37,6 +39,15 @@
 - Status: still reported as broken on-device; see `KNOWN_ISSUES.md`.
 
 ## Recently Touched Areas
+- Gameplay visual layout in `game.html` and `styles.css`:
+  - `#main-layout` row order depends on `.layout-spacer-*` and `.layout-gap-info-cheats` elements in the HTML
+  - `#game` exposes sizing variables for header/message/cheats/buttons and short-height compression
+  - `.card-slot` owns card aspect-ratio sizing; `#current-card`, `#face-down-deck`, and `#reveal-overlay` fill that slot
+  - `#game-shell` / `#game` now run edge-to-edge using `--app-height`
+- Visual styling in `styles.css` and `js/render.js`:
+  - `renderCardFaceMarkup` emits NEW-theme corner-rank + suit-image markup when `body[data-visuals="new"]`
+  - cheat inventory and cheat choices use circular coin treatment with rarity CSS variables
+  - power choice cards and header power chip share shield SVG styling
 - Tutorial flow in `js/input.js`:
   - power-pick blocking relaxed
   - cheat-choice progression split from streak-building
@@ -61,6 +72,7 @@
 ## Quick "Do First" For New AI
 1. Run `RUNBOOK.md` smoke checks.
 2. Reproduce current flip bug on Android profile.
-3. Re-test tutorial overlays and choice-modal behavior on mobile before changing adjacent UI; confirm current-card and next-card highlights are visible and throbbing.
-4. Patch minimally and verify Daily/Heroes/Profile did not regress.
-5. If Daily sharing is being revisited, start in `js/daily-page.js` and keep the toggle code-only unless explicitly asked to expose it in the UI.
+3. Re-test layout on a short mobile viewport before changing adjacent UI; confirm card pair, message bar, cheat coins, controls, and memory grid all remain visible without page scroll.
+4. Re-test tutorial overlays and choice-modal behavior on mobile before changing adjacent UI; confirm current-card and next-card highlights are visible and throbbing.
+5. Patch minimally and verify Daily/Heroes/Profile did not regress.
+6. If Daily sharing is being revisited, start in `js/daily-page.js` and keep the toggle code-only unless explicitly asked to expose it in the UI.

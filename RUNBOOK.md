@@ -20,6 +20,15 @@
 5. Confirm cheat choice cards are tappable during tutorial.
 6. Confirm `Higher / Lower` is hidden whenever power or cheat choice modals are open.
 
+## Gameplay Layout Check
+1. Test a normal mobile viewport and a short mobile viewport.
+2. Confirm the header, card pair, message bar, cheat coin row, controls, and memory grid all fit inside the visible game screen.
+3. Confirm the page itself does not scroll during gameplay; the fixed layout should fit within `--app-height`.
+4. Confirm current-card, next-card, and reveal overlay remain exactly aligned during a guess.
+5. Confirm cheat coins stay circular, rarity-colored, centered in the cheat row, and keep count badges readable.
+6. Confirm NEW visuals show corner ranks and image-backed suits on cards and memory-grid cells.
+7. On Android, repeat the check in browser and standalone/home-screen mode because `js/fullscreen.js` uses `visualViewport.height`.
+
 ## Animation Check (Current Priority)
 1. On Android Chrome, make a guess.
 2. Verify next-card flip reveals face during animation.

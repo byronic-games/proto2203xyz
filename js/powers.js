@@ -154,31 +154,31 @@ function getPowerRarityLabel(power) {
 function getPowerIcon(powerId) {
   switch (powerId) {
     case "balanced_nudges":
-      return "↕️";
+      return "±";
     case "updraft":
-      return "⬆️";
+      return "↑";
     case "downforce":
-      return "⬇️";
+      return "↓";
     case "quick_fingers":
-      return "⚡";
+      return "»";
     case "swap_stack":
-      return "🃏";
+      return "⇄";
     case "aces_wild":
       return "A";
     case "lucky_opening":
       return "7";
     case "diamonds_are_forever":
-      return "D";
+      return "◇";
     case "all_you_need_is_love":
-      return "H";
+      return "♡";
     case "dig_down":
-      return "S";
+      return "♠";
     case "club_in_baby":
-      return "C";
+      return "♣";
     case "brucie_bonus":
-      return "B";
+      return "+";
     default:
-      return "✨";
+      return "•";
   }
 }
 
@@ -354,5 +354,4 @@ function awardOnCorrectGuessPowers(guessType) {
 
   return awardedNames;
 }
-
 
