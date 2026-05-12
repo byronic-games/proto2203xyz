@@ -4251,7 +4251,7 @@ body.choice-modal-open #controls,
   z-index: 1;
   width: min(100%, 88%);
   max-width: 88%;
-  margin-top: 10%;
+  margin-top: 13%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4264,7 +4264,7 @@ body.choice-modal-open #controls,
   position: relative;
   z-index: 1;
   margin-top: auto;
-  margin-bottom: 20%;
+  margin-bottom: 17%;
   display: grid;
   place-items: center;
   width: 100%;
@@ -4324,11 +4324,11 @@ body.choice-modal-open #controls,
   #power-choice-container .choice-top {
     width: min(100%, 92%);
     max-width: 92%;
-    margin-top: 8%;
+    margin-top: 11%;
   }
 
   #power-choice-container .choice-bottom {
-    margin-bottom: 18%;
+    margin-bottom: 15%;
   }
 
   #power-choice-container .choice-desc {
@@ -4547,7 +4547,7 @@ body.choice-modal-open #controls,
   z-index: 1;
   width: min(100%, 88%);
   max-width: 88%;
-  margin-top: 10%;
+  margin-top: 13%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4560,7 +4560,7 @@ body.choice-modal-open #controls,
   position: relative;
   z-index: 1;
   margin-top: auto;
-  margin-bottom: 20%;
+  margin-bottom: 17%;
   display: grid;
   place-items: center;
   width: 100%;
@@ -4857,6 +4857,10 @@ body.choice-modal-open #controls,
   max-width: 82%;
   font-size: clamp(0.42rem, 1.38cqw, 0.58rem) !important;
   padding: 0.22em 0.58em;
+}
+
+.cheat-count-label[hidden] {
+  display: none !important;
 }
 
 .nudge-cheat-button {
