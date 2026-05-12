@@ -14,6 +14,18 @@
 - `settings.html`: config/reset tools
 - Daily sharing exists in UI but is currently disabled by a code flag in `js/daily-page.js` until we turn it back on.
 
+## Gameplay Layout Surface
+- `game.html` now defines the gameplay screen as a deliberate vertical layout skeleton with spacer/gap rows around the card pair, message bar, cheat panel, controls, and memory grid.
+- `styles.css` contains the late-file "Structured vertical layout system" that turns `#game` and `#main-layout` into fixed-height CSS grids. Key row variables are `--header-height`, `--info-height`, `--cheats-height`, `--buttons-height`, `--section-gap`, `--card-pair-gap`, and `--card-row-max-height`.
+- Cards are sized through container queries on `.card-slot`, then `#current-card`, `#face-down-deck`, and `#reveal-overlay` fill the slot. This keeps the card pair stable while the available viewport height changes.
+- `js/fullscreen.js` is part of layout ownership because it writes `--app-height` from `visualViewport.height`.
+- Choice modals use body classes from `js/render.js`: `choice-modal-open`, `cheat-choice-open`, and `power-choice-open`.
+
+## Current Visual Treatment
+- `body[data-visuals="new"]` switches card faces to white playing-card markup with corner ranks and image-backed suit symbols. `js/render.js::renderCardFaceMarkup` emits this markup; `styles.css` maps the suit assets.
+- The cheat bar and cheat-choice cards are circular rarity coins with count badges and small layout animations.
+- Power choice cards and the header power chip are shield-shaped via `.power-shield-svg` / `.power-shield-fill`.
+
 ## Deck/Progression Model
 - Start: Blue Level 1 unlocked.
 - Daily unlocks after first run started.
@@ -31,13 +43,14 @@
 
 ## Main Code Ownership
 - `js/logic.js`: game rules and state transitions
-- `js/render.js`: DOM rendering and animation hooks
+- `js/render.js`: DOM rendering, visual-theme markup, choice modal body classes, and animation hooks
 - `js/input.js`: controls/input gating + tutorial flow
 - `js/storage.js`: persistence/migrations
 - `js/daily.js` + `js/daily-page.js`: Daily data flow/UI
 - `js/leaderboard.js` + `js/heroes.js`: Heroes/crowns rendering
 - `js/profile-page.js`: profile stats/crowns
 - `js/fullscreen.js`: viewport-height handling, including Android standalone/home-screen mode
+- `styles.css`: gameplay vertical layout grid, responsive card sizing, NEW visual theme, cheat coin styling, and power shield styling
 
 ## Current Critical Risk
 - Reveal animation on some Android browsers still fails to show face mid-flip.
