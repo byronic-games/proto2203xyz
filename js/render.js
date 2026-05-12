@@ -1128,11 +1128,12 @@ function renderHandCard() {
   handEl.className = isRed(state.handCard) ? "red" : "black";
 }
 
-function buildCheatButtonMarkup(title, iconGlyph, count = 0) {
+function buildCheatButtonMarkup(title, iconGlyph, count = 0, countLabel = "") {
   return `
     <div class="cheat-icon">${iconGlyph}</div>
     <div class="cheat-name">${title}</div>
-    <div class="cheat-stack-count" ${count > 1 ? "" : "hidden"}>x${count}</div>
+    <div class="cheat-count-label" ${countLabel ? "" : "hidden"}>${countLabel}</div>
+    <div class="cheat-stack-count" ${count > 1 && !countLabel ? "" : "hidden"}>x${count}</div>
   `;
 }
 
@@ -1162,9 +1163,11 @@ function buildPowerChoiceShieldMarkup(power) {
   return `
     ${POWER_SHIELD_SVG}
     <div class="choice-top">
-      <div class="choice-icon">${getPowerIcon(power.id)}</div>
       <div class="choice-name">${power.name}</div>
       <div class="choice-rarity">${getPowerRarityLabel(power)}</div>
+    </div>
+    <div class="choice-bottom">
+      <div class="choice-icon">${getPowerIcon(power.id)}</div>
     </div>
   `;
 }
@@ -1577,7 +1580,10 @@ function renderCheats() {
       btn.classList.add("is-receive-target-hidden");
     }
 
-    btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count);
+    const countLabel = entry.kind === "nudge"
+      ? `${entry.count} ${entry.count === 1 ? "charge" : "charges"}`
+      : "";
+    btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count, countLabel);
 
     let holdTimer = null;
     let held = false;

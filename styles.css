@@ -1790,6 +1790,24 @@ body.choice-modal-open #controls,
   line-height: 1.18;
 }
 
+.cheat-count-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75em;
+  padding: 0.18em 0.62em;
+  border-radius: 999px;
+  background: rgba(14, 10, 18, 0.72);
+  color: #ffffff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+}
+
 #utility-row {
   display: none;
 }
@@ -2785,10 +2803,10 @@ body.choice-modal-open #controls,
   }
 
   #message-bar {
-    min-height: calc(1.2em * 2 + 8px);
-    padding: 4px 10px;
+    min-height: calc(1.14em * 2 + 6px);
+    padding: 3px 9px;
     font-size: 0.82rem;
-    line-height: 1.24;
+    line-height: 1.18;
   }
 
   #cheats-panel,
@@ -2826,7 +2844,7 @@ body.choice-modal-open #controls,
     min-width: 106px;
     max-width: 106px;
     min-height: 84px;
-    padding: 8px 6px;
+    padding: 7px 6px;
   }
 
   #utility-row {
@@ -3055,10 +3073,10 @@ body.choice-modal-open #controls,
   }
 
   #message-bar {
-    min-height: calc(1.2em * 2 + 8px);
-    max-height: calc(1.2em * 2 + 8px);
+    min-height: calc(1.14em * 2 + 6px);
+    max-height: calc(1.14em * 2 + 6px);
     font-size: 0.78rem;
-    padding: 4px 8px;
+    padding: 3px 8px;
   }
 
   #bottom-bar {
@@ -3362,9 +3380,9 @@ body.choice-modal-open #controls,
 
 #message-bar {
   display: none !important;
-  min-height: calc(1.16em * 2 + 8px) !important;
-  max-height: calc(1.16em * 2 + 8px) !important;
-  padding: 4px 8px !important;
+  min-height: calc(1.12em * 2 + 6px) !important;
+  max-height: calc(1.12em * 2 + 6px) !important;
+  padding: 3px 8px !important;
   border-radius: 10px !important;
   background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05) !important;
@@ -3448,7 +3466,7 @@ body.choice-modal-open #controls,
 
 #controls {
   gap: 8px !important;
-  margin-top: 2px !important;
+  margin-top: 0 !important;
 }
 
 #controls.controls-single {
@@ -3487,7 +3505,7 @@ body.choice-modal-open #controls,
   min-width: 90px !important;
   max-width: 90px !important;
   min-height: 70px !important;
-  padding: 7px 5px !important;
+  padding: 6px 5px !important;
 }
 
 .cheat-icon {
@@ -4179,10 +4197,10 @@ body.choice-modal-open #controls,
   min-height: 0 !important;
   height: auto !important;
   aspect-ratio: 100 / 128;
-  padding: 18px 16px 24px !important;
+  padding: 14px 16px 18px !important;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   border-radius: 0;
   border: 0;
@@ -4231,20 +4249,40 @@ body.choice-modal-open #controls,
 #power-choice-container .choice-top {
   position: relative;
   z-index: 1;
-  max-width: 78%;
-  transform: translateY(-1%);
+  width: min(100%, 88%);
+  max-width: 88%;
+  margin-top: 10%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  transform: none;
+}
+
+#power-choice-container .choice-bottom {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  margin-bottom: 20%;
+  display: grid;
+  place-items: center;
+  width: 100%;
 }
 
 #power-choice-container .choice-icon {
   color: var(--power-shield-text, var(--rarity-common-text)) !important;
-  font-size: clamp(1.85rem, 5.6vw, 2.4rem);
+  font-size: clamp(1.85rem, 5.8vw, 2.5rem);
   line-height: 1;
 }
 
 #power-choice-container .choice-name {
   color: var(--power-shield-text, var(--rarity-common-text)) !important;
-  font-size: clamp(0.9rem, 2.5vw, 1.08rem);
-  line-height: 1.05;
+  width: 100%;
+  font-size: clamp(0.9rem, 2.8vw, 1.12rem);
+  line-height: 1.03;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 #power-choice-container .choice-rarity {
@@ -4260,6 +4298,44 @@ body.choice-modal-open #controls,
   font-size: clamp(0.78rem, 2.1vw, 0.88rem);
   line-height: 1.24;
   text-align: center;
+}
+
+@media (max-width: 480px) {
+  #power-choice-container .choice-modal {
+    width: min(92vw, 560px);
+    padding: 14px 12px 12px;
+    gap: 10px;
+  }
+
+  #power-choice-container #power-choice-list {
+    max-width: none;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  #power-choice-container .power-choice-option {
+    gap: 8px;
+  }
+
+  #power-choice-container .choice-card.power-choice-card {
+    width: min(100%, 148px) !important;
+  }
+
+  #power-choice-container .choice-top {
+    width: min(100%, 92%);
+    max-width: 92%;
+    margin-top: 8%;
+  }
+
+  #power-choice-container .choice-bottom {
+    margin-bottom: 18%;
+  }
+
+  #power-choice-container .choice-desc {
+    width: min(100%, 210px);
+    font-size: clamp(0.8rem, 3.2vw, 0.92rem);
+    line-height: 1.2;
+  }
 }
 
 #cheat-choice-container .choice-card.cheat-choice-card.is-previewed {
@@ -4453,10 +4529,10 @@ body.choice-modal-open #controls,
   min-height: 0 !important;
   max-height: none !important;
   aspect-ratio: 100 / 128;
-  padding: 18px 16px 24px !important;
+  padding: 14px 16px 18px !important;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   border: 0;
   border-radius: 0;
@@ -4469,8 +4545,25 @@ body.choice-modal-open #controls,
 #power-choice-flyout .choice-top {
   position: relative;
   z-index: 1;
-  max-width: 78%;
-  transform: translateY(-1%);
+  width: min(100%, 88%);
+  max-width: 88%;
+  margin-top: 10%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  transform: none;
+}
+
+#power-choice-flyout .choice-bottom {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  margin-bottom: 20%;
+  display: grid;
+  place-items: center;
+  width: 100%;
 }
 
 #power-choice-flyout .choice-icon,
@@ -4758,6 +4851,32 @@ body.choice-modal-open #controls,
   line-height: 1.02;
   max-width: 86%;
   overflow-wrap: anywhere;
+}
+
+.cheat-count-label {
+  max-width: 82%;
+  font-size: clamp(0.42rem, 1.38cqw, 0.58rem) !important;
+  padding: 0.22em 0.58em;
+}
+
+.nudge-cheat-button {
+  justify-content: flex-start !important;
+  padding-top: clamp(8px, 2.2cqw, 11px) !important;
+  padding-bottom: clamp(8px, 2.2cqw, 11px) !important;
+}
+
+.nudge-cheat-button .cheat-icon {
+  font-size: clamp(0.96rem, 4.2cqw, 1.45rem) !important;
+}
+
+.nudge-cheat-button .cheat-name {
+  max-width: 78%;
+}
+
+.nudge-cheat-button .cheat-count-label {
+  margin-top: 1px;
+  background: rgba(14, 10, 18, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
 }
 
 .cheat-stack-count {
