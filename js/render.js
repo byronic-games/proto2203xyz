@@ -1137,6 +1137,30 @@ function buildCheatButtonMarkup(title, iconGlyph, count = 0, countLabel = "") {
   `;
 }
 
+function shouldConsumeCheatAfterUse(cheat, result) {
+  if (!cheat) return false;
+  if (typeof cheat.shouldConsumeResult === "function") {
+    return !!cheat.shouldConsumeResult(result);
+  }
+  return !!cheat.consumeOnUse;
+}
+
+function updateCheatOverflowIndicators() {
+  const cheatList = document.getElementById("cheat-list");
+  const cheatsPanel = document.getElementById("cheats-panel");
+  if (!cheatList || !cheatsPanel) return;
+
+  const maxScrollLeft = Math.max(0, cheatList.scrollWidth - cheatList.clientWidth);
+  const scrollLeft = Math.max(0, cheatList.scrollLeft);
+  const hasOverflow = maxScrollLeft > 6;
+  const showLeft = hasOverflow && scrollLeft > 6;
+  const showRight = hasOverflow && scrollLeft < maxScrollLeft - 6;
+
+  cheatsPanel.dataset.overflowLeft = showLeft ? "true" : "false";
+  cheatsPanel.dataset.overflowRight = showRight ? "true" : "false";
+  cheatsPanel.dataset.hasOverflow = hasOverflow ? "true" : "false";
+}
+
 function getCheatChoiceRarityLabel(cheat) {
   return (cheat?.rarity || "common").replace(/^\w/, (c) => c.toUpperCase());
 }
@@ -1462,6 +1486,12 @@ function renderCheats() {
   if (!cheatList) return;
   const previousScrollLeft = cheatList.scrollLeft;
 
+  if (cheatList.dataset.overflowInit !== "1") {
+    cheatList.dataset.overflowInit = "1";
+    cheatList.addEventListener("scroll", updateCheatOverflowIndicators, { passive: true });
+    window.addEventListener("resize", updateCheatOverflowIndicators, { passive: true });
+  }
+
   const previousCoinRects = new Map(
     Array.from(cheatList.querySelectorAll(".cheat-button[data-cheat-entry-id]"))
       .map((el) => [el.dataset.cheatEntryId, el.getBoundingClientRect()])
@@ -1634,6 +1664,7 @@ function renderCheats() {
 
       const useCheat = () => {
         const result = entry.cheat.use();
+        const didConsume = shouldConsumeCheatAfterUse(entry.cheat, result);
         state.message = result;
         appendRunDebugLog("cheat_used", {
           cheatId: entry.cheat.id,
@@ -1641,6 +1672,7 @@ function renderCheats() {
           result,
           cheatsInHandBeforeConsume: state.cheats.map((heldCheat) => heldCheat.id),
           consumeOnUse: !!entry.cheat.consumeOnUse,
+          didConsume,
           armedStatesAfterUse: {
             lucky7: !!state.lucky7Armed,
             fiveAlive: !!state.fiveAliveArmed,
@@ -1656,7 +1688,7 @@ function renderCheats() {
             cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
           },
         });
-        if (entry.cheat.consumeOnUse) {
+        if (didConsume) {
           const originalIndex = state.cheats.findIndex((c) => c.id === entry.cheat.id);
           if (originalIndex >= 0) removeCheatAt(originalIndex);
           state.cheatUsesOnCurrentCard = (state.cheatUsesOnCurrentCard || 0) + 1;
@@ -1678,6 +1710,7 @@ function renderCheats() {
   window.requestAnimationFrame(() => {
     const maxScrollLeft = Math.max(0, cheatList.scrollWidth - cheatList.clientWidth);
     cheatList.scrollLeft = Math.max(0, Math.min(previousScrollLeft, maxScrollLeft));
+    updateCheatOverflowIndicators();
   });
   if (!state.cheatChoiceAnimating) {
     lastRenderedCheatCounts = currentCheatCounts;

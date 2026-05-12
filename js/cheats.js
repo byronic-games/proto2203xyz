@@ -913,7 +913,8 @@ const CHEATS = [
     included: true,
     unlockAt: 0,
     stacking: "unique",
-    consumeOnUse: true,
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Jack swapped forward"),
     use: () => {
       if (!state.current) return "No current card.";
       const currentVal = getCurrentEffectiveValue();
