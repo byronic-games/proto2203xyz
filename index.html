@@ -473,10 +473,10 @@
         }
 
         if (normalizedDeck === "yellow") {
-          if (normalizedLevel === 1) return "Hazard run. Adds Tearless, a Joker that can repair persistent torn corners.";
-          if (normalizedLevel === 2) return "Hazard run. Adds Tearless and Nudgeless, which removes all banked Nudges.";
-          if (normalizedLevel === 3) return "Hazard run. Adds Tearless, Nudgeless, and Cheatless, which discards all banked Cheats.";
-          return "Hazard run. All four Jokers are in play, including Powerless.";
+          if (normalizedLevel === 1) return "Hazard run. Adds 1 Joker to the deck. Jokers count as both high and low when encountered.";
+          if (normalizedLevel === 2) return "Hazard run. Adds 2 Jokers to the deck. Jokers count as both high and low when encountered.";
+          if (normalizedLevel === 3) return "Hazard run. Adds 3 Jokers to the deck. Jokers count as both high and low when encountered.";
+          return "Hazard run. Adds 4 Jokers to the deck. Jokers count as both high and low when encountered.";
         }
 
         if (normalizedLevel === 1) return "Stats-driven run. No Nudge rewards, and the next card back shows live face-up card history.";

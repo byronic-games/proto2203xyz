@@ -1289,20 +1289,17 @@ function getTotalTornCardCount() {
 
 function applyTearlessJoker() {
   const totalTorn = getTotalTornCardCount();
-  if (totalTorn <= 4) {
-    return "Tearless found no spare torn corner to remove.";
-  }
-
-  const unseenTornCard = Array.isArray(state.deck)
+  const unseenTornCards = Array.isArray(state.deck)
     ? state.deck
         .slice((Number(state.index) || 0) + 1)
-        .find((card) => !isJokerCard(card) && getCardBackStatus(card.id).tornCorner)
-    : null;
+        .filter((card) => !isJokerCard(card) && getCardBackStatus(card.id).tornCorner)
+    : [];
 
-  if (!unseenTornCard) {
+  if (!unseenTornCards.length) {
     return "Tearless found the torn cards, but none still hidden in this run.";
   }
 
+  const unseenTornCard = unseenTornCards[Math.floor(Math.random() * unseenTornCards.length)];
   setCardBackStatus(unseenTornCard.id, { tornCorner: false });
   return `Tearless repaired ${describeCard(unseenTornCard)}. Persistent torn corners now: ${Math.max(0, totalTorn - 1)}.`;
 }
