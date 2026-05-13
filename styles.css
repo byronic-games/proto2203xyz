@@ -343,8 +343,8 @@ a {
 
 #message-bar {
   display: flex;
-  min-height: calc(1.25em * 3 + 10px);
-  max-height: calc(1.25em * 3 + 10px);
+  min-height: var(--info-height, calc(1.2em * 2 + 8px));
+  max-height: var(--info-height, calc(1.2em * 2 + 8px));
   padding: 7px 12px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255, 124, 245, 0.1), rgba(255, 124, 245, 0.05));
@@ -360,6 +360,8 @@ a {
   overflow-x: hidden;
   white-space: normal;
   word-break: break-word;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
   visibility: hidden;
   pointer-events: none;
 }
@@ -367,6 +369,29 @@ a {
 #message-bar.has-message {
   visibility: visible;
   pointer-events: auto;
+}
+
+#message-bar[data-message-density="compact"] {
+  padding: 5px 10px !important;
+  font-size: 0.8rem !important;
+  line-height: 1.24 !important;
+}
+
+#message-bar[data-message-density="tight"] {
+  padding: 4px 9px !important;
+  font-size: 0.75rem !important;
+  line-height: 1.18 !important;
+}
+
+#message-bar[data-message-density="scroll"] {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  font-size: 0.74rem !important;
+  line-height: 1.16 !important;
+  text-align: center !important;
 }
 
 #hud-row {
@@ -2936,7 +2961,8 @@ body.choice-modal-open #controls,
   }
 
   #message-bar {
-    min-height: calc(1.14em * 2 + 6px);
+    min-height: var(--info-height, calc(1.14em * 2 + 6px));
+    max-height: var(--info-height, calc(1.14em * 2 + 6px));
     padding: 3px 9px;
     font-size: 0.82rem;
     line-height: 1.18;
@@ -3076,8 +3102,8 @@ body.choice-modal-open #controls,
   }
 
   #message-bar {
-    min-height: calc(1.2em * 2 + 8px);
-    max-height: calc(1.2em * 2 + 8px);
+    min-height: var(--info-height, calc(1.2em * 2 + 8px));
+    max-height: var(--info-height, calc(1.2em * 2 + 8px));
     padding: 4px 9px;
     font-size: 0.8rem;
   }
@@ -3206,8 +3232,8 @@ body.choice-modal-open #controls,
   }
 
   #message-bar {
-    min-height: calc(1.14em * 2 + 6px);
-    max-height: calc(1.14em * 2 + 6px);
+    min-height: var(--info-height, calc(1.14em * 2 + 6px));
+    max-height: var(--info-height, calc(1.14em * 2 + 6px));
     font-size: 0.78rem;
     padding: 3px 8px;
   }
@@ -3513,8 +3539,8 @@ body.choice-modal-open #controls,
 
 #message-bar {
   display: none !important;
-  min-height: calc(1.12em * 2 + 6px) !important;
-  max-height: calc(1.12em * 2 + 6px) !important;
+  min-height: var(--info-height) !important;
+  max-height: var(--info-height) !important;
   padding: 3px 8px !important;
   border-radius: 10px !important;
   background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
@@ -4097,8 +4123,9 @@ body.choice-modal-open #controls,
   max-height: var(--info-height);
   visibility: visible !important;
   pointer-events: auto !important;
-  overflow: hidden;
-}
+  overflow-x: hidden;
+  overflow-y: auto;
+  }
 
 #cheats-panel {
   min-height: 0;

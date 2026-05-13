@@ -2173,6 +2173,7 @@ function renderMessage() {
   if (!el) return;
 
   el.classList.remove("is-game-over");
+  el.dataset.messageDensity = "normal";
 
   if (state.gameOver) {
     el.innerText = "GAME OVER";
@@ -2188,6 +2189,14 @@ function renderMessage() {
 
   el.innerText = state.message;
   el.classList.add("has-message");
+  const densitySteps = ["normal", "compact", "tight"];
+  for (const density of densitySteps) {
+    el.dataset.messageDensity = density;
+    if (el.scrollHeight <= el.clientHeight + 2) {
+      return;
+    }
+  }
+  el.dataset.messageDensity = "scroll";
 }
 
 function renderNextInfo() {
