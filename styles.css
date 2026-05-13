@@ -3326,6 +3326,7 @@ body.choice-modal-open #controls,
     font-size: 0.74rem;
     line-height: 1.16;
   }
+
 }
 
 @media (max-height: 680px) {
