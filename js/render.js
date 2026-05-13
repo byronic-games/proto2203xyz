@@ -1281,7 +1281,12 @@ function renderCheatChoiceInfo(infoEl, cheat, promptText = "") {
   if (!infoEl) return;
 
   if (!cheat) {
-    infoEl.innerHTML = `<div class="cheat-choice-info-copy">${promptText || "Tap a cheat to read the description."}</div>`;
+    infoEl.innerHTML = `
+      <div class="cheat-choice-info-title cheat-choice-info-title-prompt">Choose a cheat</div>
+      <div class="cheat-choice-info-rarity">&nbsp;</div>
+      <div class="cheat-choice-info-copy">${promptText || "Tap a cheat to read the description."}</div>
+      <div class="cheat-choice-info-hint">&nbsp;</div>
+    `;
     return;
   }
 
@@ -1945,12 +1950,37 @@ function renderCheatChoice() {
   const introToken = String(state.cheatChoiceIntroToken || 0);
   const introFresh = list.dataset.introToken !== introToken;
   list.dataset.introToken = introToken;
-  const previewIndex = animation ? animation.selectedIndex : state.cheatChoicePreviewIndex;
+  const previewIndex = animation
+    ? animation.selectedIndex
+    : (Number.isInteger(state.cheatChoicePreviewIndex) && state.cheatChoicePreviewIndex >= 0
+      ? state.cheatChoicePreviewIndex
+      : (choiceOptions.length ? 0 : -1));
+  if (!animation && previewIndex >= 0 && state.cheatChoicePreviewIndex !== previewIndex) {
+    state.cheatChoicePreviewIndex = previewIndex;
+  }
+
+  const updatePreviewSelection = (targetIndex) => {
+    state.cheatChoicePreviewIndex = targetIndex;
+    cheatChoiceConfirmIndex = targetIndex;
+    cheatChoiceConfirmAfter = Date.now() + CHEAT_CHOICE_CONFIRM_BUFFER_MS;
+    list.querySelectorAll(".cheat-choice-card.is-previewed").forEach((el) => {
+      el.classList.remove("is-previewed");
+    });
+    const targetBtn = list.querySelector(`.cheat-choice-card[data-choice-index="${targetIndex}"]`);
+    if (targetBtn) {
+      targetBtn.classList.add("is-previewed");
+    }
+    renderCheatChoiceInfo(
+      infoEl,
+      choiceOptions[targetIndex] || null,
+      "Tap a cheat to read the description."
+    );
+  };
 
   choiceOptions.forEach((cheat, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card cheat-choice-card cheat-button ${cheat.rarity || "common"} ${introFresh && !animation ? "choice-intro" : ""}`.trim();
+    btn.className = `choice-card cheat-choice-card cheat-button ${cheat.rarity || "common"}`.trim();
     btn.disabled = choiceLocked || !!animation;
     btn.style.setProperty("--choice-index", String(i));
     btn.dataset.choiceIndex = String(i);
@@ -1967,26 +1997,10 @@ function renderCheatChoice() {
       }
     }
 
-    btn.onmouseenter = () => {
-      if (!canUseHoverTooltips()) return;
-      if (choiceLocked || state.cheatChoiceAnimating) return;
-      state.cheatChoicePreviewIndex = i;
-      cheatChoiceConfirmIndex = -1;
-      cheatChoiceConfirmAfter = 0;
-      list.querySelectorAll(".cheat-choice-card.is-previewed").forEach((el) => {
-        el.classList.remove("is-previewed");
-      });
-      btn.classList.add("is-previewed");
-      renderCheatChoiceInfo(infoEl, cheat, "");
-    };
-
     btn.onclick = () => {
       if (choiceLocked || state.cheatChoiceAnimating) return;
       if (state.cheatChoicePreviewIndex !== i) {
-        state.cheatChoicePreviewIndex = i;
-        cheatChoiceConfirmIndex = i;
-        cheatChoiceConfirmAfter = Date.now() + CHEAT_CHOICE_CONFIRM_BUFFER_MS;
-        render();
+        updatePreviewSelection(i);
         return;
       }
       if (cheatChoiceConfirmIndex === i && Date.now() < cheatChoiceConfirmAfter) return;
