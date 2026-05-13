@@ -1008,14 +1008,22 @@ const CHEATS = [
     unlockAt: 0,
     stacking: "unique",
     consumeOnUse: false,
-    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Equals 11 armed"),
+    shouldConsumeResult: (result) => typeof result === "string" && !result.startsWith("Equals 11 needs"),
     use: () => {
       if (!state.current) return "Equals 11 needs a current card.";
       const next = getNextCardAt(1);
       if (!next || isJokerCard(next)) return "Equals 11 needs a normal next card.";
-      if (state.equalsElevenArmed) return "Equals 11 is already armed.";
-      state.equalsElevenArmed = true;
-      return "Equals 11 armed - if this card and the revealed next card total 11, choose 3 bonus cheats.";
+      const currentValue = getCurrentEffectiveValue();
+      const nextValue = getUpcomingCheatValue(1);
+      if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) {
+        return "Equals 11 needs a normal next card.";
+      }
+      const total = currentValue + nextValue;
+      if (total !== 11) {
+        return `Equals 11 missed - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = ${total}.`;
+      }
+      scheduleBonusCheatChoices(3, "equals_11", "Equals 11 hit! Choose 3 bonus cheats.");
+      return `Equals 11 hit - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = 11.`;
     },
   },
   {

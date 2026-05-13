@@ -813,7 +813,6 @@ function startRunWithPower(powerId) {
     forcedNextGuess: "",
     lockCurrentCardForForcedGuess: false,
     cheatACheaterRemaining: 0,
-    equalsElevenArmed: false,
     wlStage: "",
   };
 
@@ -1609,7 +1608,6 @@ function makeGuessLegacy(type) {
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
-  const equalsElevenWasArmed = !!state.equalsElevenArmed;
   const wlStageBeforeGuess = state.wlStage || "";
   const forcedNextGuessDirection = state.forcedNextGuess || "";
   const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
@@ -1856,18 +1854,6 @@ function makeGuessLegacy(type) {
       queueCheatAward("cheat_a_cheater");
       queueCheatAward("cheat_a_cheater");
     }
-  }
-
-  equalsElevenTriggered =
-    equalsElevenWasArmed &&
-    Number.isFinite(currentComparisonValue) &&
-    Number.isFinite(nextComparisonValue) &&
-    currentComparisonValue + nextComparisonValue === 11;
-
-  if (equalsElevenTriggered) {
-    queueCheatAward("equals_11");
-    queueCheatAward("equals_11");
-    queueCheatAward("equals_11");
   }
 
   if (wlCompleted) {
@@ -2263,7 +2249,6 @@ function makeGuess(type) {
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
-  const equalsElevenWasArmed = !!state.equalsElevenArmed;
   const wlStageBeforeGuess = state.wlStage || "";
   const forcedNextGuessDirection = state.forcedNextGuess || "";
   const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
@@ -2281,7 +2266,6 @@ function makeGuess(type) {
   state.blankSpaceValue = null;
   state.forcedNextGuess = "";
   state.lockCurrentCardForForcedGuess = false;
-  state.equalsElevenArmed = false;
   state.wlStage = "";
 
   let correct = false;
@@ -2296,7 +2280,6 @@ function makeGuess(type) {
   let wlLossSatisfied = false;
   let wlAdvancedToLoss = false;
   let wlCompleted = false;
-  let equalsElevenTriggered = false;
 
   const forcedNudgeDirection =
     forcedNextGuessDirection === "higher"
@@ -2643,8 +2626,6 @@ function makeGuess(type) {
     rescuedByCursedShield,
     rescuedBySuitedAndBooted,
     blankSpaceWasActive,
-    equalsElevenWasArmed,
-    equalsElevenTriggered,
     wlStageBeforeGuess,
     wlAdvancedToLoss,
     wlCompleted,
@@ -2759,19 +2740,6 @@ function makeGuess(type) {
     setTimeout(() => {
       state.pauseForCheat = false;
       const nextReason = state.pendingCheatAwardQueue.shift() || "cheat_a_cheater";
-      offerCheatChoice(nextReason);
-      render();
-    }, 1000);
-    return;
-  }
-
-  if (equalsElevenTriggered) {
-    state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("Equals 11 hit! Choose 3 bonus cheats.", revealDistance);
-    render();
-    setTimeout(() => {
-      state.pauseForCheat = false;
-      const nextReason = state.pendingCheatAwardQueue.shift() || "equals_11";
       offerCheatChoice(nextReason);
       render();
     }, 1000);

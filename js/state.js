@@ -95,7 +95,6 @@ function createEmptyState() {
     forcedNextGuess: "",
     lockCurrentCardForForcedGuess: false,
     cheatACheaterRemaining: 0,
-    equalsElevenArmed: false,
     wlStage: "",
     sixSevenArmed: false,
     sixSevenRewardChoicesRemaining: 0,

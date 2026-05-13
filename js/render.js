@@ -8,7 +8,6 @@ function getDeckBackColor(deckKey) {
 
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
-let revealAnimationWatchdogTimer = null;
 let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
 let suppressNextCheatEntryIntroId = "";
@@ -41,34 +40,6 @@ function clearPendingRevealTimers() {
     clearTimeout(revealGameOverTimer);
     revealGameOverTimer = null;
   }
-  if (revealAnimationWatchdogTimer) {
-    clearTimeout(revealAnimationWatchdogTimer);
-    revealAnimationWatchdogTimer = null;
-  }
-}
-
-function armRevealAnimationWatchdog(pendingId, phase, options = {}) {
-  const {
-    delayMs = 80,
-    action = "retry",
-  } = options;
-  if (revealAnimationWatchdogTimer) {
-    clearTimeout(revealAnimationWatchdogTimer);
-  }
-  revealAnimationWatchdogTimer = setTimeout(() => {
-    revealAnimationWatchdogTimer = null;
-    const pending = state.pendingRevealAnimation;
-    if (!pending || pending.id !== pendingId || pending.phase !== phase) return;
-    if (!pending.started) return;
-    if (action === "finalize") {
-      finalizePendingReveal(pending);
-      render();
-      return;
-    }
-    if (revealAnimationResetTimer) return;
-    pending.started = false;
-    render();
-  }, Math.max(40, delayMs));
 }
 
 function clearPendingCheatChoiceTimer() {
@@ -240,10 +211,6 @@ function playPendingCardRevealAnimation() {
     pending.started = true;
     pending.revealSwapDone = false;
     clearPendingRevealTimers();
-    armRevealAnimationWatchdog(pending.id, pending.phase, {
-      delayMs: Math.floor(REVEAL_FLIP_MS / 2) + REVEAL_HOLD_MS + 120,
-      action: "retry",
-    });
     clearGameOverEffects();
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
@@ -287,10 +254,6 @@ function playPendingCardRevealAnimation() {
 
     pending.started = true;
     clearPendingRevealTimers();
-    armRevealAnimationWatchdog(pending.id, pending.phase, {
-      delayMs: REVEAL_SLIDE_MS + 140,
-      action: "finalize",
-    });
     removeRevealStateClasses(overlayEl);
     const slidingDeckEl = renderRevealOverlayCard(pending, true);
     const slidingCurrentEl = document.getElementById("current-card");
@@ -314,10 +277,6 @@ function playPendingCardRevealAnimation() {
 
   pending.started = true;
   clearPendingRevealTimers();
-  armRevealAnimationWatchdog(pending.id, pending.phase, {
-    delayMs: REVEAL_FAILURE_HOLD_MS + 140,
-    action: "finalize",
-  });
   removeRevealStateClasses(overlayEl);
   const finishingOverlayEl = renderRevealOverlayCard(pending, true);
   if (effectClass) {
@@ -1281,12 +1240,7 @@ function renderCheatChoiceInfo(infoEl, cheat, promptText = "") {
   if (!infoEl) return;
 
   if (!cheat) {
-    infoEl.innerHTML = `
-      <div class="cheat-choice-info-title cheat-choice-info-title-prompt">Choose a cheat</div>
-      <div class="cheat-choice-info-rarity">&nbsp;</div>
-      <div class="cheat-choice-info-copy">${promptText || "Tap a cheat to read the description."}</div>
-      <div class="cheat-choice-info-hint">&nbsp;</div>
-    `;
+    infoEl.innerHTML = `<div class="cheat-choice-info-copy">${promptText || "Tap a cheat to read the description."}</div>`;
     return;
   }
 
@@ -1676,7 +1630,7 @@ function renderCheats() {
     }
 
     const countLabel = entry.kind === "nudge"
-      ? `x${entry.count}`
+      ? `${entry.count} ${entry.count === 1 ? "charge" : "charges"}`
       : "";
     btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count, countLabel);
 
@@ -1728,6 +1682,9 @@ function renderCheats() {
         render();
         return;
       }
+      const now = Date.now();
+      if (now < cheatUseLockedUntil) return;
+      cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
 
       const useAfterOptionalDismiss = (action, shouldDiminish, shouldPulse = true) => {
         if (!shouldPulse) {
@@ -1740,13 +1697,10 @@ function renderCheats() {
       };
 
       if (entry.kind === "nudge") {
-        useNudgeCharge(entry.direction);
+        const canAnimateNudge = typeof canUseNudge === "function" && canUseNudge(entry.direction);
+        useAfterOptionalDismiss(() => useNudgeCharge(entry.direction), entry.count <= 1 && canAnimateNudge, canAnimateNudge);
         return;
       }
-
-      const now = Date.now();
-      if (now < cheatUseLockedUntil) return;
-      cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
 
       const useCheat = () => {
         const result = entry.cheat.use();
@@ -1772,7 +1726,6 @@ function renderCheats() {
             blankSpaceValue: Number.isFinite(state.blankSpaceValue) ? state.blankSpaceValue : null,
             forcedNextGuess: state.forcedNextGuess || "",
             lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
-            equalsElevenArmed: !!state.equalsElevenArmed,
             sixSeven: !!state.sixSevenArmed,
             cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
             wlStage: state.wlStage || "",
@@ -1877,27 +1830,22 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
     return;
   }
 
-  const effectiveValue = mode === "power"
-    ? card.value
-    : (isJokerCard(card) ? null : getCurrentEffectiveValue());
-  const showTempValue = !isJokerCard(card) && Number.isFinite(effectiveValue) && effectiveValue !== card.value;
-  const cardFaceClass = isJokerCard(card)
-    ? "joker-card-face"
-    : isRed(card)
-      ? "red"
-      : "black";
-  const cardMarkup = renderCardFaceMarkup(
-    card,
-    Number.isFinite(effectiveValue) ? effectiveValue : card.value,
-    showTempValue,
-    false
-  );
-  el.innerHTML = `
-    <div class="choice-current-card-label">${label}:</div>
-    <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
-      ${cardMarkup}
-    </div>
-  `;
+  if (mode === "power") {
+    const cardFaceClass = isJokerCard(card)
+      ? "joker-card-face"
+      : isRed(card)
+        ? "red"
+        : "black";
+    const cardMarkup = renderCardFaceMarkup(card, card.value, false, false);
+    el.innerHTML = `
+      <div class="choice-current-card-label">${label}:</div>
+      <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
+        ${cardMarkup}
+      </div>
+    `;
+  } else {
+    el.innerText = `${label}: ${describeCard(card)}`;
+  }
   el.classList.remove("hidden");
 }
 
@@ -1905,7 +1853,6 @@ function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
   const list = document.getElementById("cheat-choice-list");
   const infoEl = document.getElementById("cheat-choice-info");
-  const currentCardEl = document.getElementById("cheat-choice-current-card");
 
   if (!container || !list || !infoEl) return;
 
@@ -1923,10 +1870,6 @@ function renderCheatChoice() {
     document.body.classList.remove("choice-modal-open", "cheat-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
-    if (currentCardEl) {
-      currentCardEl.innerHTML = "";
-      currentCardEl.classList.add("hidden");
-    }
     renderCheatChoiceInfo(infoEl, null, "");
     return;
   }
@@ -1935,7 +1878,6 @@ function renderCheatChoice() {
   document.body.classList.add("choice-modal-open", "cheat-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
-  renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
 
   if (animation?.stage === "closing") {
     container.classList.add("is-closing");
@@ -1950,37 +1892,12 @@ function renderCheatChoice() {
   const introToken = String(state.cheatChoiceIntroToken || 0);
   const introFresh = list.dataset.introToken !== introToken;
   list.dataset.introToken = introToken;
-  const previewIndex = animation
-    ? animation.selectedIndex
-    : (Number.isInteger(state.cheatChoicePreviewIndex) && state.cheatChoicePreviewIndex >= 0
-      ? state.cheatChoicePreviewIndex
-      : (choiceOptions.length ? 0 : -1));
-  if (!animation && previewIndex >= 0 && state.cheatChoicePreviewIndex !== previewIndex) {
-    state.cheatChoicePreviewIndex = previewIndex;
-  }
-
-  const updatePreviewSelection = (targetIndex) => {
-    state.cheatChoicePreviewIndex = targetIndex;
-    cheatChoiceConfirmIndex = targetIndex;
-    cheatChoiceConfirmAfter = Date.now() + CHEAT_CHOICE_CONFIRM_BUFFER_MS;
-    list.querySelectorAll(".cheat-choice-card.is-previewed").forEach((el) => {
-      el.classList.remove("is-previewed");
-    });
-    const targetBtn = list.querySelector(`.cheat-choice-card[data-choice-index="${targetIndex}"]`);
-    if (targetBtn) {
-      targetBtn.classList.add("is-previewed");
-    }
-    renderCheatChoiceInfo(
-      infoEl,
-      choiceOptions[targetIndex] || null,
-      "Tap a cheat to read the description."
-    );
-  };
+  const previewIndex = animation ? animation.selectedIndex : state.cheatChoicePreviewIndex;
 
   choiceOptions.forEach((cheat, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `choice-card cheat-choice-card cheat-button ${cheat.rarity || "common"}`.trim();
+    btn.className = `choice-card cheat-choice-card cheat-button ${cheat.rarity || "common"} ${introFresh && !animation ? "choice-intro" : ""}`.trim();
     btn.disabled = choiceLocked || !!animation;
     btn.style.setProperty("--choice-index", String(i));
     btn.dataset.choiceIndex = String(i);
@@ -1997,10 +1914,26 @@ function renderCheatChoice() {
       }
     }
 
+    btn.onmouseenter = () => {
+      if (!canUseHoverTooltips()) return;
+      if (choiceLocked || state.cheatChoiceAnimating) return;
+      state.cheatChoicePreviewIndex = i;
+      cheatChoiceConfirmIndex = -1;
+      cheatChoiceConfirmAfter = 0;
+      list.querySelectorAll(".cheat-choice-card.is-previewed").forEach((el) => {
+        el.classList.remove("is-previewed");
+      });
+      btn.classList.add("is-previewed");
+      renderCheatChoiceInfo(infoEl, cheat, "");
+    };
+
     btn.onclick = () => {
       if (choiceLocked || state.cheatChoiceAnimating) return;
       if (state.cheatChoicePreviewIndex !== i) {
-        updatePreviewSelection(i);
+        state.cheatChoicePreviewIndex = i;
+        cheatChoiceConfirmIndex = i;
+        cheatChoiceConfirmAfter = Date.now() + CHEAT_CHOICE_CONFIRM_BUFFER_MS;
+        render();
         return;
       }
       if (cheatChoiceConfirmIndex === i && Date.now() < cheatChoiceConfirmAfter) return;
@@ -2285,16 +2218,16 @@ function render() {
   renderCurrentCard();
   renderNudgeControls();
   renderFaceDownDeck();
-  playPendingCardRevealAnimation();
   renderButtons();
   renderHandCard();
   renderCheats();
-  renderMessage();
-  renderNextInfo();
   renderCheatChoice();
-  playPendingCheatChoiceAnimation();
   renderPowerChoice();
-  playPendingPowerChoiceAnimation();
   renderSeenGrid();
   renderRestartButton();
+  renderMessage();
+  renderNextInfo();
+  playPendingCardRevealAnimation();
+  playPendingCheatChoiceAnimation();
+  playPendingPowerChoiceAnimation();
 }
