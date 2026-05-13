@@ -8,6 +8,7 @@ function getDeckBackColor(deckKey) {
 
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
+let revealAnimationWatchdogTimer = null;
 let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
 let suppressNextCheatEntryIntroId = "";
@@ -40,6 +41,34 @@ function clearPendingRevealTimers() {
     clearTimeout(revealGameOverTimer);
     revealGameOverTimer = null;
   }
+  if (revealAnimationWatchdogTimer) {
+    clearTimeout(revealAnimationWatchdogTimer);
+    revealAnimationWatchdogTimer = null;
+  }
+}
+
+function armRevealAnimationWatchdog(pendingId, phase, options = {}) {
+  const {
+    delayMs = 80,
+    action = "retry",
+  } = options;
+  if (revealAnimationWatchdogTimer) {
+    clearTimeout(revealAnimationWatchdogTimer);
+  }
+  revealAnimationWatchdogTimer = setTimeout(() => {
+    revealAnimationWatchdogTimer = null;
+    const pending = state.pendingRevealAnimation;
+    if (!pending || pending.id !== pendingId || pending.phase !== phase) return;
+    if (!pending.started) return;
+    if (action === "finalize") {
+      finalizePendingReveal(pending);
+      render();
+      return;
+    }
+    if (revealAnimationResetTimer) return;
+    pending.started = false;
+    render();
+  }, Math.max(40, delayMs));
 }
 
 function clearPendingCheatChoiceTimer() {
@@ -211,6 +240,10 @@ function playPendingCardRevealAnimation() {
     pending.started = true;
     pending.revealSwapDone = false;
     clearPendingRevealTimers();
+    armRevealAnimationWatchdog(pending.id, pending.phase, {
+      delayMs: Math.floor(REVEAL_FLIP_MS / 2) + REVEAL_HOLD_MS + 120,
+      action: "retry",
+    });
     clearGameOverEffects();
     removeRevealStateClasses(currentCardEl);
     removeRevealStateClasses(faceDownDeckEl);
@@ -254,6 +287,10 @@ function playPendingCardRevealAnimation() {
 
     pending.started = true;
     clearPendingRevealTimers();
+    armRevealAnimationWatchdog(pending.id, pending.phase, {
+      delayMs: REVEAL_SLIDE_MS + 140,
+      action: "finalize",
+    });
     removeRevealStateClasses(overlayEl);
     const slidingDeckEl = renderRevealOverlayCard(pending, true);
     const slidingCurrentEl = document.getElementById("current-card");
@@ -277,6 +314,10 @@ function playPendingCardRevealAnimation() {
 
   pending.started = true;
   clearPendingRevealTimers();
+  armRevealAnimationWatchdog(pending.id, pending.phase, {
+    delayMs: REVEAL_FAILURE_HOLD_MS + 140,
+    action: "finalize",
+  });
   removeRevealStateClasses(overlayEl);
   const finishingOverlayEl = renderRevealOverlayCard(pending, true);
   if (effectClass) {
