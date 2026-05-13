@@ -1782,11 +1782,27 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
   if (!el) return;
   const card = getChoiceCurrentCard(mode);
   if (!card) {
-    el.innerText = "";
+    el.innerHTML = "";
     el.classList.add("hidden");
     return;
   }
-  el.innerText = `${label}: ${describeCard(card)}`;
+
+  if (mode === "power") {
+    const cardFaceClass = isJokerCard(card)
+      ? "joker-card-face"
+      : isRed(card)
+        ? "red"
+        : "black";
+    const cardMarkup = renderCardFaceMarkup(card, card.value, false, false);
+    el.innerHTML = `
+      <div class="choice-current-card-label">${label}:</div>
+      <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
+        ${cardMarkup}
+      </div>
+    `;
+  } else {
+    el.innerText = `${label}: ${describeCard(card)}`;
+  }
   el.classList.remove("hidden");
 }
 

@@ -137,6 +137,12 @@ function createTutorialController() {
       clearView: true,
     },
     {
+      target: "#power-choice-current-card",
+      title: "Starting Card",
+      copy: "This is the card your run begins on, shown here before you pick your opening power.",
+      clearView: true,
+    },
+    {
       target: "#power-choice-list",
       title: "Two Power Options",
       copy: "You will usually get two options. Assess both and choose the one that fits your plan.",

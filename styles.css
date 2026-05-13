@@ -2547,6 +2547,52 @@ body.choice-modal-open #controls,
     0 0 16px rgba(95, 228, 255, 0.25);
 }
 
+.choice-current-card-label {
+  text-transform: uppercase;
+}
+
+.choice-current-card-visual {
+  --card-border-width: 2px;
+  --card-inner-border-width: 1px;
+  --card-radius: 12px;
+  width: clamp(54px, 16vw, 66px);
+  height: calc(clamp(54px, 16vw, 66px) * 1.42);
+  margin: 8px auto 0;
+  border-radius: var(--card-radius);
+  box-shadow:
+    inset 0 0 0 var(--card-border-width) rgba(247,125,246,0.24),
+    0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.choice-current-card-visual .card-center-suit {
+  font-size: 1.55rem;
+}
+
+.choice-current-card-visual .card-rank {
+  font-size: 1rem;
+}
+
+.choice-current-card-visual .card-suit {
+  font-size: 0.68rem;
+}
+
+.choice-current-card-visual .joker-card-corner {
+  font-size: 0.34rem;
+}
+
+.choice-current-card-visual .joker-card-icon {
+  width: 26px;
+  font-size: 1.25rem;
+}
+
+.choice-current-card-visual .joker-card-name {
+  font-size: 0.48rem;
+}
+
+.choice-current-card-visual .joker-card-copy {
+  display: none;
+}
+
 .choice-footer {
   margin-top: 12px;
   color: var(--muted);
