@@ -2692,10 +2692,10 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container .choice-modal {
-  width: min(96vw, 540px);
-  min-height: calc(100dvh - 14px);
-  max-height: calc(100dvh - 14px);
-  padding: 10px 10px 9px;
+  width: min(90vw, 520px);
+  min-height: auto;
+  max-height: none;
+  padding: 12px 12px 10px;
   overflow-x: hidden;
   overflow-y: hidden;
   display: flex;
@@ -3256,27 +3256,28 @@ body.choice-modal-open #controls,
   }
 
   #cheat-choice-container .choice-modal {
-    width: min(92vw, 560px);
-    max-height: calc(100dvh - 20px);
-    padding: 12px 10px 10px;
-    grid-template-rows: auto auto 94px 118px;
-    gap: 8px;
+    width: min(88vw, 520px);
+    min-height: auto;
+    max-height: none;
+    padding: 14px 12px 12px;
+    grid-template-rows: auto auto 88px 110px;
+    gap: 9px;
   }
 
   #cheat-choice-container .choice-title {
     margin-bottom: 2px;
-    font-size: 1.02rem;
+    font-size: 1rem;
   }
 
   #cheat-choice-container .choice-current-card {
-    margin: -2px 0 4px;
+    margin: -1px 0 2px;
     font-size: 0.62rem;
   }
 
   #cheat-choice-container #cheat-choice-list {
     gap: 8px;
-    min-height: 94px;
-    max-height: 94px;
+    min-height: 88px;
+    max-height: 88px;
   }
 
   #cheat-choice-container .choice-card {
@@ -3309,14 +3310,14 @@ body.choice-modal-open #controls,
   }
 
   .cheat-choice-info {
-    min-height: 118px;
-    max-height: 118px;
-    padding: 9px 10px;
+    min-height: 110px;
+    max-height: 110px;
+    padding: 8px 10px;
     border-radius: 11px;
   }
 
   .cheat-choice-info-title {
-    font-size: 0.84rem;
+    font-size: 0.82rem;
   }
 
   .cheat-choice-info-rarity,
@@ -3326,9 +3327,9 @@ body.choice-modal-open #controls,
   }
 
   .cheat-choice-info-copy {
-    margin-top: 5px;
-    font-size: 0.71rem;
-    line-height: 1.12;
+    margin-top: 4px;
+    font-size: 0.69rem;
+    line-height: 1.1;
   }
 
 }
@@ -4285,14 +4286,17 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container .choice-modal {
-  width: min(85vw, 560px);
+  width: min(82vw, 520px);
+  height: auto;
+  min-height: auto;
   max-height: calc(100dvh - 32px);
-  padding: 16px;
+  padding: 18px 18px 16px;
   display: grid;
   grid-template-rows: auto auto 104px 132px;
   align-content: start;
   gap: 10px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 #power-choice-container .choice-modal {
