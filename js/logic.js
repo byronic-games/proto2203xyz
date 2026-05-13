@@ -2263,6 +2263,7 @@ function makeGuess(type) {
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
+  const equalsElevenWasArmed = !!state.equalsElevenArmed;
   const wlStageBeforeGuess = state.wlStage || "";
   const forcedNextGuessDirection = state.forcedNextGuess || "";
   const passiveSuitSavePower = getPassiveSuitSavePower(state.current);
