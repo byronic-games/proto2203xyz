@@ -17,11 +17,30 @@ function getParityLabel(value) {
 function getUpcomingCheatValue(offset = 1) {
   const card = getNextCardAt(offset);
   if (!card) return null;
+  if (offset === 1 && state.blankSpaceActive && Number.isFinite(getBlankSpaceDisplayValue?.())) {
+    return getBlankSpaceDisplayValue();
+  }
   const modifier = offset === 1 ? (state.nextCardValueModifier || 0) : 0;
   return clampCardValue(card.value + modifier);
 }
 function clampCardValue(value) {
   return clamp(value, 1, 13);
+}
+
+function scheduleBonusCheatChoices(count, reason, message) {
+  const normalizedCount = Math.max(0, Number(count) || 0);
+  if (!normalizedCount) return;
+  for (let i = 0; i < normalizedCount; i += 1) {
+    queueCheatAward(reason);
+  }
+  state.pauseForCheat = true;
+  state.message = message;
+  window.setTimeout(() => {
+    state.pauseForCheat = false;
+    const nextReason = state.pendingCheatAwardQueue.shift() || reason;
+    offerCheatChoice(nextReason);
+    render();
+  }, 900);
 }
 
 function isPrimeCardValue(value) {
@@ -38,10 +57,27 @@ function formatCheatValue(value) {
   return valueToRank(value);
 }
 
+function getUpcomingCheatRank(offset = 1) {
+  const card = getNextCardAt(offset);
+  if (!card) return "";
+  if (offset === 1 && state.blankSpaceActive) {
+    return valueToRank(getUpcomingCheatValue(offset));
+  }
+  return card.rank || "";
+}
+
+function getUpcomingCheatSuit(offset = 1) {
+  const card = getNextCardAt(offset);
+  if (!card) return "";
+  if (offset === 1 && state.blankSpaceActive) return "";
+  return card.suit || "";
+}
+
 function formatCardIdentityForCheat(card, offset = 0) {
   if (!card) return "Unknown card";
   const value = offset > 0 ? getUpcomingCheatValue(offset) : card.value;
-  return `${valueToRank(value)}${card.suit || ""}`;
+  const suit = offset > 0 ? getUpcomingCheatSuit(offset) : (card.suit || "");
+  return `${valueToRank(value)}${suit}`;
 }
 
 function getCheatDeterministicRng(label) {
@@ -152,6 +188,9 @@ const CHEAT_DESCRIPTIONS = {
   "Swap": "Swap the current face-up card with the next face-down card.",
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
+  "Equals 11": "If this card and the next card total 11, immediately choose 3 extra cheats.",
+  "Blank Space": "Blank the next card for one turn. Nudge it for free, then guess correctly to immediately choose a new power.",
+  "WL": "Win your next guess, then lose the one after. If you do, the run survives and you choose 3 extra cheats.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
   "Suits You, Sir": "If the next card is the same suit as the current card, gain 5 Nudge +1 and 5 Nudge -1 charges.",
   "Cursed Shield": "Lose all currently stored nudges now. Your next wrong guess is survived.",
@@ -226,7 +265,7 @@ const CHEATS = [
     use: () => {
       const next = getNextCardAt(1);
       if (!next) return "No next card.";
-      return next.rank === "A" ? "Yes — the next card is an Ace." : "No — the next card is not an Ace.";
+      return getUpcomingCheatRank(1) === "A" ? "Yes — the next card is an Ace." : "No — the next card is not an Ace.";
     },
   },
   {
@@ -241,7 +280,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      return next.rank === "K" ? "Yes — it is a King." : "No — not a King.";
+      return getUpcomingCheatRank(1) === "K" ? "Yes — it is a King." : "No — not a King.";
     },
   },
   {
@@ -256,7 +295,7 @@ const CHEATS = [
     use: () => {
       const upcoming = [getNextCardAt(1), getNextCardAt(2), getNextCardAt(3)].filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
-      const found = upcoming.some((card) => card.rank === "A");
+      const found = upcoming.some((card, index) => getUpcomingCheatRank(index + 1) === "A");
       return found ? "Yes — an Ace is in the next three." : "No — no Ace in the next three.";
     },
   },
@@ -272,7 +311,7 @@ const CHEATS = [
     use: () => {
       const upcoming = [getNextCardAt(1), getNextCardAt(2), getNextCardAt(3)].filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
-      const found = upcoming.some((card) => card.rank === "K");
+      const found = upcoming.some((card, index) => getUpcomingCheatRank(index + 1) === "K");
       return found ? "Yes — a King is in the next three." : "No — no King in the next three.";
     },
   },
@@ -288,7 +327,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
-      const remaining = countUnseenCardsOfRank(next.rank);
+      const remaining = countUnseenCardsOfRank(getUpcomingCheatRank(1));
       return `${remaining} matching ${remaining === 1 ? "card remains" : "cards remain"} in the deck.`;
     },
   },
@@ -866,7 +905,10 @@ const CHEATS = [
     use: () => {
       const upcoming = [1, 2, 3, 4, 5].map((offset) => getNextCardAt(offset)).filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
-      const found = upcoming.some((card) => card.rank === "A" || card.rank === "K");
+      const found = upcoming.some((card, index) => {
+        const rank = getUpcomingCheatRank(index + 1);
+        return rank === "A" || rank === "K";
+      });
       return found ? "Yes — an Ace or King is in the next five." : "No — no Ace or King in the next five.";
     },
   },
@@ -958,6 +1000,71 @@ const CHEATS = [
     },
   },
   {
+    id: "equals_11",
+    name: "Equals 11",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && !result.startsWith("Equals 11 needs"),
+    use: () => {
+      if (!state.current) return "Equals 11 needs a current card.";
+      const next = getNextCardAt(1);
+      if (!next || isJokerCard(next)) return "Equals 11 needs a normal next card.";
+      const currentValue = getCurrentEffectiveValue();
+      const nextValue = getUpcomingCheatValue(1);
+      if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) {
+        return "Equals 11 needs a normal next card.";
+      }
+      const total = currentValue + nextValue;
+      if (total !== 11) {
+        return `Equals 11 missed - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = ${total}.`;
+      }
+      scheduleBonusCheatChoices(3, "equals_11", "Equals 11 hit! Choose 3 bonus cheats.");
+      return `Equals 11 hit - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = 11.`;
+    },
+  },
+  {
+    id: "blank_space",
+    name: "Blank Space",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Blank Space armed"),
+    use: () => {
+      const next = getNextCardAt(1);
+      if (!next || isJokerCard(next)) return "Blank Space needs a normal next card.";
+      if (!state.current) return "Blank Space needs a current card.";
+      if (state.blankSpaceActive) return "Blank Space is already active.";
+      state.blankSpaceActive = true;
+      state.blankSpaceValue = getCurrentEffectiveValue();
+      state.nextCardValueModifier = 0;
+      return "Blank Space armed - the next card is blanked. Nudge it for free, then guess correctly to choose a power.";
+    },
+  },
+  {
+    id: "wl",
+    name: "WL",
+    rarity: "uncommon",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("WL armed"),
+    use: () => {
+      if (!getNextCardAt(1)) return "WL needs a next card.";
+      if (state.wlStage) return "WL is already active.";
+      state.wlStage = "need_win";
+      return "WL armed - win the next guess, then lose the one after to survive and choose 3 cheats.";
+    },
+  },
+  {
     id: "you_can_cheat_a_cheater",
     name: "You Can Cheat A Cheater",
     rarity: "rare",
@@ -984,8 +1091,11 @@ const CHEATS = [
       if (!state.current) return "No current card.";
       const next = getNextCardAt(1);
       if (!next) return "No next card.";
-      if (next.suit !== state.current.suit) {
-        return `No match - current ${state.current.suit}, next ${next.suit}.`;
+      const nextSuit = getUpcomingCheatSuit(1);
+      if (nextSuit !== state.current.suit) {
+        return nextSuit
+          ? `No match - current ${state.current.suit}, next ${nextSuit}.`
+          : "Blank Space removed the next card's suit - no suit match.";
       }
       state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 5;
       state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 5;
@@ -1358,6 +1468,10 @@ function offerCheatChoice(reason = "") {
     state.message = "Brucie Bonus! Choose 1 cheat:";
   } else if (state.activeCheatAwardReason === "cheat_a_cheater") {
     state.message = "You Can Cheat A Cheater! Choose a bonus cheat:";
+  } else if (state.activeCheatAwardReason === "equals_11") {
+    state.message = "Equals 11! Choose a bonus cheat:";
+  } else if (state.activeCheatAwardReason === "wl") {
+    state.message = "WL! Choose a bonus cheat:";
   } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {

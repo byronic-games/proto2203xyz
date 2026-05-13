@@ -593,6 +593,20 @@ function getCheatIcon(name) {
   return CHEAT_ICON_BY_NAME[name] || "✦";
 }
 
+function getCheatIcon(name) {
+  if (name === "Equals 11") return "=11";
+  if (name === "Blank Space") return "[]";
+  if (name === "WL") return "W/L";
+  return CHEAT_ICON_BY_NAME[name] || "âœ¦";
+}
+
+function getCheatIcon(name) {
+  if (name === "Equals 11") return "=11";
+  if (name === "Blank Space") return "[]";
+  if (name === "WL") return "W/L";
+  return CHEAT_ICON_BY_NAME[name] || "✦";
+}
+
 function renderRestartButton() {
   const btn = document.getElementById("restart-btn");
   if (!btn) return;
@@ -748,6 +762,16 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
     ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
+  `;
+}
+
+function renderBlankSpaceFaceMarkup(displayValue) {
+  const shownValue = Number.isFinite(displayValue) ? valueToRank(displayValue) : "?";
+  return `
+    <div class="blank-space-chip">BLANK SPACE</div>
+    <div class="blank-space-icon">[]</div>
+    <div class="blank-space-copy">Next card treated as</div>
+    <div class="blank-space-value">${shownValue}</div>
   `;
 }
 
@@ -971,31 +995,47 @@ function renderFaceDownDeck() {
   const backStatus = next
     ? getCardBackStatus(next.id)
     : { tornCorner: false, backColor: "blue" };
+  const blankSpaceActive = !!next && typeof isBlankSpaceActiveForNextCard === "function" && isBlankSpaceActiveForNextCard(next);
 
   const backColor = getDeckBackColor(state.currentDeckKey);
-  const shouldShowDeckStatsInline = !!next && normalizeDeckKey(state.currentDeckKey) === "red";
+  const shouldShowDeckStatsInline = !!next && !blankSpaceActive && normalizeDeckKey(state.currentDeckKey) === "red";
 
   const tutorialFocusClass = getPreservedTutorialFocusClass(deckEl);
-  deckEl.className = shouldShowDeckStatsInline
-    ? `card-face red card-stats-face ${backStatus.tornCorner ? "torn-corner-face" : ""}${tutorialFocusClass}`.trim()
-    : `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}${tutorialFocusClass}`.trim();
-  deckEl.setAttribute("data-back-color", backColor);
+  deckEl.className = blankSpaceActive
+    ? `card-face blank-space-face ${backStatus.tornCorner ? "torn-corner-face" : ""}${tutorialFocusClass}`.trim()
+    : shouldShowDeckStatsInline
+      ? `card-face red card-stats-face ${backStatus.tornCorner ? "torn-corner-face" : ""}${tutorialFocusClass}`.trim()
+      : `card-back card-back-${backColor} ${backStatus.tornCorner ? "torn-corner" : ""}${tutorialFocusClass}`.trim();
+  if (blankSpaceActive) {
+    deckEl.removeAttribute("data-back-color");
+  } else {
+    deckEl.setAttribute("data-back-color", backColor);
+  }
   deckEl.innerHTML = "";
 
-  if (!shouldShowDeckStatsInline) {
+  if (blankSpaceActive) {
+    deckEl.innerHTML = renderBlankSpaceFaceMarkup(getUpcomingCheatValue(1));
+  } else if (!shouldShowDeckStatsInline) {
     const symbol = document.createElement("div");
     symbol.className = "card-back-symbol";
     symbol.innerText = "🂠";
     deckEl.appendChild(symbol);
   }
 
-  if (backStatus.tornCorner) {
+  if (backStatus.tornCorner && !blankSpaceActive) {
     const tear = document.createElement("div");
     tear.className = shouldShowDeckStatsInline ? "tear-mark-face" : "tear-mark";
     deckEl.appendChild(tear);
   }
 
-  if (shouldShowDeckStatsInline) {
+  if (blankSpaceActive) {
+    deckEl.classList.remove("has-deck-stats-tooltip");
+    setupDeckStatsTooltip(deckEl, {
+      enabled: false,
+      title: "",
+      description: "",
+    });
+  } else if (shouldShowDeckStatsInline) {
     const entry = getCardStatsEntry(next.id);
     const statsSummary = getRedDeckStatsSummary(entry);
     const tooltipTitle = `${describeCard(next)} Red Stats`;
@@ -1682,10 +1722,13 @@ function renderCheats() {
             cursedShield: !!state.cursedShieldArmed,
             suitedAndBooted: !!state.suitedAndBootedArmed,
             suitedAndBootedSuit: state.suitedAndBootedSuit || "",
+            blankSpaceActive: !!state.blankSpaceActive,
+            blankSpaceValue: Number.isFinite(state.blankSpaceValue) ? state.blankSpaceValue : null,
             forcedNextGuess: state.forcedNextGuess || "",
             lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
             sixSeven: !!state.sixSevenArmed,
             cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
+            wlStage: state.wlStage || "",
           },
         });
         if (didConsume) {
