@@ -1031,7 +1031,7 @@ const CHEATS = [
     name: "Blank Space",
     rarity: "uncommon",
     weight: 0.85,
-    included: true,
+    included: false,
     unlockAt: 0,
     stacking: "unique",
     consumeOnUse: false,
