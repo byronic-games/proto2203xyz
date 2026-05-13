@@ -2230,16 +2230,16 @@ function render() {
   renderCurrentCard();
   renderNudgeControls();
   renderFaceDownDeck();
+  playPendingCardRevealAnimation();
   renderButtons();
   renderHandCard();
   renderCheats();
-  renderCheatChoice();
-  renderPowerChoice();
-  renderSeenGrid();
-  renderRestartButton();
   renderMessage();
   renderNextInfo();
-  playPendingCardRevealAnimation();
+  renderCheatChoice();
   playPendingCheatChoiceAnimation();
+  renderPowerChoice();
   playPendingPowerChoiceAnimation();
+  renderSeenGrid();
+  renderRestartButton();
 }
