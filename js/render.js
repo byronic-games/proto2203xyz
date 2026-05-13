@@ -1630,7 +1630,7 @@ function renderCheats() {
     }
 
     const countLabel = entry.kind === "nudge"
-      ? `${entry.count} ${entry.count === 1 ? "charge" : "charges"}`
+      ? `x${entry.count}`
       : "";
     btn.innerHTML = buildCheatButtonMarkup(title, iconGlyph, entry.count, countLabel);
 
@@ -1682,9 +1682,6 @@ function renderCheats() {
         render();
         return;
       }
-      const now = Date.now();
-      if (now < cheatUseLockedUntil) return;
-      cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
 
       const useAfterOptionalDismiss = (action, shouldDiminish, shouldPulse = true) => {
         if (!shouldPulse) {
@@ -1697,10 +1694,13 @@ function renderCheats() {
       };
 
       if (entry.kind === "nudge") {
-        const canAnimateNudge = typeof canUseNudge === "function" && canUseNudge(entry.direction);
-        useAfterOptionalDismiss(() => useNudgeCharge(entry.direction), entry.count <= 1 && canAnimateNudge, canAnimateNudge);
+        useNudgeCharge(entry.direction);
         return;
       }
+
+      const now = Date.now();
+      if (now < cheatUseLockedUntil) return;
+      cheatUseLockedUntil = now + CHEAT_USE_BUFFER_MS;
 
       const useCheat = () => {
         const result = entry.cheat.use();
@@ -1726,6 +1726,7 @@ function renderCheats() {
             blankSpaceValue: Number.isFinite(state.blankSpaceValue) ? state.blankSpaceValue : null,
             forcedNextGuess: state.forcedNextGuess || "",
             lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
+            equalsElevenArmed: !!state.equalsElevenArmed,
             sixSeven: !!state.sixSevenArmed,
             cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
             wlStage: state.wlStage || "",
@@ -1830,22 +1831,27 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
     return;
   }
 
-  if (mode === "power") {
-    const cardFaceClass = isJokerCard(card)
-      ? "joker-card-face"
-      : isRed(card)
-        ? "red"
-        : "black";
-    const cardMarkup = renderCardFaceMarkup(card, card.value, false, false);
-    el.innerHTML = `
-      <div class="choice-current-card-label">${label}:</div>
-      <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
-        ${cardMarkup}
-      </div>
-    `;
-  } else {
-    el.innerText = `${label}: ${describeCard(card)}`;
-  }
+  const effectiveValue = mode === "power"
+    ? card.value
+    : (isJokerCard(card) ? null : getCurrentEffectiveValue());
+  const showTempValue = !isJokerCard(card) && Number.isFinite(effectiveValue) && effectiveValue !== card.value;
+  const cardFaceClass = isJokerCard(card)
+    ? "joker-card-face"
+    : isRed(card)
+      ? "red"
+      : "black";
+  const cardMarkup = renderCardFaceMarkup(
+    card,
+    Number.isFinite(effectiveValue) ? effectiveValue : card.value,
+    showTempValue,
+    false
+  );
+  el.innerHTML = `
+    <div class="choice-current-card-label">${label}:</div>
+    <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
+      ${cardMarkup}
+    </div>
+  `;
   el.classList.remove("hidden");
 }
 
@@ -1853,6 +1859,7 @@ function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
   const list = document.getElementById("cheat-choice-list");
   const infoEl = document.getElementById("cheat-choice-info");
+  const currentCardEl = document.getElementById("cheat-choice-current-card");
 
   if (!container || !list || !infoEl) return;
 
@@ -1870,6 +1877,10 @@ function renderCheatChoice() {
     document.body.classList.remove("choice-modal-open", "cheat-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
+    if (currentCardEl) {
+      currentCardEl.innerHTML = "";
+      currentCardEl.classList.add("hidden");
+    }
     renderCheatChoiceInfo(infoEl, null, "");
     return;
   }
@@ -1878,6 +1889,7 @@ function renderCheatChoice() {
   document.body.classList.add("choice-modal-open", "cheat-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
+  renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
 
   if (animation?.stage === "closing") {
     container.classList.add("is-closing");
