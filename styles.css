@@ -2613,10 +2613,10 @@ body.choice-modal-open #controls,
 }
 
 .choice-current-card {
-  margin: -6px 0 10px;
+  margin: -4px 0 8px;
   color: #dff5ff;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2632,16 +2632,16 @@ body.choice-modal-open #controls,
 }
 
 .choice-current-card-visual {
-  --card-border-width: 0.5px;
-  --card-inner-border-width: 0.5px;
+  --card-border-width: 0.15px;
+  --card-inner-border-width: 0.15px;
   --card-radius: 12px;
-  width: clamp(54px, 16vw, 66px);
-  height: calc(clamp(54px, 16vw, 66px) * 1.42);
-  margin: 8px auto 0;
+  width: clamp(50px, 14vw, 62px);
+  height: calc(clamp(50px, 14vw, 62px) * 1.42);
+  margin: 6px auto 0;
   border-radius: var(--card-radius);
   box-shadow:
-    inset 0 0 0 var(--card-border-width) rgba(247,125,246,0.14),
-    0 8px 20px rgba(0, 0, 0, 0.2);
+    inset 0 0 0 var(--card-border-width) rgba(247,125,246,0.08),
+    0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .choice-current-card-visual .card-center-suit {
@@ -2695,23 +2695,26 @@ body.choice-modal-open #controls,
   width: min(96vw, 540px);
   min-height: calc(100dvh - 14px);
   max-height: calc(100dvh - 14px);
-  padding: 12px 12px 10px;
-  overflow: hidden;
+  padding: 10px 10px 9px;
+  overflow-x: hidden;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 #cheat-choice-container .choice-title {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 #cheat-choice-container #cheat-choice-list {
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   overflow: hidden;
   padding-bottom: 0;
 }
@@ -3253,36 +3256,38 @@ body.choice-modal-open #controls,
   }
 
   #cheat-choice-container .choice-modal {
-    padding: 10px 10px 8px;
+    padding: 8px 8px 8px;
     min-height: calc(100dvh - 10px);
     max-height: calc(100dvh - 10px);
-  }
-
-  #cheat-choice-container .choice-title {
-    margin-bottom: 8px;
-    font-size: 1.18rem;
-  }
-
-  #cheat-choice-container .choice-current-card {
-    margin: -4px 0 8px;
-    font-size: 0.68rem;
-  }
-
-  #cheat-choice-container #cheat-choice-list {
     gap: 6px;
   }
 
+  #cheat-choice-container .choice-title {
+    margin-bottom: 4px;
+    font-size: 1.1rem;
+  }
+
+  #cheat-choice-container .choice-current-card {
+    margin: -2px 0 6px;
+    font-size: 0.64rem;
+  }
+
+  #cheat-choice-container #cheat-choice-list {
+    gap: 8px;
+    min-height: 82px;
+  }
+
   #cheat-choice-container .choice-card {
-    padding: 8px 6px;
-    gap: 4px;
+    padding: 7px 5px;
+    gap: 3px;
   }
 
   #cheat-choice-container .choice-icon {
-    font-size: 1.3rem;
+    font-size: 1.12rem;
   }
 
   #cheat-choice-container .choice-name {
-    font-size: 1.08rem;
+    font-size: 0.98rem;
   }
 
   #cheat-choice-container .choice-rarity,
@@ -3291,14 +3296,35 @@ body.choice-modal-open #controls,
   }
 
   #cheat-choice-container .choice-desc {
-    margin-top: 4px;
-    font-size: 0.8rem;
-    line-height: 1.2;
+    margin-top: 3px;
+    font-size: 0.74rem;
+    line-height: 1.14;
   }
 
   #cheat-choice-container .choice-footer {
-    margin-top: 6px;
-    font-size: 0.64rem;
+    margin-top: 4px;
+    font-size: 0.6rem;
+  }
+
+  .cheat-choice-info {
+    padding: 9px 10px;
+    border-radius: 11px;
+  }
+
+  .cheat-choice-info-title {
+    font-size: 0.88rem;
+  }
+
+  .cheat-choice-info-rarity,
+  .cheat-choice-info-hint {
+    margin-top: 3px;
+    font-size: 0.58rem;
+  }
+
+  .cheat-choice-info-copy {
+    margin-top: 5px;
+    font-size: 0.74rem;
+    line-height: 1.16;
   }
 }
 
@@ -4289,11 +4315,12 @@ body.choice-modal-open #controls,
 
 #cheat-choice-container #cheat-choice-list {
   display: flex;
+  flex: 0 0 auto;
   justify-content: center;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 12px;
-  min-height: 96px;
+  gap: 10px;
+  min-height: 88px;
   overflow: visible;
   padding-bottom: 0;
 }
@@ -4337,13 +4364,13 @@ body.choice-modal-open #controls,
 }
 
 #cheat-choice-container .choice-card.cheat-choice-card {
-  width: clamp(76px, 20vw, 110px) !important;
-  min-width: clamp(76px, 20vw, 110px) !important;
-  max-width: clamp(76px, 20vw, 110px) !important;
+  width: clamp(70px, 18vw, 100px) !important;
+  min-width: clamp(70px, 18vw, 100px) !important;
+  max-width: clamp(70px, 18vw, 100px) !important;
   min-height: 0 !important;
   height: auto !important;
   aspect-ratio: 118 / 96;
-  padding: 10px 7px !important;
+  padding: 8px 6px !important;
   justify-content: center;
   align-items: center;
   border-radius: 12px;
@@ -4527,13 +4554,14 @@ body.choice-modal-open #controls,
 }
 
 .cheat-choice-info {
+  flex: 0 0 auto;
   min-height: 0;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
   background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
   text-align: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cheat-choice-info.is-dismissing {
@@ -4543,8 +4571,9 @@ body.choice-modal-open #controls,
 
 .cheat-choice-info-title {
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(1rem, 3.4vw, 1.22rem);
+  font-size: clamp(0.94rem, 3vw, 1.14rem);
   font-weight: 800;
+  line-height: 1.06;
   color: var(--text);
 }
 
@@ -4563,14 +4592,14 @@ body.choice-modal-open #controls,
 }
 
 .cheat-choice-info-copy {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #e8e1f0;
-  font-size: 0.88rem;
-  line-height: 1.32;
+  font-size: 0.8rem;
+  line-height: 1.22;
 }
 
 .cheat-choice-info-hint {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--muted);
 }
 
