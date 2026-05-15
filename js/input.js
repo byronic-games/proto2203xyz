@@ -96,7 +96,7 @@ function createTutorialController() {
     {
       target: "#cheats-panel",
       title: "Nudges",
-      copy: "Nudges now live in the cheats row. Use them to temporarily shift the current card before your next guess.",
+      copy: "Nudge up or down to temporarily shift the value of the current card before your next guess.",
     },
     {
       target: "#controls",
@@ -118,6 +118,12 @@ function createTutorialController() {
       target: "#cheats-panel",
       title: "Play or Preview Cheats",
       copy: "Play or Preview Cheats - hold a cheat to view more detail. Tap a cheat to play.",
+      clearView: true,
+    },
+    {
+      target: "#memory-panel",
+      title: "The Grid",
+      copy: "The grid records the cards you have already found, helping you judge what values may still be face down.",
       clearView: true,
     },
     {
@@ -147,6 +153,7 @@ function createTutorialController() {
       title: "Two Power Options",
       copy: "You will usually get two options. Assess both and choose the one that fits your plan.",
       clearView: true,
+      placement: "upper",
     },
     {
       target: "#power-choice-list .choice-card",
@@ -155,6 +162,7 @@ function createTutorialController() {
       requirePowerPick: true,
       showHighlight: false,
       clearView: true,
+      placement: "upper",
     },
   ];
 
@@ -245,6 +253,7 @@ function createTutorialController() {
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     overlay.classList.remove("tutorial-clear-view");
+    overlay.classList.remove("tutorial-dialog-upper");
     syncTutorialLockedControls();
     if (complete) {
       setTutorialCompleted();
@@ -267,6 +276,7 @@ function createTutorialController() {
       : (step.nextLabel || (stepIndex === steps.length - 1 ? "Finish" : "Next"));
     nextBtn.disabled = !!step.requireGuess || !!step.requirePowerPick || !!step.requireCheatPick || !!step.requireCheatUse;
     overlay.classList.toggle("tutorial-clear-view", !!step.clearView);
+    overlay.classList.toggle("tutorial-dialog-upper", step.placement === "upper");
     setFocusTarget(step);
     syncTutorialLockedControls();
   }

@@ -2228,6 +2228,11 @@ body.choice-modal-open #controls,
   pointer-events: auto;
 }
 
+#tutorial-overlay.tutorial-dialog-upper .tutorial-dialog {
+  top: max(16px, env(safe-area-inset-top));
+  bottom: auto;
+}
+
 .tutorial-progress {
   margin-bottom: 4px;
   color: var(--cyan);
