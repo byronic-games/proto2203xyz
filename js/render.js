@@ -15,16 +15,16 @@ let lastRenderedCheatCounts = new Map();
 let cheatChoiceConfirmIndex = -1;
 let cheatChoiceConfirmAfter = 0;
 let cheatUseLockedUntil = 0;
-const CHEAT_CHOICE_CLOSE_MS = 140;
-const CHEAT_CHOICE_FLY_MS = 300;
-const POWER_CHOICE_CLOSE_MS = 180;
-const POWER_CHOICE_FLY_MS = 320;
-const CHEAT_CHOICE_CONFIRM_BUFFER_MS = 450;
-const CHEAT_USE_BUFFER_MS = 420;
-const REVEAL_FLIP_MS = 420;
-const REVEAL_HOLD_MS = 160;
-const REVEAL_SLIDE_MS = 400;
-const REVEAL_FAILURE_HOLD_MS = 180;
+const CHEAT_CHOICE_CLOSE_MS = 126;
+const CHEAT_CHOICE_FLY_MS = 270;
+const POWER_CHOICE_CLOSE_MS = 162;
+const POWER_CHOICE_FLY_MS = 288;
+const CHEAT_CHOICE_CONFIRM_BUFFER_MS = 405;
+const CHEAT_USE_BUFFER_MS = 378;
+const REVEAL_FLIP_MS = 378;
+const REVEAL_HOLD_MS = 144;
+const REVEAL_SLIDE_MS = 360;
+const REVEAL_FAILURE_HOLD_MS = 162;
 const POWER_SHIELD_SVG = `
   <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
     <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>

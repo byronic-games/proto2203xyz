@@ -157,11 +157,11 @@ a {
 }
 
 #game.flash-wrong::after {
-  animation: game-flash-wrong 220ms ease-out;
+  animation: game-flash-wrong 198ms ease-out;
 }
 
 #game.game-over-effect {
-  animation: game-over-drain 700ms ease-out;
+  animation: game-over-drain 630ms ease-out;
 }
 
 @keyframes game-flash-wrong {
@@ -477,7 +477,7 @@ a {
 }
 
 .hud-pop {
-  animation: hud-pop 360ms ease-out;
+  animation: hud-pop 324ms ease-out;
 }
 
 @keyframes hud-pop {
@@ -522,7 +522,7 @@ a {
 }
 
 #game.game-over-effect #play-area {
-  animation: play-area-collapse 620ms cubic-bezier(0.18, 0.82, 0.22, 1);
+  animation: play-area-collapse 558ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 #card-row {
@@ -562,7 +562,7 @@ a {
 
 #game.game-over-effect #card-row::after {
   opacity: 0.97;
-  animation: game-over-board-stamp 620ms cubic-bezier(0.18, 0.82, 0.22, 1);
+  animation: game-over-board-stamp 558ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 #victory-banner {
@@ -632,7 +632,7 @@ a {
   background: var(--confetti-color, #9ff0ff);
   opacity: 0;
   transform: translate3d(0, 0, 0) rotate(0deg);
-  animation: confetti-fall var(--fall-duration, 1900ms) ease-out forwards;
+  animation: confetti-fall var(--fall-duration, 1710ms) ease-out forwards;
   animation-delay: var(--fall-delay, 0ms);
 }
 
@@ -668,7 +668,7 @@ a {
 }
 
 #game.game-over-effect .current-card-wrap {
-  animation: current-card-judder 280ms ease-out;
+  animation: current-card-judder 252ms ease-out;
 }
 
 .nudge-stack {
@@ -735,26 +735,26 @@ a {
 
 .card-face.feedback-correct {
   animation:
-    card-neon-pulse-correct 520ms ease-out,
-    card-throb 520ms ease-out;
+    card-neon-pulse-correct 468ms ease-out,
+    card-throb 468ms ease-out;
 }
 
 .card-face.feedback-wrong {
   animation:
-    card-neon-pulse-wrong 520ms ease-out,
-    card-shake 500ms ease-out;
+    card-neon-pulse-wrong 468ms ease-out,
+    card-shake 450ms ease-out;
 }
 
 .card-face.nudge-animate {
   transform-origin: center;
   will-change: transform;
-  animation: card-nudge-bounce 360ms cubic-bezier(0.2, 0.95, 0.25, 1.24);
+  animation: card-nudge-bounce 324ms cubic-bezier(0.2, 0.95, 0.25, 1.24);
 }
 
 .card-nudge-new-rank,
 .card-nudge-new-label {
   display: inline-block;
-  animation: card-nudge-new-value 200ms cubic-bezier(0.2, 0.95, 0.25, 1.24) 130ms both;
+  animation: card-nudge-new-value 180ms cubic-bezier(0.2, 0.95, 0.25, 1.24) 117ms both;
 }
 
 .card-nudge-old-rank,
@@ -764,7 +764,7 @@ a {
   z-index: 5;
   pointer-events: none;
   color: currentColor;
-  animation: card-nudge-old-value 130ms ease-in both;
+  animation: card-nudge-old-value 117ms ease-in both;
 }
 
 .card-nudge-old-label {
@@ -1093,7 +1093,7 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 }
 
 #game.game-over-effect #face-down-deck {
-  animation: deck-collapse-shudder 520ms cubic-bezier(0.18, 0.82, 0.22, 1);
+  animation: deck-collapse-shudder 468ms cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 #face-down-deck.reveal-flip,
@@ -1103,7 +1103,7 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 
 #face-down-deck.reveal-flip-out,
 #reveal-overlay.reveal-flip-out {
-  animation: card-reveal-flip-out 210ms cubic-bezier(0.42, 0, 0.58, 1) both;
+  animation: card-reveal-flip-out 189ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
   transform-origin: center center;
   transform-style: preserve-3d;
@@ -1113,7 +1113,7 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 
 #face-down-deck.reveal-flip-in,
 #reveal-overlay.reveal-flip-in {
-  animation: card-reveal-flip-in 210ms cubic-bezier(0.42, 0, 0.58, 1) both;
+  animation: card-reveal-flip-in 189ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
   transform-origin: center center;
   transform-style: preserve-3d;
@@ -1123,35 +1123,35 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 
 #face-down-deck.reveal-flip-180,
 #reveal-overlay.reveal-flip-180 {
-  animation: card-reveal-flip-180 420ms cubic-bezier(0.42, 0, 0.58, 1) both;
+  animation: card-reveal-flip-180 378ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
 }
 
 #face-down-deck.reveal-flip,
 #reveal-overlay.reveal-flip {
-  animation: card-reveal-flip 420ms cubic-bezier(0.42, 0, 0.58, 1);
+  animation: card-reveal-flip 378ms cubic-bezier(0.42, 0, 0.58, 1);
   will-change: transform, filter;
 }
 
 #face-down-deck.reveal-slide-over,
 #reveal-overlay.reveal-slide-over {
-  animation: card-reveal-slide-over 400ms cubic-bezier(0.42, 0, 0.58, 1) both;
+  animation: card-reveal-slide-over 360ms cubic-bezier(0.42, 0, 0.58, 1) both;
   will-change: transform, filter;
   z-index: 12;
 }
 
 #current-card.reveal-promote {
-  animation: card-reveal-promote 240ms cubic-bezier(0.22, 0.8, 0.26, 1);
+  animation: card-reveal-promote 216ms cubic-bezier(0.22, 0.8, 0.26, 1);
   will-change: transform, filter;
 }
 
 #current-card.reveal-settle {
-  animation: card-reveal-settle 320ms cubic-bezier(0.22, 0.8, 0.26, 1);
+  animation: card-reveal-settle 288ms cubic-bezier(0.22, 0.8, 0.26, 1);
   will-change: transform, filter;
 }
 
 #current-card.reveal-fail {
-  animation: card-reveal-fail 250ms ease-out;
+  animation: card-reveal-fail 225ms ease-out;
   will-change: transform, filter;
 }
 
@@ -1760,7 +1760,7 @@ body.choice-modal-open #controls,
   width: clamp(12px, 4vw, 22px);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 160ms ease;
+  transition: opacity 144ms ease;
   z-index: 2;
 }
 
@@ -2070,7 +2070,7 @@ body.choice-modal-open #controls,
 }
 
 .grid-cell.seen.fresh {
-  animation: seen-stamp 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: seen-stamp 468ms cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: center;
 }
 
@@ -2288,7 +2288,7 @@ body.choice-modal-open #controls,
     0 0 24px rgba(109, 228, 255, 0.56),
     0 0 52px rgba(109, 228, 255, 0.24);
   border-radius: inherit;
-  animation: tutorial-focus-throb 1200ms ease-in-out infinite;
+  animation: tutorial-focus-throb 1080ms ease-in-out infinite;
   will-change: box-shadow, outline-color;
 }
 
@@ -2333,14 +2333,14 @@ body.choice-modal-open #controls,
 #game-howto-modal:not(.hidden):not(.is-closing) .help-dialog,
 #game-settings-modal:not(.hidden):not(.is-closing) .help-dialog {
   transform-origin: center center;
-  animation: choice-modal-pop 480ms linear both;
+  animation: choice-modal-pop 432ms linear both;
 }
 
 #cheat-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-backdrop,
 #power-choice-container:not(.hidden):not(.is-closing):not(.is-flying) .choice-backdrop,
 #game-howto-modal:not(.hidden):not(.is-closing) .help-backdrop,
 #game-settings-modal:not(.hidden):not(.is-closing) .help-backdrop {
-  animation: choice-backdrop-pop 260ms ease-out both;
+  animation: choice-backdrop-pop 234ms ease-out both;
 }
 
 #game-howto-modal.is-closing,
@@ -2351,12 +2351,12 @@ body.choice-modal-open #controls,
 #game-howto-modal.is-closing .help-dialog,
 #game-settings-modal.is-closing .help-dialog {
   transform-origin: center center;
-  animation: menu-modal-close 220ms cubic-bezier(0.34, 0.01, 0.58, 1) both;
+  animation: menu-modal-close 198ms cubic-bezier(0.34, 0.01, 0.58, 1) both;
 }
 
 #game-howto-modal.is-closing .help-backdrop,
 #game-settings-modal.is-closing .help-backdrop {
-  animation: menu-backdrop-close 220ms ease-in both;
+  animation: menu-backdrop-close 198ms ease-in both;
 }
 
 @keyframes choice-modal-pop {
@@ -2766,8 +2766,8 @@ body.choice-modal-open #controls,
 }
 
 .choice-card.choice-intro {
-  animation: choice-card-pop 430ms linear both;
-  animation-delay: calc(90ms + (var(--choice-index, 0) * 55ms));
+  animation: choice-card-pop 387ms linear both;
+  animation-delay: calc(81ms + (var(--choice-index, 0) * 50ms));
 }
 
 @keyframes choice-card-pop {
@@ -3865,7 +3865,7 @@ body.choice-modal-open #controls,
 }
 
 #header-energy-metric.energy-pop {
-  animation: energy-counter-pop 240ms cubic-bezier(0.18, 0.9, 0.22, 1.35);
+  animation: energy-counter-pop 216ms cubic-bezier(0.18, 0.9, 0.22, 1.35);
 }
 
 @keyframes energy-counter-pop {
@@ -4194,15 +4194,15 @@ body.choice-modal-open #controls,
 }
 
 .cheat-button.is-click-pulsing {
-  animation: cheat-coin-click-pulse 180ms ease-in-out both;
+  animation: cheat-coin-click-pulse 162ms ease-in-out both;
 }
 
 .cheat-button.is-consuming {
-  animation: cheat-coin-consume 280ms ease-in-out both;
+  animation: cheat-coin-consume 252ms ease-in-out both;
 }
 
 .cheat-button.is-awarded-new {
-  animation: cheat-coin-award-fade 180ms ease-out both;
+  animation: cheat-coin-award-fade 162ms ease-out both;
 }
 
 @keyframes cheat-coin-consume {
@@ -4341,13 +4341,13 @@ body.choice-modal-open #controls,
 #power-choice-container .choice-backdrop,
 #power-choice-container .choice-modal {
   transition:
-    opacity 320ms ease-in-out,
-    transform 320ms ease-in-out;
+    opacity 288ms ease-in-out,
+    transform 288ms ease-in-out;
 }
 
 #power-choice-container .power-choice-option.choice-intro {
-  animation: choice-card-pop 430ms linear both;
-  animation-delay: calc(90ms + (var(--choice-index, 0) * 55ms));
+  animation: choice-card-pop 387ms linear both;
+  animation-delay: calc(81ms + (var(--choice-index, 0) * 50ms));
 }
 
 #cheat-choice-container .choice-card.cheat-choice-card {
@@ -4386,9 +4386,9 @@ body.choice-modal-open #controls,
   overflow: visible;
   overflow-wrap: anywhere;
   transition:
-    transform 180ms ease,
-    filter 180ms ease,
-    box-shadow 180ms ease;
+    transform 162ms ease,
+    filter 162ms ease,
+    box-shadow 162ms ease;
 }
 
 #power-choice-container .choice-card.power-choice-card:hover:not(:disabled),
@@ -4611,7 +4611,7 @@ body.choice-modal-open #controls,
 
 #power-choice-container .power-choice-option.is-dismissing {
   transform-origin: center;
-  animation: power-choice-dismiss 180ms ease-in-out both;
+  animation: power-choice-dismiss 162ms ease-in-out both;
 }
 
 #power-choice-container .power-choice-option.is-dismissed {
@@ -4653,12 +4653,12 @@ body.choice-modal-open #controls,
 
 #cheat-choice-flyout.is-moving {
   transition:
-    opacity 300ms ease-in-out,
-    left 300ms ease-in-out,
-    top 300ms ease-in-out,
-    width 300ms ease-in-out,
-    height 300ms ease-in-out,
-    transform 300ms ease-in-out;
+    opacity 270ms ease-in-out,
+    left 270ms ease-in-out,
+    top 270ms ease-in-out,
+    width 270ms ease-in-out,
+    height 270ms ease-in-out,
+    transform 270ms ease-in-out;
 }
 
 #cheat-choice-flyout.cheat-button {
@@ -4689,12 +4689,12 @@ body.choice-modal-open #controls,
 
 #power-choice-flyout.is-moving {
   transition:
-    opacity 320ms ease-in-out,
-    left 320ms cubic-bezier(0.42, 0, 0.58, 1),
-    top 320ms cubic-bezier(0.42, 0, 0.58, 1),
-    width 320ms cubic-bezier(0.42, 0, 0.58, 1),
-    height 320ms cubic-bezier(0.42, 0, 0.58, 1),
-    transform 320ms cubic-bezier(0.42, 0, 0.58, 1);
+    opacity 288ms ease-in-out,
+    left 288ms cubic-bezier(0.42, 0, 0.58, 1),
+    top 288ms cubic-bezier(0.42, 0, 0.58, 1),
+    width 288ms cubic-bezier(0.42, 0, 0.58, 1),
+    height 288ms cubic-bezier(0.42, 0, 0.58, 1),
+    transform 288ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 
 #power-choice-flyout.power-choice-card {
@@ -4775,7 +4775,7 @@ body.choice-modal-open #controls,
 }
 
 #game.game-over-effect #face-down-deck {
-  animation: card-shake 500ms ease-out !important;
+  animation: card-shake 450ms ease-out !important;
 }
 
 .nudge-cheat-button .cheat-icon {
@@ -5172,7 +5172,7 @@ body.choice-modal-open #controls,
 }
 
 .cheat-button.has-count-pulse .cheat-stack-count {
-  animation: cheat-count-pulse 520ms ease-in-out both;
+  animation: cheat-count-pulse 468ms ease-in-out both;
 }
 
 @keyframes cheat-count-pulse {
@@ -5319,11 +5319,11 @@ body[data-visuals="new"] .card-face.temporary-value {
 
 /* suppress neon feedback animations on white card */
 body[data-visuals="new"] .card-face.feedback-correct {
-  animation: card-throb 520ms ease-out;
+  animation: card-throb 468ms ease-out;
 }
 
 body[data-visuals="new"] .card-face.feedback-wrong {
-  animation: card-shake 500ms ease-out;
+  animation: card-shake 450ms ease-out;
 }
 
 /* corners: rank + small suit stacked vertically */
@@ -5447,7 +5447,7 @@ body[data-visuals="new"] .grid-cell.seen.black {
 }
 
 body[data-visuals="new"] .grid-cell.seen.fresh {
-  animation: seen-stamp 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: seen-stamp 468ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 body[data-visuals="new"] .memory-card-rank {

@@ -98,6 +98,7 @@ function createEmptyState() {
     wlStage: "",
     sixSevenArmed: false,
     sixSevenRewardChoicesRemaining: 0,
+    equals11Armed: false,
     runSeed: loadLastRunSeed() || randomSeedString(),
     restartConfirmArmed: false,
     deckStatsTooltipOpen: false,

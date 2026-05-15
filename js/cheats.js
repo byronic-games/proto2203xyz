@@ -17,6 +17,7 @@ function getParityLabel(value) {
 function getUpcomingCheatValue(offset = 1) {
   const card = getNextCardAt(offset);
   if (!card) return null;
+  if (isJokerCard(card)) return null;
   if (offset === 1 && state.blankSpaceActive && Number.isFinite(getBlankSpaceDisplayValue?.())) {
     return getBlankSpaceDisplayValue();
   }
@@ -54,12 +55,22 @@ function formatAverageValue(total, count) {
   return average.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 function formatCheatValue(value) {
+  if (!Number.isFinite(value)) return "Joker";
   return valueToRank(value);
+}
+
+function isUpcomingCheatJoker(offset = 1) {
+  return isJokerCard(getNextCardAt(offset));
+}
+
+function hasUpcomingCheatJoker(offsets = []) {
+  return offsets.some((offset) => isUpcomingCheatJoker(offset));
 }
 
 function getUpcomingCheatRank(offset = 1) {
   const card = getNextCardAt(offset);
   if (!card) return "";
+  if (isJokerCard(card)) return "Joker";
   if (offset === 1 && state.blankSpaceActive) {
     return valueToRank(getUpcomingCheatValue(offset));
   }
@@ -69,12 +80,14 @@ function getUpcomingCheatRank(offset = 1) {
 function getUpcomingCheatSuit(offset = 1) {
   const card = getNextCardAt(offset);
   if (!card) return "";
+  if (isJokerCard(card)) return "Joker";
   if (offset === 1 && state.blankSpaceActive) return "";
   return card.suit || "";
 }
 
 function formatCardIdentityForCheat(card, offset = 0) {
   if (!card) return "Unknown card";
+  if (isJokerCard(card)) return "Joker";
   const value = offset > 0 ? getUpcomingCheatValue(offset) : card.value;
   const suit = offset > 0 ? getUpcomingCheatSuit(offset) : (card.suit || "");
   return `${valueToRank(value)}${suit}`;
@@ -188,7 +201,7 @@ const CHEAT_DESCRIPTIONS = {
   "Swap": "Swap the current face-up card with the next face-down card.",
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
-  "Equals 11": "If this card and the next card total 11, immediately choose 3 extra cheats.",
+  "Equals 11": "Arm this card. If it and the next revealed card total 11, choose 3 extra cheats.",
   "Blank Space": "Blank the next card for one turn. Nudge it for free, then guess correctly to immediately choose a new power.",
   "WL": "Win your next guess, then lose the one after. If you do, the run survives and you choose 3 extra cheats.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
@@ -217,6 +230,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       return nextValue > 9 ? "Yes — above 9." : "No — 9 or below.";
     },
@@ -233,6 +247,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       return nextValue < 5 ? "Yes — below 5." : "No — 5 or above.";
     },
@@ -249,6 +264,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       return nextValue >= 5 && nextValue <= 9 ? "Yes — between 5 and 9." : "No — outside 5–9.";
     },
@@ -265,6 +281,7 @@ const CHEATS = [
     use: () => {
       const next = getNextCardAt(1);
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       return getUpcomingCheatRank(1) === "A" ? "Yes — the next card is an Ace." : "No — the next card is not an Ace.";
     },
   },
@@ -280,6 +297,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       return getUpcomingCheatRank(1) === "K" ? "Yes — it is a King." : "No — not a King.";
     },
   },
@@ -327,6 +345,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const remaining = countUnseenCardsOfRank(getUpcomingCheatRank(1));
       return `${remaining} matching ${remaining === 1 ? "card remains" : "cards remain"} in the deck.`;
     },
@@ -344,6 +363,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return `Total = ${nextValue + next2Value}`;
@@ -363,6 +383,7 @@ const CHEATS = [
       const next2 = getNextCardAt(2);
       const next3 = getNextCardAt(3);
       if (!next || !next2 || !next3) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2, 3])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       const next3Value = getUpcomingCheatValue(3);
@@ -382,6 +403,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue + next2Value > 12 ? "Yes — total is above 12." : "No — total is 12 or below.";
@@ -400,6 +422,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue + next2Value > 20 ? "Yes — total is above 20." : "No — total is 20 or below.";
@@ -418,6 +441,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue + next2Value < 10 ? "Yes — total is under 10." : "No — total is 10 or above.";
@@ -436,6 +460,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue + next2Value < 15 ? "Yes — total is under 15." : "No — total is 15 or above.";
@@ -453,6 +478,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       return isPrimeCardValue(next.value)
         ? "Yes — the next card is prime-valued (2, 3, 5, 7, J = 11, or K = 13)."
         : "No — the next card is not prime-valued.";
@@ -471,6 +497,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return `Product = ${nextValue * next2Value}`;
@@ -488,6 +515,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       return nextValue >= 7 ? "Top half (7+)." : "Bottom half (6 or below).";
     },
@@ -525,6 +553,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue > currentVal || next2Value > currentVal
@@ -547,6 +576,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return nextValue < currentVal || next2Value < currentVal
@@ -567,6 +597,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return `Higher = ${formatCheatValue(Math.max(nextValue, next2Value))}`;
@@ -585,6 +616,7 @@ const CHEATS = [
       const next = getNextCardAt(1);
       const next2 = getNextCardAt(2);
       if (!next || !next2) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2])) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       const next2Value = getUpcomingCheatValue(2);
       return `Lower = ${formatCheatValue(Math.min(nextValue, next2Value))}`;
@@ -602,6 +634,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const nextValue = getUpcomingCheatValue(1);
       return getParityLabel(nextValue);
     },
@@ -620,8 +653,10 @@ const CHEATS = [
       const val = getCurrentEffectiveValue();
       const remaining = state.deck.slice(state.index + 1);
       if (!remaining.length) return "No next card.";
-      const count = remaining.filter((c) => c.value > val).length;
-      return `${Math.round((count / remaining.length) * 100)}% higher`;
+      const normalRemaining = remaining.filter((card) => !isJokerCard(card) && Number.isFinite(card.value));
+      if (!normalRemaining.length) return "Joker.";
+      const count = normalRemaining.filter((c) => c.value > val).length;
+      return `${Math.round((count / normalRemaining.length) * 100)}% higher`;
     },
   },
   {
@@ -638,8 +673,10 @@ const CHEATS = [
       const val = getCurrentEffectiveValue();
       const remaining = state.deck.slice(state.index + 1);
       if (!remaining.length) return "No next card.";
-      const count = remaining.filter((c) => c.value < val).length;
-      return `${Math.round((count / remaining.length) * 100)}% lower`;
+      const normalRemaining = remaining.filter((card) => !isJokerCard(card) && Number.isFinite(card.value));
+      if (!normalRemaining.length) return "Joker.";
+      const count = normalRemaining.filter((c) => c.value < val).length;
+      return `${Math.round((count / normalRemaining.length) * 100)}% lower`;
     },
   },
   {
@@ -738,6 +775,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "";
       const currentValue = getUpcomingCheatValue(1);
       const targetValue = getAdjustedNextNudgeTarget(3);
       if (!Number.isFinite(targetValue)) return "No next card.";
@@ -758,6 +796,7 @@ const CHEATS = [
     use: () => {
       const next = peekNext();
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "";
       const currentValue = getUpcomingCheatValue(1);
       const targetValue = getAdjustedNextNudgeTarget(-3);
       if (!Number.isFinite(targetValue)) return "No next card.";
@@ -889,6 +928,7 @@ const CHEATS = [
       const currentVal = getCurrentEffectiveValue();
       const upcoming = [1, 2, 3, 4, 5].map((offset) => getNextCardAt(offset)).filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
+      if ([1, 2, 3, 4, 5].some((offset) => isUpcomingCheatJoker(offset))) return "Joker.";
       const found = upcoming.some((card, index) => getUpcomingCheatValue(index + 1) === currentVal);
       return found ? "Yes — a match to the current value is in the next five." : "No — no match to the current value in the next five.";
     },
@@ -926,6 +966,7 @@ const CHEATS = [
       const next2 = getNextCardAt(2);
       const next3 = getNextCardAt(3);
       if (!next || !next2 || !next3) return "Not enough cards remaining.";
+      if (hasUpcomingCheatJoker([1, 2, 3])) return "Joker.";
       const total = getUpcomingCheatValue(1) + getUpcomingCheatValue(2) + getUpcomingCheatValue(3);
       return `Average = ${formatAverageValue(total, 3)}`;
     },
@@ -988,7 +1029,7 @@ const CHEATS = [
     use: () => {
       const upcoming = [1, 2, 3].map((offset) => getNextCardAt(offset)).filter(Boolean);
       if (upcoming.length === 0) return "No next card.";
-      const values = upcoming.map((card, index) => formatCheatValue(getUpcomingCheatValue(index + 1)));
+      const values = upcoming.map((card, index) => isJokerCard(card) ? "Joker" : formatCheatValue(getUpcomingCheatValue(index + 1)));
       const rng = getCheatDeterministicRng("fortune_teller");
       for (let i = values.length - 1; i > 0; i -= 1) {
         const swapIndex = Math.floor(rng() * (i + 1));
@@ -1008,22 +1049,18 @@ const CHEATS = [
     unlockAt: 0,
     stacking: "unique",
     consumeOnUse: false,
-    shouldConsumeResult: (result) => typeof result === "string" && !result.startsWith("Equals 11 needs"),
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Equals 11 armed"),
     use: () => {
       if (!state.current) return "Equals 11 needs a current card.";
-      const next = getNextCardAt(1);
-      if (!next || isJokerCard(next)) return "Equals 11 needs a normal next card.";
       const currentValue = getCurrentEffectiveValue();
-      const nextValue = getUpcomingCheatValue(1);
-      if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) {
-        return "Equals 11 needs a normal next card.";
+      if (!Number.isFinite(currentValue)) {
+        return "Equals 11 needs a normal current card.";
       }
-      const total = currentValue + nextValue;
-      if (total !== 11) {
-        return `Equals 11 missed - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = ${total}.`;
+      if (!getNextCardAt(1)) {
+        return "Equals 11 needs a next card.";
       }
-      scheduleBonusCheatChoices(3, "equals_11", "Equals 11 hit! Choose 3 bonus cheats.");
-      return `Equals 11 hit - ${valueToRank(currentValue)} + ${valueToRank(nextValue)} = 11.`;
+      state.equals11Armed = true;
+      return "Equals 11 armed - it will resolve when the next card is revealed.";
     },
   },
   {
@@ -1226,6 +1263,7 @@ const CHEATS = [
       if (!state.current) return "No current card.";
       const next = getNextCardAt(1);
       if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Joker.";
       const difference = Math.abs(getUpcomingCheatValue(1) - getCurrentEffectiveValue());
       return difference <= 7 ? "Hot - within 7." : "Cold - more than 7 away.";
     },

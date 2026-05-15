@@ -617,7 +617,7 @@ document.getElementById("copy-seed-btn")?.addEventListener("click", async () => 
   renderMessage();
 });
 
-const MENU_MODAL_CLOSE_MS = 220;
+const MENU_MODAL_CLOSE_MS = 198;
 const menuModalCloseTimers = new Map();
 
 function syncBodyModalOpenClass() {

@@ -230,7 +230,7 @@ function spawnVictoryConfetti() {
       piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
       piece.style.setProperty("--fall-distance", `${105 + Math.round(Math.random() * 30)}vh`);
       piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
-      piece.style.setProperty("--fall-duration", `${1500 + Math.round(Math.random() * 900)}ms`);
+      piece.style.setProperty("--fall-duration", `${1350 + Math.round(Math.random() * 810)}ms`);
       piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 220)}ms`);
       piece.style.setProperty("--confetti-color", colors[(waveIndex * piecesPerWave + i) % colors.length]);
       confettiEl.appendChild(piece);
@@ -305,7 +305,7 @@ function setRecentlySeenCard(cardId) {
     state.recentlySeenCardId = "";
     recentlySeenCardTimer = null;
     renderSeenGrid();
-  }, 520);
+  }, 468);
 }
 
 function setCurrentCardFeedback(effect) {
@@ -352,7 +352,7 @@ function setCurrentCardNudgeAnimation(direction, fromValue, toValue) {
       render();
     }
     currentCardNudgeAnimationTimer = null;
-  }, 360);
+  }, 324);
 }
 
 function describeCardForDebug(card) {
@@ -813,6 +813,7 @@ function startRunWithPower(powerId) {
     forcedNextGuess: "",
     lockCurrentCardForForcedGuess: false,
     cheatACheaterRemaining: 0,
+    equals11Armed: false,
     wlStage: "",
   };
 
@@ -1378,6 +1379,7 @@ function clearArmedPowerEffects() {
   state.cheatACheaterRemaining = 0;
   state.sixSevenArmed = false;
   state.sixSevenRewardChoicesRemaining = 0;
+  state.equals11Armed = false;
 }
 
 function applyYellowJokerEffect(jokerCard) {
@@ -1606,6 +1608,7 @@ function makeGuessLegacy(type) {
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const cursedShieldWasArmed = !!state.cursedShieldArmed;
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
+  const equals11WasArmed = !!state.equals11Armed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
   const wlStageBeforeGuess = state.wlStage || "";
@@ -1620,6 +1623,7 @@ function makeGuessLegacy(type) {
   state.oddOneOutArmed = false;
   state.sixSevenArmed = false;
   state.suitedAndBootedArmed = false;
+  state.equals11Armed = false;
   state.suitedAndBootedSuit = "";
   state.forcedNextGuess = "";
   state.lockCurrentCardForForcedGuess = false;
@@ -1792,6 +1796,14 @@ function makeGuessLegacy(type) {
     state.nudgeDownCharges = (state.nudgeDownCharges || 0) + forcedNudgeReward;
   }
   updateBestScoreIfNeeded();
+  const equals11Resolved = equals11WasArmed && Number.isFinite(currentComparisonValue) && Number.isFinite(nextComparisonValue);
+  const equals11Total = equals11Resolved ? currentComparisonValue + nextComparisonValue : null;
+  const equals11Hit = equals11Resolved && equals11Total === 11;
+  if (equals11Hit && state.index < state.deck.length - 1) {
+    queueCheatAward("equals_11");
+    queueCheatAward("equals_11");
+    queueCheatAward("equals_11");
+  }
 
   if (state.index >= state.deck.length - 1) {
     appendRunDebugLog("guess_resolved", {
@@ -2163,6 +2175,7 @@ function makeGuess(type) {
 
   const currentComparisonValue = getCurrentEffectiveValue();
   const nextComparisonValue = getNextComparisonValueForGuess(next);
+  const equals11WasArmed = !!state.equals11Armed;
   const revealDistance = Number.isFinite(nextComparisonValue) && Number.isFinite(currentComparisonValue)
     ? Math.abs(nextComparisonValue - currentComparisonValue)
     : 0;
@@ -2183,6 +2196,7 @@ function makeGuess(type) {
 
   if (isJokerCard(next)) {
     const prevCard = state.current;
+    state.equals11Armed = false;
     advanceToCard(next);
     state.currentValueModifier = 0;
     const jokerMessage = applyYellowJokerEffect(next);
@@ -2261,6 +2275,7 @@ function makeGuess(type) {
   state.oddOneOutArmed = false;
   state.sixSevenArmed = false;
   state.suitedAndBootedArmed = false;
+  state.equals11Armed = false;
   state.suitedAndBootedSuit = "";
   state.blankSpaceActive = false;
   state.blankSpaceValue = null;
@@ -2503,6 +2518,14 @@ function makeGuess(type) {
     state.nudgeDownCharges = (state.nudgeDownCharges || 0) + forcedNudgeReward;
   }
   updateBestScoreIfNeeded();
+  const equals11Resolved = equals11WasArmed && Number.isFinite(currentComparisonValue) && Number.isFinite(nextComparisonValue);
+  const equals11Total = equals11Resolved ? currentComparisonValue + nextComparisonValue : null;
+  const equals11Hit = equals11Resolved && equals11Total === 11;
+  if (equals11Hit && state.index < state.deck.length - 1) {
+    queueCheatAward("equals_11");
+    queueCheatAward("equals_11");
+    queueCheatAward("equals_11");
+  }
 
   if (state.index >= state.deck.length - 1) {
     appendRunDebugLog("guess_resolved", {
@@ -2691,13 +2714,41 @@ function makeGuess(type) {
     return;
   }
 
+  if (equals11Hit) {
+    let equalsMessage = `Equals 11 hit! ${valueToRank(currentComparisonValue)} + ${valueToRank(nextComparisonValue)} = 11. Choose 3 bonus cheats.`;
+    if (state.streak >= getCheatRewardThreshold()) {
+      state.streak = 0;
+      queueCheatAward("streak");
+      equalsMessage += " Streak cheat queued next.";
+    }
+    if (powerAwards.length > 0) {
+      equalsMessage += ` Power gained: ${powerAwards.join(", ")}.`;
+    }
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback(equalsMessage, revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingCheatAwardQueue.shift() || "equals_11";
+      offerCheatChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
   const forcedRewardText = forcedNudgeReward > 0
     ? forcedNudgeDirection === "up"
       ? ` Gained ${forcedNudgeReward} Nudge +1.`
       : ` Gained ${forcedNudgeReward} Nudge -1.`
     : "";
   const wlAdvanceText = wlAdvancedToLoss ? " WL advanced - now lose the next guess." : "";
-  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${forcedRewardText}${wlAdvanceText}`;
+  const equals11MissText = equals11WasArmed && !equals11Hit
+    ? equals11Resolved
+      ? ` Equals 11 missed: ${valueToRank(currentComparisonValue)} + ${valueToRank(nextComparisonValue)} = ${equals11Total}.`
+      : " Equals 11 missed."
+    : "";
+  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}`;
+
 
   if (state.streak >= getCheatRewardThreshold()) {
     state.streak = 0;
