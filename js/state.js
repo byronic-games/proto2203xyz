@@ -56,6 +56,8 @@ function createEmptyState() {
     nextCardValueModifier: 0,
     correctAnswers: 0,
     streak: 0,
+    currentCorrectStreak: 0,
+    bestCorrectStreak: 0,
     bestScore: loadBestScore(loadSelectedDeck(), loadSelectedLevel()),
     seenCardIds: new Set(),
     powers: [],

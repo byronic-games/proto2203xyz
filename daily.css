@@ -139,6 +139,21 @@ h1 {
   min-width: 0;
 }
 
+.daily-result-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.daily-result-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .daily-share-btn {
   flex: 0 0 auto;
   min-width: 84px;
@@ -155,6 +170,12 @@ h1 {
   text-transform: uppercase;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.daily-download-btn {
+  border-color: rgba(199, 255, 84, 0.24);
+  background: linear-gradient(180deg, rgba(199, 255, 84, 0.20), rgba(199, 255, 84, 0.09));
+  color: var(--lime);
 }
 
 .daily-share-btn:hover:not(:disabled) {
@@ -394,6 +415,23 @@ td.score {
     padding: 0 12px;
     font-size: 0.7rem;
     letter-spacing: 0.12em;
+  }
+
+  .daily-result-row,
+  .daily-result-actions {
+    align-items: stretch;
+  }
+
+  .daily-result-row {
+    flex-direction: column;
+  }
+
+  .daily-result-actions {
+    width: 100%;
+  }
+
+  .daily-result-actions .daily-share-btn {
+    flex: 1 1 0;
   }
 
   .table-wrap {

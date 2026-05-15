@@ -749,6 +749,8 @@ function startRunWithPower(powerId) {
     currentValueModifier: 0,
     correctAnswers: 0,
     streak: 0,
+    currentCorrectStreak: 0,
+    bestCorrectStreak: 0,
     bestScore: loadBestScore(currentDeckKey, currentLevelNumber),
     seenCardIds: new Set([deck[0].id]),
     powers: activePowers,
@@ -855,6 +857,7 @@ function handleRunFinished(finalScore) {
     playerName: playerName || "Unknown",
     playerId: getOrCreateDailyPlayerId(),
     score: dailyScore,
+    bestStreak: state.bestCorrectStreak || state.currentCorrectStreak || finalScore,
   });
 
   submitDailyResult(entry).finally(() => {
@@ -922,6 +925,18 @@ function getRunScoreFromCorrectAnswers(correctAnswers) {
 
 function getDisplayedRunScore() {
   return state.current ? getRunScoreFromCorrectAnswers(state.correctAnswers) : 0;
+}
+
+function recordCorrectStreakProgress() {
+  state.currentCorrectStreak = Math.max(0, Number(state.currentCorrectStreak || 0)) + 1;
+  state.bestCorrectStreak = Math.max(
+    Math.max(0, Number(state.bestCorrectStreak || 0)),
+    state.currentCorrectStreak
+  );
+}
+
+function resetCorrectStreakProgress() {
+  state.currentCorrectStreak = 0;
 }
 
 function peekNext() {
@@ -1658,6 +1673,7 @@ function makeGuessLegacy(type) {
       advanceToCard(next);
       state.currentValueModifier = 0;
       state.streak = 0;
+      resetCorrectStreakProgress();
       setCurrentCardFeedback("wrong");
       flashGameShell("wrong");
       const lossMessage = `Odd One Out triggered — next card was ${formatNextCardForLossMessage(next)}.`;
@@ -1745,6 +1761,7 @@ function makeGuessLegacy(type) {
     advanceToCard(next);
     state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
+    resetCorrectStreakProgress();
     setCurrentCardFeedback("wrong");
     flashGameShell("wrong");
     const lossDetail = sixSevenWasArmed
@@ -1788,6 +1805,7 @@ function makeGuessLegacy(type) {
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
+  recordCorrectStreakProgress();
   setCurrentCardFeedback("correct");
   addMetaProgression(1);
   if (forcedNudgeDirection === "up" && forcedNudgeReward > 0) {
@@ -2333,6 +2351,7 @@ function makeGuess(type) {
       });
       state.currentValueModifier = 0;
       state.streak = 0;
+      resetCorrectStreakProgress();
       const lossMessage = appendEnergyFeedback(
         `Odd One Out triggered - next card was ${formatNextCardForLossMessage(next)}.`,
         -revealDistance
@@ -2422,6 +2441,7 @@ function makeGuess(type) {
     advanceToCard(next);
     state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
+    resetCorrectStreakProgress();
     const lossDetail = sixSevenWasArmed
       ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
@@ -2507,6 +2527,7 @@ function makeGuess(type) {
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
+  recordCorrectStreakProgress();
   addMetaProgression(1);
   if (wlStageBeforeGuess === "need_win" && !wlCompleted) {
     state.wlStage = "need_loss";

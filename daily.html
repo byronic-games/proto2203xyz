@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="daily.css?v=20260427b">
+  <link rel="stylesheet" href="daily.css?v=20260515a">
 </head>
 <body class="daily-page">
   <main class="daily-shell">
@@ -42,10 +42,14 @@
         <div class="summary-block summary-highlight">
           <div class="daily-result-row">
             <div class="daily-result-copy">
-              <div class="summary-label">Your Score</div>
+              <div class="summary-label">Your Result</div>
               <div class="summary-value" id="daily-score-label">-</div>
+              <div class="daily-result-meta" id="daily-streak-label"></div>
             </div>
-            <button id="daily-share-btn" class="daily-share-btn" type="button">Share</button>
+            <div class="daily-result-actions">
+              <button id="daily-share-btn" class="daily-share-btn" type="button">Share Result</button>
+              <button id="daily-download-share-btn" class="daily-share-btn daily-download-btn" type="button">Download Image</button>
+            </div>
           </div>
         </div>
       </section>
@@ -82,7 +86,7 @@
   <script src="js/fullscreen.js?v=20260425b"></script>
   <script src="js/constants.js?v=20260512z"></script>
   <script src="js/leaderboard.js?v=20260425c"></script>
-  <script src="js/daily.js?v=20260429a"></script>
-  <script src="js/daily-page.js?v=20260427i"></script>
+  <script src="js/daily.js?v=20260515a"></script>
+  <script src="js/daily-page.js?v=20260515a"></script>
 </body>
 </html>
