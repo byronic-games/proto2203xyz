@@ -1024,23 +1024,50 @@ document.getElementById("exit-btn")?.addEventListener("click", () => {
   window.location.href = "index.html?v=20260405d";
 });
 
-document.getElementById("nudge-up-btn")?.addEventListener("click", () => {
+function handleNudgeControlPress(direction) {
   if (typeof window.isTutorialBlockingNudge === "function" && window.isTutorialBlockingNudge()) {
     state.message = "Nudges unlock once the tutorial ends.";
     renderMessage();
     return;
   }
-  useNudgeCharge("up");
-});
+  useNudgeCharge(direction);
+}
 
-document.getElementById("nudge-down-btn")?.addEventListener("click", () => {
-  if (typeof window.isTutorialBlockingNudge === "function" && window.isTutorialBlockingNudge()) {
-    state.message = "Nudges unlock once the tutorial ends.";
-    renderMessage();
-    return;
-  }
-  useNudgeCharge("down");
-});
+function bindNudgeControl(buttonId, direction) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  let ignoreNextClick = false;
+  let ignoreNextClickTimer = null;
+
+  button.addEventListener("pointerdown", (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (button.disabled) return;
+    ignoreNextClick = true;
+    if (ignoreNextClickTimer) clearTimeout(ignoreNextClickTimer);
+    ignoreNextClickTimer = setTimeout(() => {
+      ignoreNextClick = false;
+      ignoreNextClickTimer = null;
+    }, 450);
+    event.preventDefault();
+    handleNudgeControlPress(direction);
+  });
+
+  button.addEventListener("click", (event) => {
+    if (ignoreNextClick) {
+      ignoreNextClick = false;
+      if (ignoreNextClickTimer) {
+        clearTimeout(ignoreNextClickTimer);
+        ignoreNextClickTimer = null;
+      }
+      event.preventDefault();
+      return;
+    }
+    handleNudgeControlPress(direction);
+  });
+}
+
+bindNudgeControl("nudge-up-btn", "up");
+bindNudgeControl("nudge-down-btn", "down");
 
 const scoreEl = document.getElementById("score");
 const scoreDebugTapTarget = document.querySelector(".hud-card-score");
