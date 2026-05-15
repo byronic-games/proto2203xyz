@@ -376,12 +376,13 @@ async function refreshDailyPageForDate(activeDateKey) {
       }
     }
     if (shareBtn) {
-      shareBtn.disabled = !hasCompletedAttempt;
+      shareBtn.disabled = true;
       shareBtn.style.display = hasCompletedAttempt ? "" : "none";
+      shareBtn.innerText = "Coming Soon";
     }
     if (downloadShareBtn) {
-      downloadShareBtn.disabled = !hasCompletedAttempt;
-      downloadShareBtn.style.display = hasCompletedAttempt ? "" : "none";
+      downloadShareBtn.disabled = true;
+      downloadShareBtn.style.display = "none";
     }
     if (startBtn) {
       startBtn.disabled = hasCompletedAttempt ? true : (activeDateKey !== todayKey);
@@ -429,9 +430,7 @@ async function refreshDailyPageForDate(activeDateKey) {
 
   if (shareBtn) {
     shareBtn.onclick = () => {
-      const entry = hasCompletedAttempt ? currentAttempt : null;
-      if (!entry) return;
-      shareDailyResult(entry, activeDateKey, statusEl);
+      if (statusEl) statusEl.innerText = "Daily result sharing is coming soon.";
     };
   }
 
