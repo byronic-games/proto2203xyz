@@ -533,6 +533,7 @@ function setupHeaderPowerTooltip(el, payload) {
 const CHEAT_ICON_BY_NAME = Object.freeze({
   "Above 9?": "9↑",
   "Below 5?": "5↓",
+  "5 or Under?": "5↓",
   "Between 5 and 9?": "5–9",
   "Is it an Ace?": "A?",
   "Is it a King?": "K?",
@@ -599,7 +600,7 @@ function getCheatIcon(name) {
   if (name === "WL") return "W/L";
   if (name === "Margin For Error") return "+/-2";
   if (name === "Higher, Higher, Higher") return "^^^";
-  if (name === "Back To Square One") return "A";
+  if (name === "Back To Square One") return "A1";
   if (name === "A Stitch In Time Saves...") return "9+";
   if (name === "Catch-22") return "22";
   if (name === "Sixth Sense") return "6?";
@@ -1728,6 +1729,9 @@ function renderCheats() {
           armedStatesAfterUse: {
             lucky7: !!state.lucky7Armed,
             fiveAlive: !!state.fiveAliveArmed,
+            marginForError: !!state.marginForErrorArmed,
+            stitchInTime: !!state.stitchInTimeArmed,
+            higherHigherHigherRemaining: Number(state.higherHigherHigherRemaining) || 0,
             godSaveKing: !!state.godSaveKingArmed,
             alwaysBetBlack: !!state.alwaysBetBlackArmed,
             oddOneOut: !!state.oddOneOutArmed,
@@ -1739,6 +1743,7 @@ function renderCheats() {
             forcedNextGuess: state.forcedNextGuess || "",
             lockCurrentCardForForcedGuess: !!state.lockCurrentCardForForcedGuess,
             sixSeven: !!state.sixSevenArmed,
+            catch22: !!state.catch22Armed,
             cheatACheaterRemaining: Number(state.cheatACheaterRemaining) || 0,
             wlStage: state.wlStage || "",
           },

@@ -499,10 +499,6 @@ function offerRewardPowerChoice(reason = "bonus") {
     ? "Brucie Bonus! Choose 1 power:"
     : state.activePowerAwardReason === "blank_space"
       ? "Blank Space hit! Choose 1 power:"
-      : state.activePowerAwardReason === "higher_higher_higher"
-        ? "Higher, Higher, Higher hit! Choose 1 power:"
-        : state.activePowerAwardReason === "catch_22"
-          ? "Catch-22 hit! Choose 1 power:"
     : "Choose 1 power:";
 
   appendRunDebugLog("power_offer_presented", {
@@ -753,8 +749,6 @@ function startRunWithPower(powerId) {
     currentValueModifier: 0,
     correctAnswers: 0,
     streak: 0,
-    currentCorrectStreak: 0,
-    bestCorrectStreak: 0,
     bestScore: loadBestScore(currentDeckKey, currentLevelNumber),
     seenCardIds: new Set([deck[0].id]),
     powers: activePowers,
@@ -809,10 +803,6 @@ function startRunWithPower(powerId) {
     fiveAliveArmed: false,
     godSaveKingArmed: false,
     alwaysBetBlackArmed: false,
-    marginForErrorArmed: false,
-    stitchInTimeArmed: false,
-    catch22Armed: false,
-    higherHigherHigherRemaining: 0,
     lockySevensActive: false,
     oddOneOutArmed: false,
     cursedShieldArmed: false,
@@ -865,7 +855,6 @@ function handleRunFinished(finalScore) {
     playerName: playerName || "Unknown",
     playerId: getOrCreateDailyPlayerId(),
     score: dailyScore,
-    bestStreak: state.bestCorrectStreak || state.currentCorrectStreak || finalScore,
   });
 
   submitDailyResult(entry).finally(() => {
@@ -933,18 +922,6 @@ function getRunScoreFromCorrectAnswers(correctAnswers) {
 
 function getDisplayedRunScore() {
   return state.current ? getRunScoreFromCorrectAnswers(state.correctAnswers) : 0;
-}
-
-function recordCorrectStreakProgress() {
-  state.currentCorrectStreak = Math.max(0, Number(state.currentCorrectStreak || 0)) + 1;
-  state.bestCorrectStreak = Math.max(
-    Math.max(0, Number(state.bestCorrectStreak || 0)),
-    state.currentCorrectStreak
-  );
-}
-
-function resetCorrectStreakProgress() {
-  state.currentCorrectStreak = 0;
 }
 
 function peekNext() {
@@ -1390,6 +1367,9 @@ function applyTearlessJoker() {
 function clearArmedPowerEffects() {
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
+  state.marginForErrorArmed = false;
+  state.stitchInTimeArmed = false;
+  state.higherHigherHigherRemaining = 0;
   state.godSaveKingArmed = false;
   state.alwaysBetBlackArmed = false;
   state.lockySevensActive = false;
@@ -1401,6 +1381,7 @@ function clearArmedPowerEffects() {
   state.lockCurrentCardForForcedGuess = false;
   state.cheatACheaterRemaining = 0;
   state.sixSevenArmed = false;
+  state.catch22Armed = false;
   state.sixSevenRewardChoicesRemaining = 0;
   state.equals11Armed = false;
 }
@@ -1533,6 +1514,7 @@ function fullResetAllStateForDebug() {
 function maybeBiasUpcomingCardForNewPlayers() {
   if (!state.current || state.gameOver) return;
   if ((state.metaProgression ?? 0) > 20) return;
+  if ((state.cheatUsesOnCurrentCard || 0) > 0) return;
 
   const nextIndex = state.index + 1;
   if (nextIndex >= state.deck.length) return;
@@ -1625,15 +1607,15 @@ function makeGuessLegacy(type) {
 
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
+  const marginForErrorWasArmed = !!state.marginForErrorArmed;
+  const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
+  const higherHigherHigherRemainingBeforeGuess = Number(state.higherHigherHigherRemaining || 0);
+  const catch22WasArmed = !!state.catch22Armed;
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
   const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const cursedShieldWasArmed = !!state.cursedShieldArmed;
-  const marginForErrorWasArmed = !!state.marginForErrorArmed;
-  const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
-  const catch22WasArmed = !!state.catch22Armed;
-  const higherHigherHigherWasActive = (state.higherHigherHigherRemaining || 0) > 0;
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const equals11WasArmed = !!state.equals11Armed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
@@ -1645,14 +1627,14 @@ function makeGuessLegacy(type) {
 
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
+  state.marginForErrorArmed = false;
+  state.stitchInTimeArmed = false;
+  state.catch22Armed = false;
   state.godSaveKingArmed = false;
   state.alwaysBetBlackArmed = false;
   state.oddOneOutArmed = false;
   state.sixSevenArmed = false;
   state.suitedAndBootedArmed = false;
-  state.marginForErrorArmed = false;
-  state.stitchInTimeArmed = false;
-  state.catch22Armed = false;
   state.equals11Armed = false;
   state.suitedAndBootedSuit = "";
   state.forcedNextGuess = "";
@@ -1690,7 +1672,6 @@ function makeGuessLegacy(type) {
       advanceToCard(next);
       state.currentValueModifier = 0;
       state.streak = 0;
-      resetCorrectStreakProgress();
       setCurrentCardFeedback("wrong");
       flashGameShell("wrong");
       const lossMessage = `Odd One Out triggered — next card was ${formatNextCardForLossMessage(next)}.`;
@@ -1752,23 +1733,23 @@ function makeGuessLegacy(type) {
       (type === "lower" && nextComparisonValue < currentComparisonValue);
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
+    rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && revealDistance <= 2;
+    rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && getNextComparisonValueForGuess(next) === 13;
     rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (next.suit === SUITS[0] || next.suit === SUITS[3]);
     rescuedByCursedShield = !comparisonCorrect && cursedShieldWasArmed;
     rescuedBySuitedAndBooted = !comparisonCorrect && suitedAndBootedWasArmed && !!suitedAndBootedSuit && next.suit !== suitedAndBootedSuit;
-    rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && Math.abs(nextComparisonValue - currentComparisonValue) <= 2;
-    rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
     correct =
       comparisonCorrect ||
       rescuedByLucky7 ||
       rescuedByFiveAlive ||
+      rescuedByMarginForError ||
+      rescuedByStitchInTime ||
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
       rescuedByCursedShield ||
       rescuedBySuitedAndBooted ||
-      rescuedByMarginForError ||
-      rescuedByStitchInTime ||
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
@@ -1782,7 +1763,6 @@ function makeGuessLegacy(type) {
     advanceToCard(next);
     state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
-    resetCorrectStreakProgress();
     setCurrentCardFeedback("wrong");
     flashGameShell("wrong");
     const lossDetail = sixSevenWasArmed
@@ -1809,9 +1789,6 @@ function makeGuessLegacy(type) {
       });
     triggerGameOverEffect(lossDetail);
     state.message = `❌ ${lossDetail}`;
-    if (higherHigherHigherWasActive) {
-      state.higherHigherHigherRemaining = 0;
-    }
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
@@ -1829,7 +1806,6 @@ function makeGuessLegacy(type) {
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
-  recordCorrectStreakProgress();
   setCurrentCardFeedback("correct");
   addMetaProgression(1);
   if (forcedNudgeDirection === "up" && forcedNudgeReward > 0) {
@@ -1858,6 +1834,8 @@ function makeGuessLegacy(type) {
       match,
       lucky7WasArmed,
       fiveAliveWasArmed,
+      marginForErrorWasArmed,
+      stitchInTimeWasArmed,
       godSaveKingWasArmed,
       alwaysBetBlackWasArmed,
       oddOneOutWasArmed,
@@ -1888,10 +1866,6 @@ function makeGuessLegacy(type) {
   const powerAwards = awardOnCorrectGuessPowers(type);
   const blankSpacePowerTriggered = blankSpaceWasActive;
   const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
-  const catch22Triggered = catch22WasArmed && nextComparisonValue === 2;
-  const higherHigherHigherHit = higherHigherHigherWasActive && type === "higher" && nextComparisonValue > currentComparisonValue;
-  let higherHigherHigherCompleted = false;
-  let higherHigherHigherBroken = false;
   let cheatACheaterTriggered = false;
 
   if (blankSpacePowerTriggered) {
@@ -1903,23 +1877,6 @@ function makeGuessLegacy(type) {
 
   if (brucieBonusTriggered) {
     queuePowerAward("brucie_bonus");
-  }
-
-  if (catch22Triggered) {
-    queuePowerAward("catch_22");
-  }
-
-  if (higherHigherHigherWasActive) {
-    if (higherHigherHigherHit) {
-      state.higherHigherHigherRemaining = Math.max(0, (state.higherHigherHigherRemaining || 0) - 1);
-      higherHigherHigherCompleted = state.higherHigherHigherRemaining === 0;
-      if (higherHigherHigherCompleted) {
-        queuePowerAward("higher_higher_higher");
-      }
-    } else {
-      state.higherHigherHigherRemaining = 0;
-      higherHigherHigherBroken = true;
-    }
   }
 
   if ((state.cheatACheaterRemaining || 0) > 0) {
@@ -1946,21 +1903,21 @@ function makeGuessLegacy(type) {
         ? "match"
         : rescuedByCursedShield
           ? "cursed_shield"
-        : rescuedBySuitedAndBooted
-          ? "suited_and_booted"
-          : rescuedByMarginForError
-            ? "margin_for_error"
-            : rescuedByStitchInTime
-              ? "stitch_in_time"
-              : lucky7WasArmed
-                ? "lucky_7"
-                : fiveAliveWasArmed
-                  ? "five_alive"
-                  : godSaveKingWasArmed
-                    ? "god_save_the_king"
-                    : oddOneOutWasArmed
-                      ? "odd_one_out_safe"
-                      : "comparison_correct",
+          : rescuedBySuitedAndBooted
+            ? "suited_and_booted"
+            : rescuedByMarginForError
+              ? "margin_for_error"
+              : rescuedByStitchInTime
+                ? "stitch_in_time_saves"
+        : lucky7WasArmed
+          ? "lucky_7"
+          : fiveAliveWasArmed
+            ? "five_alive"
+            : godSaveKingWasArmed
+              ? "god_save_the_king"
+              : oddOneOutWasArmed
+                ? "odd_one_out_safe"
+                : "comparison_correct",
     currentComparisonValue,
     nextComparisonValue,
     aceAutoWin,
@@ -1974,11 +1931,6 @@ function makeGuessLegacy(type) {
     cursedShieldWasArmed,
     suitedAndBootedWasArmed,
     suitedAndBootedSuit,
-    marginForErrorWasArmed,
-    stitchInTimeWasArmed,
-    catch22WasArmed,
-    higherHigherHigherWasActive,
-    higherHigherHigherRemaining: state.higherHigherHigherRemaining || 0,
     forcedNextGuessDirection,
     forcedNudgeDirection,
     forcedNudgeReward,
@@ -2099,21 +2051,6 @@ function makeGuessLegacy(type) {
     return;
   }
 
-  if ((catch22Triggered || higherHigherHigherCompleted) && (state.pendingPowerAwardQueue || []).length > 0) {
-    state.pauseForCheat = true;
-    state.message = catch22Triggered
-      ? "Catch-22 hit - choose 1 power."
-      : "Higher, Higher, Higher complete - choose 1 power.";
-    render();
-    setTimeout(() => {
-      state.pauseForCheat = false;
-      const nextReason = state.pendingPowerAwardQueue.shift() || (catch22Triggered ? "catch_22" : "higher_higher_higher");
-      offerRewardPowerChoice(nextReason);
-      render();
-    }, 1000);
-    return;
-  }
-
   if (cheatACheaterTriggered) {
     state.pauseForCheat = true;
     state.message = "You Can Cheat A Cheater paid out - choose 2 bonus cheats.";
@@ -2154,6 +2091,16 @@ function makeGuessLegacy(type) {
   }
   if (fiveAliveWasArmed) {
     state.message = `✅ Correct! Five Alive was spent. (${buildComparisonSnippet(prevCard, currentComparisonValue, next, nextComparisonValue)})`;
+    render();
+    return;
+  }
+  if (rescuedByMarginForError) {
+    state.message = appendEnergyFeedback(`Margin For Error saved the run - it was ${describeCard(next)}.`, revealDistance);
+    render();
+    return;
+  }
+  if (rescuedByStitchInTime) {
+    state.message = appendEnergyFeedback(`A Stitch In Time saved the run - it was ${describeCard(next)}.`, revealDistance);
     render();
     return;
   }
@@ -2284,10 +2231,6 @@ function makeGuess(type) {
   if (isJokerCard(next)) {
     const prevCard = state.current;
     state.equals11Armed = false;
-    state.marginForErrorArmed = false;
-    state.stitchInTimeArmed = false;
-    state.catch22Armed = false;
-    state.higherHigherHigherRemaining = 0;
     advanceToCard(next);
     state.currentValueModifier = 0;
     const jokerMessage = applyYellowJokerEffect(next);
@@ -2346,15 +2289,15 @@ function makeGuess(type) {
 
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
+  const marginForErrorWasArmed = !!state.marginForErrorArmed;
+  const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
+  const higherHigherHigherRemainingBeforeGuess = Number(state.higherHigherHigherRemaining || 0);
+  const catch22WasArmed = !!state.catch22Armed;
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
   const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const cursedShieldWasArmed = !!state.cursedShieldArmed;
-  const marginForErrorWasArmed = !!state.marginForErrorArmed;
-  const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
-  const catch22WasArmed = !!state.catch22Armed;
-  const higherHigherHigherWasActive = (state.higherHigherHigherRemaining || 0) > 0;
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
@@ -2365,14 +2308,14 @@ function makeGuess(type) {
 
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
+  state.marginForErrorArmed = false;
+  state.stitchInTimeArmed = false;
+  state.catch22Armed = false;
   state.godSaveKingArmed = false;
   state.alwaysBetBlackArmed = false;
   state.oddOneOutArmed = false;
   state.sixSevenArmed = false;
   state.suitedAndBootedArmed = false;
-  state.marginForErrorArmed = false;
-  state.stitchInTimeArmed = false;
-  state.catch22Armed = false;
   state.equals11Armed = false;
   state.suitedAndBootedSuit = "";
   state.blankSpaceActive = false;
@@ -2395,6 +2338,9 @@ function makeGuess(type) {
   let wlLossSatisfied = false;
   let wlAdvancedToLoss = false;
   let wlCompleted = false;
+  let higherHigherHigherCompleted = false;
+  let higherHigherHigherBroken = false;
+  let catch22Hit = false;
 
   const forcedNudgeDirection =
     forcedNextGuessDirection === "higher"
@@ -2433,7 +2379,6 @@ function makeGuess(type) {
       });
       state.currentValueModifier = 0;
       state.streak = 0;
-      resetCorrectStreakProgress();
       const lossMessage = appendEnergyFeedback(
         `Odd One Out triggered - next card was ${formatNextCardForLossMessage(next)}.`,
         -revealDistance
@@ -2492,23 +2437,23 @@ function makeGuess(type) {
       (type === "lower" && nextComparisonValue < currentComparisonValue);
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
+    rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && revealDistance <= 2;
+    rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && getNextComparisonValueForGuess(next) === 13;
     rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (nextSuitForResolution === SUITS[0] || nextSuitForResolution === SUITS[3]);
     rescuedByCursedShield = !comparisonCorrect && cursedShieldWasArmed;
     rescuedBySuitedAndBooted = !comparisonCorrect && suitedAndBootedWasArmed && !!suitedAndBootedSuit && nextSuitForResolution !== suitedAndBootedSuit;
-    rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && revealDistance <= 2;
-    rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
     correct =
       comparisonCorrect ||
       rescuedByLucky7 ||
       rescuedByFiveAlive ||
+      rescuedByMarginForError ||
+      rescuedByStitchInTime ||
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
       rescuedByCursedShield ||
       rescuedBySuitedAndBooted ||
-      rescuedByMarginForError ||
-      rescuedByStitchInTime ||
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
@@ -2527,7 +2472,6 @@ function makeGuess(type) {
     advanceToCard(next);
     state.currentValueModifier = lockySevenCarryModifier;
     state.streak = 0;
-    resetCorrectStreakProgress();
     const lossDetail = sixSevenWasArmed
       ? `6/7 failed - ${buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue)}`
       : buildWrongGuessMessage(type, lossCurrentCard, currentComparisonValue, next, nextComparisonValue);
@@ -2570,10 +2514,6 @@ function makeGuess(type) {
       cursedShieldWasArmed,
       suitedAndBootedWasArmed,
       suitedAndBootedSuit,
-      marginForErrorWasArmed,
-      stitchInTimeWasArmed,
-      catch22WasArmed,
-      higherHigherHigherWasActive,
       forcedNextGuessDirection,
       passiveSuitSavePowerId: passiveSuitSavePower?.id || "",
       rescuedBySuitSave,
@@ -2587,9 +2527,6 @@ function makeGuess(type) {
     });
 
     state.message = gameOverMessage;
-    if (higherHigherHigherWasActive) {
-      state.higherHigherHigherRemaining = 0;
-    }
     state.gameOver = true;
     updateBestScoreIfNeeded();
     render();
@@ -2622,8 +2559,23 @@ function makeGuess(type) {
   recordCorrectGuessProgress(1);
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
-  recordCorrectStreakProgress();
   addMetaProgression(1);
+  if (catch22WasArmed && Number.isFinite(nextComparisonValue) && nextComparisonValue === 2) {
+    catch22Hit = true;
+    queuePowerAward("catch_22");
+  }
+  if (higherHigherHigherRemainingBeforeGuess > 0) {
+    if (type === "higher") {
+      state.higherHigherHigherRemaining = Math.max(0, higherHigherHigherRemainingBeforeGuess - 1);
+      higherHigherHigherCompleted = state.higherHigherHigherRemaining === 0;
+      if (higherHigherHigherCompleted) {
+        queuePowerAward("higher_higher_higher");
+      }
+    } else {
+      state.higherHigherHigherRemaining = 0;
+      higherHigherHigherBroken = true;
+    }
+  }
   if (wlStageBeforeGuess === "need_win" && !wlCompleted) {
     state.wlStage = "need_loss";
     wlAdvancedToLoss = true;
@@ -2733,6 +2685,10 @@ function makeGuess(type) {
           ? "cursed_shield"
           : rescuedBySuitedAndBooted
             ? "suited_and_booted"
+            : rescuedByMarginForError
+              ? "margin_for_error"
+              : rescuedByStitchInTime
+                ? "stitch_in_time_saves"
         : lucky7WasArmed
           ? "lucky_7"
           : fiveAliveWasArmed
@@ -2749,6 +2705,13 @@ function makeGuess(type) {
     match,
     lucky7WasArmed,
     fiveAliveWasArmed,
+    marginForErrorWasArmed,
+    stitchInTimeWasArmed,
+    higherHigherHigherRemainingBeforeGuess,
+    higherHigherHigherCompleted,
+    higherHigherHigherBroken,
+    catch22WasArmed,
+    catch22Hit,
     godSaveKingWasArmed,
     alwaysBetBlackWasArmed,
     oddOneOutWasArmed,
@@ -2772,9 +2735,6 @@ function makeGuess(type) {
     wlCompleted,
     blankSpacePowerTriggered,
     brucieBonusTriggered,
-    catch22Triggered,
-    higherHigherHigherCompleted,
-    higherHigherHigherBroken,
     cheatACheaterTriggered,
     cheatACheaterRemaining: state.cheatACheaterRemaining || 0,
     energyAfter: state.energy || 0,
@@ -2835,6 +2795,32 @@ function makeGuess(type) {
     return;
   }
 
+  if (higherHigherHigherCompleted) {
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback("Higher, Higher, Higher complete! Choose a new Power.", revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingPowerAwardQueue.shift() || "higher_higher_higher";
+      offerRewardPowerChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
+  if (catch22Hit) {
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback("Catch-22 hit! The next card was a 2 - choose a new Power.", revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingPowerAwardQueue.shift() || "catch_22";
+      offerRewardPowerChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
   if (equals11Hit) {
     let equalsMessage = `Equals 11 hit! ${valueToRank(currentComparisonValue)} + ${valueToRank(nextComparisonValue)} = 11. Choose 3 bonus cheats.`;
     if (state.streak >= getCheatRewardThreshold()) {
@@ -2868,15 +2854,12 @@ function makeGuess(type) {
       ? ` Equals 11 missed: ${valueToRank(currentComparisonValue)} + ${valueToRank(nextComparisonValue)} = ${equals11Total}.`
       : " Equals 11 missed."
     : "";
-  const catch22Text = catch22Triggered ? " Catch-22 hit - power choice queued." : "";
-  const higherHigherHigherText = higherHigherHigherCompleted
-    ? " Higher, Higher, Higher complete - power choice queued."
-    : higherHigherHigherHit
+  const higherHigherHigherText = higherHigherHigherBroken
+    ? " Higher, Higher, Higher broke."
+    : higherHigherHigherRemainingBeforeGuess > 0 && !higherHigherHigherCompleted
       ? ` Higher, Higher, Higher: ${state.higherHigherHigherRemaining} to go.`
-      : higherHigherHigherBroken
-        ? " Higher, Higher, Higher chain broken."
-        : "";
-  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}${catch22Text}${higherHigherHigherText}`;
+      : "";
+  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}${higherHigherHigherText}`;
 
 
   if (state.streak >= getCheatRewardThreshold()) {
@@ -2907,19 +2890,6 @@ function makeGuess(type) {
     setTimeout(() => {
       state.pauseForCheat = false;
       const nextReason = state.pendingPowerAwardQueue.shift() || "brucie_bonus";
-      offerRewardPowerChoice(nextReason);
-      render();
-    }, 1000);
-    return;
-  }
-
-  if ((catch22Triggered || higherHigherHigherCompleted) && (state.pendingPowerAwardQueue || []).length > 0) {
-    state.pauseForCheat = true;
-    state.message = appendEnergyFeedback(`${catch22Text}${higherHigherHigherText}`.trim() || "Choose 1 power.", revealDistance);
-    render();
-    setTimeout(() => {
-      state.pauseForCheat = false;
-      const nextReason = state.pendingPowerAwardQueue.shift() || (catch22Triggered ? "catch_22" : "higher_higher_higher");
       offerRewardPowerChoice(nextReason);
       render();
     }, 1000);

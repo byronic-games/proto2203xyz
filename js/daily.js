@@ -98,15 +98,13 @@ function normalizeDailyEntry(entry) {
       dailyClears: 0,
       summary: "",
     };
-  const normalizedScore = Math.max(0, Number(entry?.score || 0));
 
   return {
     dateKey: String(entry?.dateKey || ""),
     seed: String(entry?.seed || ""),
     playerName: String(entry?.playerName || "Unknown"),
     playerId: String(entry?.playerId || ""),
-    score: normalizedScore,
-    bestStreak: Math.max(0, Number(entry?.bestStreak ?? entry?.best_streak ?? Math.max(0, normalizedScore - 1)) || 0),
+    score: Math.max(0, Number(entry?.score || 0)),
     completed: entry?.completed !== false,
     createdAt: String(entry?.createdAt || new Date().toISOString()),
     source: String(entry?.source || "local"),
@@ -307,7 +305,6 @@ function buildDailyEntry({
   playerName,
   playerId,
   score,
-  bestStreak,
   completed = true,
   createdAt,
   source = "local",
@@ -345,7 +342,6 @@ function buildDailyEntry({
     playerName,
     playerId,
     score,
-    bestStreak,
     completed,
     createdAt: createdAt || new Date().toISOString(),
     source: normalizedSource,
