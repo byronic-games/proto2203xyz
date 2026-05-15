@@ -1,4 +1,4 @@
-const CACHE_VERSION = "20260515b";
+const CACHE_VERSION = "20260515c";
 const CACHE_NAME = `byronic-52-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -82,7 +82,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+    caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((response) => {
         if (!response || response.status !== 200 || response.type !== "basic") return response;
