@@ -598,6 +598,7 @@ function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
   if (name === "Blank Space") return "[]";
   if (name === "WL") return "W/L";
+  if (name === "One of Next 2 Higher?") return "?↑";
   if (name === "Margin For Error") return "+/-2";
   if (name === "Higher, Higher, Higher") return "^^^";
   if (name === "Back To Square One") return "A1";
