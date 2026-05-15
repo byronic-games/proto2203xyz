@@ -125,6 +125,7 @@ function createTutorialController() {
       title: "The Grid",
       copy: "The grid records the cards you have already found, helping you judge what values may still be face down.",
       clearView: true,
+      placement: "upper",
     },
     {
       target: "#cheats-panel",
