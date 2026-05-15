@@ -1278,11 +1278,10 @@ const CHEATS = [
     included: true,
     unlockAt: 0,
     stacking: "unique",
-    consumeOnUse: true,
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("The Higher The Better armed"),
     use: () => {
       if (!state.current) return "No current card.";
-      const currentVal = getCurrentEffectiveValue();
-      if (currentVal <= 1) return "The Higher The Better cannot be used on an Ace.";
       state.forcedNextGuess = "higher";
       state.lockCurrentCardForForcedGuess = true;
       return "The Higher The Better armed - card value locked and your next guess must be Higher.";
@@ -1296,11 +1295,10 @@ const CHEATS = [
     included: true,
     unlockAt: 0,
     stacking: "unique",
-    consumeOnUse: true,
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("The Lower The Better armed"),
     use: () => {
       if (!state.current) return "No current card.";
-      const currentVal = getCurrentEffectiveValue();
-      if (currentVal >= 13) return "The Lower The Better cannot be used on a King.";
       state.forcedNextGuess = "lower";
       state.lockCurrentCardForForcedGuess = true;
       return "The Lower The Better armed - card value locked and your next guess must be Lower.";
