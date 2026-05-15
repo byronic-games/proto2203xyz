@@ -221,6 +221,7 @@
       const selectedLevelKey = "hl_prototype_selected_level";
       const deckWinsKey = "hl_prototype_deck_wins";
       const deckLevelClearsKey = "hl_prototype_deck_level_clears";
+      const bestScoreKey = "hl_prototype_best_score";
       const bestScoresByModeKey = "hl_prototype_best_scores_by_mode";
       const manualLevelOneUnlocksKey = "hl_prototype_manual_level1_unlocks";
       const unlockDecksKey = "hl_prototype_unlock_decks";
@@ -379,6 +380,32 @@
         } catch {
           return {};
         }
+      }
+
+      function getBestScoreLabel(deckKey, levelNumber) {
+        const normalizedLevel = normalizeLevelNumber(levelNumber);
+        const bucketKey = getDeckLevelKey(deckKey, normalizedLevel);
+        const bestScores = loadBestScoresByMode();
+        const hasStoredScore = Object.prototype.hasOwnProperty.call(bestScores, bucketKey);
+        let score = hasStoredScore ? Number(bestScores[bucketKey]) : NaN;
+
+        if (!hasStoredScore && bucketKey === getDeckLevelKey("blue", 1)) {
+          const legacyScore = Number(localStorage.getItem(bestScoreKey));
+          if (Number.isFinite(legacyScore) && legacyScore > 0) score = legacyScore;
+        }
+
+        if (!Number.isFinite(score)) return "--";
+        return String(Math.max(0, Math.min(52, score)));
+      }
+
+      function setLevelDescription(descEl, description, deckKey, levelNumber, unlocked) {
+        if (!descEl) return;
+        descEl.textContent = description;
+        if (!unlocked) return;
+
+        const bestEl = document.createElement("strong");
+        bestEl.textContent = ` Best: ${getBestScoreLabel(deckKey, levelNumber)}/52`;
+        descEl.appendChild(bestEl);
       }
 
       function hasVerifiedDeckLevelClear(deckKey, levelNumber) {
@@ -600,18 +627,34 @@
               ? "Yellow progression unlocks from Blue Level 3. Each level adds another Joker hazard to the run."
               : "Red progression unlocks from Blue Level 2, then advances by clearing each Red level in order."));
 
-        levelOneDesc.textContent = levelOneUnlocked
-          ? getLevelDescription(pendingDeckSelection, 1)
-          : getLevelUnlockText(pendingDeckSelection, 1);
-        levelTwoDesc.textContent = levelTwoUnlocked
-          ? getLevelDescription(pendingDeckSelection, 2)
-          : getLevelUnlockText(pendingDeckSelection, 2);
-        levelThreeDesc.textContent = levelThreeUnlocked
-          ? getLevelDescription(pendingDeckSelection, 3)
-          : getLevelUnlockText(pendingDeckSelection, 3);
-        levelFourDesc.textContent = levelFourUnlocked
-          ? getLevelDescription(pendingDeckSelection, 4)
-          : getLevelUnlockText(pendingDeckSelection, 4);
+        setLevelDescription(
+          levelOneDesc,
+          levelOneUnlocked ? getLevelDescription(pendingDeckSelection, 1) : getLevelUnlockText(pendingDeckSelection, 1),
+          pendingDeckSelection,
+          1,
+          levelOneUnlocked,
+        );
+        setLevelDescription(
+          levelTwoDesc,
+          levelTwoUnlocked ? getLevelDescription(pendingDeckSelection, 2) : getLevelUnlockText(pendingDeckSelection, 2),
+          pendingDeckSelection,
+          2,
+          levelTwoUnlocked,
+        );
+        setLevelDescription(
+          levelThreeDesc,
+          levelThreeUnlocked ? getLevelDescription(pendingDeckSelection, 3) : getLevelUnlockText(pendingDeckSelection, 3),
+          pendingDeckSelection,
+          3,
+          levelThreeUnlocked,
+        );
+        setLevelDescription(
+          levelFourDesc,
+          levelFourUnlocked ? getLevelDescription(pendingDeckSelection, 4) : getLevelUnlockText(pendingDeckSelection, 4),
+          pendingDeckSelection,
+          4,
+          levelFourUnlocked,
+        );
 
         setChoiceCardState(levelOneBtn, levelOneUnlocked);
         setChoiceCardState(levelTwoBtn, levelTwoUnlocked);
