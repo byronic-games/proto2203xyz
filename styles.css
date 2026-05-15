@@ -4274,13 +4274,13 @@ body.choice-modal-open #controls,
 
 #cheat-choice-container .choice-modal {
   width: min(85vw, 560px);
-  height: min(64dvh, 560px);
-  min-height: min(64dvh, 560px);
+  height: min(70dvh, 600px);
+  min-height: min(70dvh, 600px);
   max-height: calc(100dvh - 32px);
   padding: 16px;
   display: grid;
-  grid-template-rows: auto auto minmax(168px, 1fr);
-  gap: 12px;
+  grid-template-rows: auto auto auto minmax(108px, 1fr);
+  gap: 10px;
   overflow: hidden;
 }
 
@@ -4300,6 +4300,19 @@ body.choice-modal-open #controls,
   text-transform: uppercase;
 }
 
+#cheat-choice-container .choice-current-card {
+  margin: -2px 0 0;
+}
+
+#cheat-choice-container .choice-current-card-label {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+#cheat-choice-container .choice-current-card-visual {
+  margin-top: 5px;
+}
+
 #power-choice-container .choice-title {
   margin: 0;
   letter-spacing: 0.08em;
@@ -4312,7 +4325,7 @@ body.choice-modal-open #controls,
   align-items: center;
   flex-wrap: nowrap;
   gap: 12px;
-  min-height: 96px;
+  min-height: 88px;
   overflow: visible;
   padding-bottom: 0;
 }
@@ -4547,7 +4560,7 @@ body.choice-modal-open #controls,
 
 .cheat-choice-info {
   min-height: 0;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
@@ -4584,14 +4597,14 @@ body.choice-modal-open #controls,
 }
 
 .cheat-choice-info-copy {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #e8e1f0;
   font-size: clamp(0.78rem, 3.35vw, 0.92rem);
-  line-height: 1.26;
+  line-height: 1.2;
 }
 
 .cheat-choice-info-hint {
-  margin-top: 10px;
+  margin-top: 7px;
   color: var(--muted);
 }
 

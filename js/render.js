@@ -1847,22 +1847,19 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
     return;
   }
 
-  if (mode === "power") {
-    const cardFaceClass = isJokerCard(card)
-      ? "joker-card-face"
-      : isRed(card)
-        ? "red"
-        : "black";
-    const cardMarkup = renderCardFaceMarkup(card, card.value, false, false);
-    el.innerHTML = `
-      <div class="choice-current-card-label">${label}:</div>
-      <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
-        ${cardMarkup}
-      </div>
-    `;
-  } else {
-    el.innerText = `${label}: ${describeCard(card)}`;
-  }
+  const cardFaceClass = isJokerCard(card)
+    ? "joker-card-face"
+    : isRed(card)
+      ? "red"
+      : "black";
+  const cardValue = Number.isFinite(card.value) ? card.value : getCurrentEffectiveValue();
+  const cardMarkup = renderCardFaceMarkup(card, cardValue, false, false);
+  el.innerHTML = `
+    <div class="choice-current-card-label">${label}:</div>
+    <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">
+      ${cardMarkup}
+    </div>
+  `;
   el.classList.remove("hidden");
 }
 
@@ -1870,6 +1867,7 @@ function renderCheatChoice() {
   const container = document.getElementById("cheat-choice-container");
   const list = document.getElementById("cheat-choice-list");
   const infoEl = document.getElementById("cheat-choice-info");
+  const currentCardEl = document.getElementById("cheat-choice-current-card");
 
   if (!container || !list || !infoEl) return;
 
@@ -1887,6 +1885,10 @@ function renderCheatChoice() {
     document.body.classList.remove("choice-modal-open", "cheat-choice-open");
     container.classList.add("hidden");
     container.setAttribute("aria-hidden", "true");
+    if (currentCardEl) {
+      currentCardEl.innerHTML = "";
+      currentCardEl.classList.add("hidden");
+    }
     renderCheatChoiceInfo(infoEl, null, "");
     return;
   }
@@ -1895,6 +1897,7 @@ function renderCheatChoice() {
   document.body.classList.add("choice-modal-open", "cheat-choice-open");
   container.classList.remove("hidden");
   container.setAttribute("aria-hidden", "false");
+  renderChoiceCurrentCard(currentCardEl, "cheat", "Current card");
 
   if (animation?.stage === "closing") {
     container.classList.add("is-closing");
