@@ -597,6 +597,12 @@ function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
   if (name === "Blank Space") return "[]";
   if (name === "WL") return "W/L";
+  if (name === "Margin For Error") return "+/-2";
+  if (name === "Higher, Higher, Higher") return "^^^";
+  if (name === "Back To Square One") return "A";
+  if (name === "A Stitch In Time Saves...") return "9+";
+  if (name === "Catch-22") return "22";
+  if (name === "Sixth Sense") return "6?";
   return CHEAT_ICON_BY_NAME[name] || "âœ¦";
 }
 

@@ -193,6 +193,12 @@ const CHEAT_DESCRIPTIONS = {
   "Odd One Out": "For the next card only: if it is odd, you lose. Aces count as odd even under Aces Wild. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
   "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
+  "Margin For Error": "Arm the current card. If your next guess is wrong but the revealed card is within 2 values of the face-up card, the run survives.",
+  "Higher, Higher, Higher": "Arm a three-step streak. If your next three successful revealed guesses are Higher, choose a new Power.",
+  "Back To Square One": "Temporarily treats the current face-up card as an Ace for your next guess.",
+  "A Stitch In Time Saves...": "Can only be used on a 9. If your next guess is wrong, the run still continues.",
+  "Catch-22": "Can only be used on a 2. If the next revealed card is also a 2, choose a new Power.",
+  "Sixth Sense": "Can only be used on a 6. Reveals whether the next card is higher, lower, or neither before you guess.",
   "6/7": "Use only on an un-nudged 6 or 7, and it must be the first and only cheat played on that card. Nudges then lock. Guess correctly to pick 3 cheats in a row. Guess wrong and you lose.",
   "Twin Peek": "Checks the next five cards and reveals whether any of them match the face-up card's current value.",
   "Run Stopper": "Checks the next five cards and reveals whether at least one Ace or King appears.",
@@ -888,6 +894,117 @@ const CHEATS = [
       if (currentVal !== 5) return "Five Alive can only be used on a 5.";
       state.fiveAliveArmed = true;
       return "Five Alive armed — a wrong next guess will still continue the run.";
+    },
+  },
+  {
+    id: "margin_for_error",
+    name: "Margin For Error",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Margin For Error armed"),
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (!getNextCardAt(1)) return "No next card.";
+      if (!Number.isFinite(getCurrentEffectiveValue())) return "Margin For Error needs a normal current card.";
+      state.marginForErrorArmed = true;
+      return "Margin For Error armed - it will resolve when the next card is revealed.";
+    },
+  },
+  {
+    id: "higher_higher_higher",
+    name: "Higher, Higher, Higher",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Higher, Higher, Higher armed"),
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (!getNextCardAt(1)) return "No next card.";
+      state.higherHigherHigherRemaining = 3;
+      return "Higher, Higher, Higher armed - make the next three successful revealed guesses Higher to choose a power.";
+    },
+  },
+  {
+    id: "back_to_square_one",
+    name: "Back To Square One",
+    rarity: "common",
+    weight: 0.9,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (isJokerCard(state.current)) return "Back To Square One needs a normal current card.";
+      const currentValue = getCurrentEffectiveValue();
+      if (!Number.isFinite(currentValue)) return "Back To Square One needs a normal current card.";
+      state.currentValueModifier += 1 - currentValue;
+      return "Back To Square One - current card is treated as an Ace for the next guess.";
+    },
+  },
+  {
+    id: "stitch_in_time",
+    name: "A Stitch In Time Saves...",
+    rarity: "rare",
+    weight: 0.8,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("A Stitch In Time armed"),
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (getCurrentEffectiveValue() !== 9) return "A Stitch In Time Saves... can only be used on a 9.";
+      if (!getNextCardAt(1)) return "No next card.";
+      state.stitchInTimeArmed = true;
+      return "A Stitch In Time armed - if the next guess is wrong, the run continues.";
+    },
+  },
+  {
+    id: "catch_22",
+    name: "Catch-22",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Catch-22 armed"),
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (getCurrentEffectiveValue() !== 2) return "Catch-22 can only be used on a 2.";
+      if (!getNextCardAt(1)) return "No next card.";
+      state.catch22Armed = true;
+      return "Catch-22 armed - it will resolve when the next card is revealed.";
+    },
+  },
+  {
+    id: "sixth_sense",
+    name: "Sixth Sense",
+    rarity: "uncommon",
+    weight: 0.85,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      const currentValue = getCurrentEffectiveValue();
+      if (currentValue !== 6) return "Sixth Sense can only be used on a 6.";
+      const next = getNextCardAt(1);
+      if (!next) return "No next card.";
+      if (isJokerCard(next)) return "Sixth Sense: Joker.";
+      const nextValue = getUpcomingCheatValue(1);
+      if (nextValue > currentValue) return "Sixth Sense: next card is higher.";
+      if (nextValue < currentValue) return "Sixth Sense: next card is lower.";
+      return "Sixth Sense: next card is neither higher nor lower.";
     },
   },
   {
