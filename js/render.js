@@ -916,6 +916,7 @@ function renderNudgeControls() {
   const downBtn = document.getElementById("nudge-down-btn");
   const upCountEl = document.getElementById("nudge-up-count");
   const downCountEl = document.getElementById("nudge-down-count");
+  const cheatsPanel = document.getElementById("cheats-panel");
 
   if (!upBtn || !downBtn || !upCountEl || !downCountEl) return;
 
@@ -924,6 +925,8 @@ function renderNudgeControls() {
 
   upCountEl.innerText = String(upCount);
   downCountEl.innerText = String(downCount);
+  upBtn.setAttribute("aria-label", `Nudge Up, ${upCount} charge${upCount === 1 ? "" : "s"} available`);
+  downBtn.setAttribute("aria-label", `Nudge Down, ${downCount} charge${downCount === 1 ? "" : "s"} available`);
 
   const isBlocked =
     state.gameOver ||
@@ -936,6 +939,9 @@ function renderNudgeControls() {
   const revealLocked = !!state.pendingRevealAnimation;
   upBtn.classList.toggle("keep-bright", revealLocked);
   downBtn.classList.toggle("keep-bright", revealLocked);
+  if (cheatsPanel) {
+    cheatsPanel.classList.toggle("nudge-order-up-down", loadNudgeButtonOrder() === "up-down");
+  }
 
   upBtn.disabled = isBlocked || !canUseNudge("up");
   downBtn.disabled = isBlocked || !canUseNudge("down");
@@ -1545,7 +1551,7 @@ function renderCheats() {
   const nudgeUpCount = Math.max(0, Number(state.nudgeUpCharges) || 0);
   const nudgeDownCount = Math.max(0, Number(state.nudgeDownCharges) || 0);
 
-  if (nudgeDownCount > 0) {
+  if (false && nudgeDownCount > 0) {
     groupedEntries.push({
       kind: "nudge",
       id: "nudge_down",
@@ -1560,7 +1566,7 @@ function renderCheats() {
     });
   }
 
-  if (nudgeUpCount > 0) {
+  if (false && nudgeUpCount > 0) {
     groupedEntries.push({
       kind: "nudge",
       id: "nudge_up",

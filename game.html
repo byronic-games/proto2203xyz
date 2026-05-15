@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260512z">
+  <link rel="stylesheet" href="styles.css?v=20260515a">
 </head>
 <body class="game-page">
   <div id="game-shell">
@@ -88,7 +88,19 @@
         <div class="layout-gap layout-gap-info-cheats" aria-hidden="true"></div>
 
         <section id="cheats-panel">
-          <div id="cheat-list"></div>
+          <button id="nudge-down-btn" class="cheat-button nudge-cheat-button nudge-arrow nudge-down-control common" type="button" aria-label="Nudge Down">
+            <div class="cheat-icon nudge-symbol" aria-hidden="true">&darr;</div>
+            <div class="cheat-name">Nudge Down</div>
+            <div class="cheat-count-label nudge-charge-label"><span id="nudge-down-count" class="nudge-charge-number">0</span><span class="nudge-charge-word">charges</span></div>
+          </button>
+          <button id="nudge-up-btn" class="cheat-button nudge-cheat-button nudge-arrow nudge-up-control common" type="button" aria-label="Nudge Up">
+            <div class="cheat-icon nudge-symbol" aria-hidden="true">&uarr;</div>
+            <div class="cheat-name">Nudge Up</div>
+            <div class="cheat-count-label nudge-charge-label"><span id="nudge-up-count" class="nudge-charge-number">0</span><span class="nudge-charge-word">charges</span></div>
+          </button>
+          <div class="cheat-scroll-window">
+            <div id="cheat-list"></div>
+          </div>
         </section>
 
         <div id="controls">
@@ -166,6 +178,14 @@
               <select id="settings-button-order-select">
                 <option value="lower-higher" selected>Lower / Higher</option>
                 <option value="higher-lower">Higher / Lower</option>
+              </select>
+            </label>
+
+            <label class="settings-row" for="settings-nudge-order-select">
+              <span>Nudges</span>
+              <select id="settings-nudge-order-select">
+                <option value="down-up" selected>Down / Up</option>
+                <option value="up-down">Up / Down</option>
               </select>
             </label>
 
@@ -276,8 +296,8 @@
   </div>
 
   <script src="js/fullscreen.js?v=20260506b"></script>
-  <script src="js/constants.js?v=20260512z"></script>
-  <script src="js/storage.js?v=20260512z"></script>
+  <script src="js/constants.js?v=20260515a"></script>
+  <script src="js/storage.js?v=20260515a"></script>
   <script src="js/state.js?v=20260512y"></script>
   <script src="js/powers.js?v=20260512y"></script>
   <script src="js/cheats.js?v=20260506b"></script>
@@ -286,8 +306,8 @@
   <script src="js/leaderboard.js?v=20260425c"></script>
 <script src="js/daily.js?v=20260429a"></script>
   <script src="js/logic.js?v=20260512z"></script>
-  <script src="js/render.js?v=20260512z"></script>
-  <script src="js/input.js?v=20260512z"></script>
+  <script src="js/render.js?v=20260515a"></script>
+  <script src="js/input.js?v=20260515a"></script>
   <script src="js/main.js?v=20260414a"></script>
 </body>
 </html>

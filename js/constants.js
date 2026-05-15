@@ -37,6 +37,7 @@ const GAME_STATE_SNAPSHOT_KEY = "hl_prototype_game_state_snapshot";
     const UNLOCK_DECKS_KEY = "hl_prototype_unlock_decks";
     const UNLOCK_ALL_KEY = "hl_prototype_unlock_all";
     const GUESS_BUTTON_ORDER_KEY = "hl_prototype_guess_button_order";
+    const NUDGE_BUTTON_ORDER_KEY = "hl_prototype_nudge_button_order";
     const RED_DECK_DEBUG_UNLOCK_KEY = "hl_prototype_red_deck_debug_unlock";
     const PROFILE_STATS_KEY = "hl_prototype_profile_stats";
     const RUN_SEED_KEY = "hl_prototype_last_seed";

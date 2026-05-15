@@ -4129,9 +4129,12 @@ body.choice-modal-open #controls,
 
 #cheats-panel {
   min-height: 0;
+  container-type: size;
   display: grid !important;
+  grid-template-columns: auto auto minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
-  gap: 0;
+  gap: clamp(6px, 2.1cqw, 10px);
+  align-items: stretch;
 }
 
 #cheats-panel .section-bar {
@@ -4141,9 +4144,19 @@ body.choice-modal-open #controls,
 #cheat-list {
   min-height: 0;
   align-items: stretch;
+  height: 100%;
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.cheat-scroll-window {
+  min-width: 0;
+  min-height: 0;
+  padding-left: clamp(10px, 3.2cqw, 16px);
+  border-left: 1px solid rgba(226, 232, 240, 0.38);
+  overflow: hidden;
+  container-type: size;
 }
 
 .cheat-button,
@@ -4949,8 +4962,44 @@ body.choice-modal-open #controls,
 #cheat-list {
   justify-content: flex-start !important;
   gap: clamp(8px, 3cqw, 14px) !important;
-  padding-inline: clamp(4px, 2cqw, 10px);
+  padding-inline: 0 clamp(4px, 2cqw, 10px);
   scroll-snap-type: none !important;
+}
+
+#cheats-panel.nudge-order-up-down .nudge-up-control {
+  order: 1;
+}
+
+#cheats-panel.nudge-order-up-down .nudge-down-control {
+  order: 2;
+}
+
+#cheats-panel.nudge-order-up-down .cheat-scroll-window {
+  order: 3;
+}
+
+.nudge-down-control {
+  order: 1;
+}
+
+.nudge-up-control {
+  order: 2;
+}
+
+.cheat-scroll-window {
+  order: 3;
+}
+
+#cheats-panel > .nudge-arrow {
+  width: min(clamp(58px, 16cqw, 76px), calc(84cqh - 2px)) !important;
+  min-width: min(clamp(58px, 16cqw, 76px), calc(84cqh - 2px)) !important;
+  max-width: min(clamp(58px, 16cqw, 76px), calc(84cqh - 2px)) !important;
+  height: min(calc(100cqh - 2px), clamp(70px, 19cqw, 92px)) !important;
+  min-height: min(calc(100cqh - 2px), clamp(70px, 19cqw, 92px)) !important;
+  max-height: calc(100cqh - 2px) !important;
+  align-self: center;
+  aspect-ratio: auto;
+  border-radius: clamp(14px, 4cqw, 20px) !important;
 }
 
 .cheat-button,
@@ -5042,6 +5091,54 @@ body.choice-modal-open #controls,
   margin-top: 1px;
   background: rgba(14, 10, 18, 0.58);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+}
+
+#cheats-panel > .nudge-cheat-button {
+  padding: clamp(6px, 1.7cqw, 8px) clamp(5px, 1.5cqw, 7px) !important;
+  gap: clamp(1px, 0.55cqw, 2px) !important;
+}
+
+#cheats-panel > .nudge-cheat-button .cheat-icon {
+  font-size: clamp(1.12rem, 4.25cqw, 1.48rem) !important;
+}
+
+#cheats-panel > .nudge-cheat-button .cheat-name {
+  max-width: 92%;
+  font-size: clamp(0.42rem, 1.38cqw, 0.56rem) !important;
+  color: #111111 !important;
+}
+
+#cheats-panel > .nudge-cheat-button .cheat-count-label {
+  max-width: 94%;
+  padding: 0.2em 0.5em 0.24em;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#cheats-panel > .nudge-cheat-button .nudge-charge-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+}
+
+.nudge-charge-number {
+  display: block;
+  font-size: clamp(1rem, 4.5cqw, 1.5rem);
+  font-weight: 900;
+  line-height: 0.9;
+  color: #111111;
+}
+
+.nudge-charge-word {
+  display: block;
+  margin-top: 1px;
+  font-size: clamp(0.34rem, 1.08cqw, 0.46rem);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #111111;
 }
 
 .cheat-stack-count {
@@ -5192,6 +5289,19 @@ body[data-visuals="new"] #game[data-deck="red"] .card-face {
 
 body[data-visuals="new"] #game[data-deck="green"] .card-face {
   box-shadow: inset 0 0 0 var(--card-ring) #22c55e, 0 2px 8px rgba(0,0,0,0.12);
+}
+
+body[data-visuals="new"] .choice-current-card-visual.card-face {
+  --card-ring: 1px;
+  box-shadow: inset 0 0 0 var(--card-ring) rgba(59, 130, 246, 0.48), 0 2px 6px rgba(0,0,0,0.1);
+}
+
+body[data-visuals="new"] #game[data-deck="red"] .choice-current-card-visual.card-face {
+  box-shadow: inset 0 0 0 var(--card-ring) rgba(239, 68, 68, 0.46), 0 2px 6px rgba(0,0,0,0.1);
+}
+
+body[data-visuals="new"] #game[data-deck="green"] .choice-current-card-visual.card-face {
+  box-shadow: inset 0 0 0 var(--card-ring) rgba(34, 197, 94, 0.46), 0 2px 6px rgba(0,0,0,0.1);
 }
 
 body[data-visuals="new"] .card-face.temporary-value {

@@ -14,7 +14,7 @@
 - Deck progression order: Blue -> Green -> Red -> Yellow.
 - Levels: 1-4 currently wired for Blue, Green, Red, and Yellow.
 - Yellow Level 1 unlocks after Blue Level 3. Yellow levels add Joker hazards: Tearless, Nudgeless, Cheatless, then Powerless.
-- Settings include an Unlock Decks toggle for testing Level 1 of locked decks without changing clear history, plus a button-order preference for Lower / Higher vs Higher / Lower.
+- Settings include an Unlock Decks toggle for testing Level 1 of locked decks without changing clear history, plus guess-button and nudge-button order preferences.
 - Daily and Heroes use Supabase when online; local fallback exists.
 - Daily leaderboard loads now retry-upload a completed local Daily attempt if the matching `date_key` + `player_id` row is missing online.
 - Daily now has a share button on the result panel, but it is intentionally code-gated off for now with `DAILY_SHARE_ENABLED = false` in `js/daily-page.js`.
@@ -49,7 +49,7 @@
   - `#game-shell` / `#game` now run edge-to-edge using `--app-height`
 - Visual styling in `styles.css` and `js/render.js`:
   - `renderCardFaceMarkup` emits NEW-theme corner-rank + suit-image markup when `body[data-visuals="new"]`
-  - cheat inventory and cheat choices use circular coin treatment with rarity CSS variables
+  - cheat inventory and cheat choices use circular coin treatment with rarity CSS variables; nudge controls are permanent coins beside the cheat scroll window
   - power choice cards and header power chip share shield SVG styling
 - Tutorial flow in `js/input.js`:
   - power-pick blocking relaxed

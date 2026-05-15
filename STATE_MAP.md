@@ -10,6 +10,7 @@
 - `hl_prototype_unlock_decks`
 - `hl_prototype_unlock_all`
 - `hl_prototype_guess_button_order`
+- `hl_prototype_nudge_button_order`
 - `hl_prototype_daily_player_id`
 - `hl_prototype_daily_attempts_local`
 - `hl_prototype_hero_name`

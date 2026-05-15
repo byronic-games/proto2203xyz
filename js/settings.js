@@ -12,6 +12,7 @@ const tutorialReplayStatus = document.getElementById("tutorial-replay-status");
 const unlockDecksToggle = document.getElementById("unlock-decks-toggle");
 const unlockDecksStatus = document.getElementById("unlock-decks-status");
 const buttonOrderSelect = document.getElementById("button-order-select");
+const nudgeOrderSelect = document.getElementById("nudge-order-select");
 const closeSettingsBtn = document.getElementById("settings-close-btn");
 
 let holdStartedAt = 0;
@@ -87,6 +88,12 @@ function refreshUnlockDecksState() {
 function refreshButtonOrderState() {
   if (buttonOrderSelect) {
     buttonOrderSelect.value = loadGuessButtonOrder();
+  }
+}
+
+function refreshNudgeOrderState() {
+  if (nudgeOrderSelect) {
+    nudgeOrderSelect.value = loadNudgeButtonOrder();
   }
 }
 
@@ -297,6 +304,11 @@ buttonOrderSelect?.addEventListener("change", (event) => {
   saveGuessButtonOrder(event.target.value);
 });
 
+nudgeOrderSelect?.addEventListener("change", (event) => {
+  saveNudgeButtonOrder(event.target.value);
+});
+
 refreshRunLogExportState();
 refreshUnlockDecksState();
 refreshButtonOrderState();
+refreshNudgeOrderState();

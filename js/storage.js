@@ -369,6 +369,19 @@ function saveGuessButtonOrder(order) {
   );
 }
 
+function loadNudgeButtonOrder() {
+  return localStorage.getItem(NUDGE_BUTTON_ORDER_KEY) === "up-down"
+    ? "up-down"
+    : "down-up";
+}
+
+function saveNudgeButtonOrder(order) {
+  localStorage.setItem(
+    NUDGE_BUTTON_ORDER_KEY,
+    order === "up-down" ? "up-down" : "down-up"
+  );
+}
+
 function loadSelectedDeck() {
   return normalizeDeckKey(localStorage.getItem(SELECTED_DECK_KEY) || "blue");
 }

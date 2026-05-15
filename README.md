@@ -35,7 +35,7 @@ Mobile-first browser card game (higher/lower) with deck progression, powers, che
 - `styles.css` owns the sizing system for that stack. The late-file "Structured vertical layout system" uses container queries and fixed row variables (`--header-height`, `--info-height`, `--cheats-height`, `--buttons-height`) so mobile screens fit without scrolling.
 - `js/fullscreen.js` updates `--app-height` from `visualViewport.height`; layout checks should include Android browser chrome and standalone/home-screen mode.
 - The `NEW` visuals mode is the default in `game.html` settings. `js/render.js` emits different card markup for `body[data-visuals="new"]`, and `styles.css` maps suit icons from `images/Suits/`.
-- Cheat inventory and cheat-choice items are styled as circular rarity coins. Power choice and the header power indicator use shield-shaped SVG styling.
+- Cheat inventory and cheat-choice items are styled as circular rarity coins. Nudge controls are permanent coins beside the cheat window. Power choice and the header power indicator use shield-shaped SVG styling.
 - Yellow runs show remaining Jokers in the compact `next-info` area and use the main message bar for Joker effects.
 
 ## Current Priority
@@ -43,7 +43,7 @@ Mobile-first browser card game (higher/lower) with deck progression, powers, che
 
 ## Recent Ops Notes
 - Yellow deck adds level-gated Joker hazards: Tearless, Nudgeless, Cheatless, and Powerless. Unlock Decks in settings opens Level 1 of every deck for testing.
-- Players can choose Lower / Higher or Higher / Lower button order in Settings; the buttons keep their existing styles.
+- Players can choose Lower / Higher or Higher / Lower guess button order and Down / Up or Up / Down nudge order in Settings; the controls keep their existing styles.
 - Daily leaderboard loads retry-upload a completed local Daily attempt when that player's online row is missing.
 - Tutorial highlighting now styles the actual target element instead of a separate floating highlight box. Rendered card elements preserve the focus class across redraws, and focused tutorial targets throb again.
 - Choice modals are intended to hide the gameplay `Higher / Lower` row while open.

@@ -742,6 +742,7 @@ function refreshSettingsModalState() {
   const tutorialToggle = document.getElementById("settings-tutorial-toggle");
   const visualsSelect = document.getElementById("settings-visuals-select");
   const buttonOrderSelect = document.getElementById("settings-button-order-select");
+  const nudgeOrderSelect = document.getElementById("settings-nudge-order-select");
   const unlockDecksToggle = document.getElementById("settings-unlock-decks-toggle");
   const shareLogBtn = document.getElementById("settings-share-log-btn");
   const downloadLogBtn = document.getElementById("settings-download-log-btn");
@@ -755,6 +756,9 @@ function refreshSettingsModalState() {
   }
   if (buttonOrderSelect) {
     buttonOrderSelect.value = loadGuessButtonOrder();
+  }
+  if (nudgeOrderSelect) {
+    nudgeOrderSelect.value = loadNudgeButtonOrder();
   }
   if (unlockDecksToggle) {
     unlockDecksToggle.checked = loadUnlockDecks();
@@ -990,6 +994,14 @@ document.getElementById("settings-button-order-select")?.addEventListener("chang
   setSettingsModalStatus(event.target.value === "higher-lower"
     ? "Guess buttons set to Higher / Lower."
     : "Guess buttons set to Lower / Higher.");
+});
+
+document.getElementById("settings-nudge-order-select")?.addEventListener("change", (event) => {
+  saveNudgeButtonOrder(event.target.value);
+  render();
+  setSettingsModalStatus(event.target.value === "up-down"
+    ? "Nudges set to Up / Down."
+    : "Nudges set to Down / Up.");
 });
 
 document.getElementById("settings-unlock-decks-toggle")?.addEventListener("change", (event) => {
