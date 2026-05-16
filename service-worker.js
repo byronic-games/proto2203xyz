@@ -1,4 +1,4 @@
-const CACHE_VERSION = "20260515d";
+const CACHE_VERSION = "20260516d";
 const CACHE_NAME = `byronic-52-${CACHE_VERSION}`;
 
 const APP_SHELL = [

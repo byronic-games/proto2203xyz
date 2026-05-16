@@ -193,7 +193,7 @@ const CHEAT_DESCRIPTIONS = {
   "Odd One Out": "For the next card only: if it is odd, you lose. Aces count as odd even under Aces Wild. Otherwise you survive.",
   "Lucky 7": "Can only be used on a 7. Your next wrong guess still counts as correct.",
   "Five Alive": "Can only be used on a 5. If your next guess is wrong, the run still continues.",
-  "Margin For Error": "If your next guess is wrong by 2 or less, the run continues.",
+  "Psycho": "For the next three guesses, you cannot use Cheats or Nudges. Survive all three to choose a new Power.",
   "Higher, Higher, Higher": "Choose a new Power if your next three successful guesses are Higher.",
   "Back To Square One": "Treat the current face-up card as an Ace for the next guess.",
   "A Stitch In Time Saves...": "Can only be used on a 9. If your next guess is wrong, the run continues.",
@@ -208,7 +208,6 @@ const CHEAT_DESCRIPTIONS = {
   "Jack Of All Trades": "Can only be used on a Jack. Swap the current Jack with the next face-down card and reveal that new current card.",
   "Fortune Teller": "Reveals the values of the next three face-down cards in a random order.",
   "Equals 11": "Arm this card. If it and the next revealed card total 11, choose 3 extra cheats.",
-  "Blank Space": "Blank the next card for one turn. Nudge it for free, then guess correctly to immediately choose a new power.",
   "WL": "Win your next guess, then lose the one after. If you do, the run survives and you choose 3 extra cheats.",
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
   "Suits You, Sir": "If the next card is the same suit as the current card, gain 5 Nudge +1 and 5 Nudge -1 charges.",
@@ -218,7 +217,7 @@ const CHEAT_DESCRIPTIONS = {
   "Suited and Booted": "Survive your next guess regardless of outcome unless the revealed next card matches the current card's suit.",
   "Always Bet On The Black": "For the next card only: if it is a Club or a Spade, the run survives even on a wrong guess.",
   "Locky 7s": "Gain 10 Nudge +1 and 10 Nudge -1 charges. From then on, any card that is or becomes a 7 locks at 7 and cannot be nudged.",
-  "Hot or Cold?": "Is the next card within 7 values of the current face card, up or down?",
+  "Margin Of Error": "If your next guess is wrong by 3 or less, the run continues.",
   "Corporate Icebreaker": "Hear two true value-and-suit facts and one believable lie about the next three cards.",
   "Tear Corner": "Tear off the top left corner of the current face card so it can be recognised in future runs.",
 };
@@ -921,22 +920,6 @@ const CHEATS = [
     },
   },
   {
-    id: "margin_for_error",
-    name: "Margin For Error",
-    rarity: "rare",
-    weight: 0.8,
-    included: true,
-    unlockAt: 0,
-    stacking: "unique",
-    consumeOnUse: true,
-    use: () => {
-      if (!state.current) return "No current card.";
-      if (!getNextCardAt(1)) return "No next card.";
-      state.marginForErrorArmed = true;
-      return "Margin For Error armed - a wrong next guess survives if the values differ by 2 or less.";
-    },
-  },
-  {
     id: "higher_higher_higher",
     name: "Higher, Higher, Higher",
     rarity: "rare",
@@ -949,6 +932,22 @@ const CHEATS = [
       if (!state.current) return "No current card.";
       state.higherHigherHigherRemaining = 3;
       return "Higher, Higher, Higher armed - make your next 3 successful guesses Higher to choose a Power.";
+    },
+  },
+  {
+    id: "psycho",
+    name: "Psycho",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 0,
+    stacking: "unique",
+    consumeOnUse: true,
+    use: () => {
+      if (!state.current) return "No current card.";
+      if (state.psychoRemaining > 0) return "Psycho is already active.";
+      state.psychoRemaining = 3;
+      return "Psycho active - no Cheats or Nudges for 3 turns. Survive all 3 to choose a Power.";
     },
   },
   {
@@ -1179,27 +1178,6 @@ const CHEATS = [
     },
   },
   {
-    id: "blank_space",
-    name: "Blank Space",
-    rarity: "uncommon",
-    weight: 0.85,
-    included: false,
-    unlockAt: 0,
-    stacking: "unique",
-    consumeOnUse: false,
-    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Blank Space armed"),
-    use: () => {
-      const next = getNextCardAt(1);
-      if (!next || isJokerCard(next)) return "Blank Space needs a normal next card.";
-      if (!state.current) return "Blank Space needs a current card.";
-      if (state.blankSpaceActive) return "Blank Space is already active.";
-      state.blankSpaceActive = true;
-      state.blankSpaceValue = getCurrentEffectiveValue();
-      state.nextCardValueModifier = 0;
-      return "Blank Space armed - the next card is blanked. Nudge it for free, then guess correctly to choose a power.";
-    },
-  },
-  {
     id: "wl",
     name: "WL",
     rarity: "uncommon",
@@ -1247,7 +1225,7 @@ const CHEATS = [
       if (nextSuit !== state.current.suit) {
         return nextSuit
           ? `No match - current ${state.current.suit}, next ${nextSuit}.`
-          : "Blank Space removed the next card's suit - no suit match.";
+          : "Next card has no suit - no suit match.";
       }
       state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 5;
       state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 5;
@@ -1365,20 +1343,21 @@ const CHEATS = [
   },
   {
     id: "hot_or_cold",
-    name: "Hot or Cold?",
+    name: "Margin Of Error",
     rarity: "common",
     weight: 1,
     included: true,
     unlockAt: 0,
     stacking: "unique",
-    consumeOnUse: true,
+    consumeOnUse: false,
+    shouldConsumeResult: (result) => typeof result === "string" && result.startsWith("Margin Of Error armed"),
     use: () => {
       if (!state.current) return "No current card.";
       const next = getNextCardAt(1);
       if (!next) return "No next card.";
       if (isJokerCard(next)) return "Joker.";
-      const difference = Math.abs(getUpcomingCheatValue(1) - getCurrentEffectiveValue());
-      return difference <= 7 ? "Hot - within 7." : "Cold - more than 7 away.";
+      state.hotOrColdArmed = true;
+      return "Margin Of Error armed - a wrong next guess survives if the values differ by 3 or less.";
     },
   },
   {

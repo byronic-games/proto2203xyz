@@ -2839,12 +2839,12 @@ body.choice-modal-open #controls,
 #cheat-tooltip {
   position: fixed;
   z-index: 1200;
-  max-width: min(260px, calc(100vw - 20px));
+  width: min(260px, calc(100vw - 24px));
   padding: 10px 12px;
   border-radius: 10px;
   background: rgba(12, 8, 18, 0.98);
   box-shadow: var(--shadow);
-  transform: translate(-50%, -110%);
+  transform: none;
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;

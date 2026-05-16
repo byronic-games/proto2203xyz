@@ -28,7 +28,7 @@ double_trouble,Double Trouble,rare,55,TRUE,unique,1,,Meta progression >= 7,"Trea
 odd_one_out,Odd One Out,rare,30,TRUE,unique,1,,Meta progression >= 6,"For the next card only: if it is odd, you lose. Otherwise you survive."
 lucky_7,Lucky 7,rare,10,TRUE,unique,1,,Meta progression >= 8 | Can only be used on a 7.,Can only be used on a 7. Your next wrong guess still counts as correct.
 five_alive,Five Alive,rare,10,TRUE,unique,1,,Meta progression >= 9 | Can only be used on a 5.,"Can only be used on a 5. If your next guess is wrong, the run still continues."
-margin_for_error,Margin For Error,rare,0,TRUE,unique,0.8,,Available from run start,A wrong guess survives the run if the difference between the face up card and the next card is two or less.
+psycho,Psycho,rare,0,TRUE,unique,0.75,,Available from run start,Prevents Cheats and Nudges for three turns. Survive all three to choose a new Power.
 higher_higher_higher,"Higher, Higher, Higher",rare,0,TRUE,unique,0.75,,Available from run start,Choose a new Power if the next three successful guesses are Higher.
 back_to_square_one,Back To Square One,uncommon,0,TRUE,unique,0.85,,Available from run start,Temporarily changes the face up card value into an Ace.
 stitch_in_time_saves,A Stitch In Time Saves...,rare,0,TRUE,unique,0.8,,Can only be used on a 9.,"Can only be played on a nine. If the next guess is wrong, the run continues."

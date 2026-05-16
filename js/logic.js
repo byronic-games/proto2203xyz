@@ -499,6 +499,8 @@ function offerRewardPowerChoice(reason = "bonus") {
     ? "Brucie Bonus! Choose 1 power:"
     : state.activePowerAwardReason === "blank_space"
       ? "Blank Space hit! Choose 1 power:"
+    : state.activePowerAwardReason === "psycho"
+      ? "Psycho complete! Choose 1 power:"
     : "Choose 1 power:";
 
   appendRunDebugLog("power_offer_presented", {
@@ -801,6 +803,11 @@ function startRunWithPower(powerId) {
     lastJokerMessage: "",
     lucky7Armed: false,
     fiveAliveArmed: false,
+    marginForErrorArmed: false,
+    hotOrColdArmed: false,
+    stitchInTimeArmed: false,
+    higherHigherHigherRemaining: 0,
+    psychoRemaining: 0,
     godSaveKingArmed: false,
     alwaysBetBlackArmed: false,
     lockySevensActive: false,
@@ -814,6 +821,7 @@ function startRunWithPower(powerId) {
     lockCurrentCardForForcedGuess: false,
     cheatACheaterRemaining: 0,
     equals11Armed: false,
+    catch22Armed: false,
     wlStage: "",
   };
 
@@ -1090,6 +1098,7 @@ function canUseNudge(direction) {
     !state.current ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
+    (state.psychoRemaining || 0) > 0 ||
     !!state.sixSevenArmed ||
     !!state.pauseForCheat;
   if (isBlocked) return false;
@@ -1119,11 +1128,17 @@ function canUseNudge(direction) {
 
 function useNudgeCharge(direction) {
   const blankSpaceActive = !!state.blankSpaceActive && !!peekNext();
+  if ((state.psychoRemaining || 0) > 0) {
+    state.message = `Psycho is active - no Cheats or Nudges for ${state.psychoRemaining} more turn${state.psychoRemaining === 1 ? "" : "s"}.`;
+    render();
+    return;
+  }
   if (
     state.gameOver ||
     !state.current ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
+    (state.psychoRemaining || 0) > 0 ||
     (!blankSpaceActive && !!state.lockCurrentCardForForcedGuess) ||
     !!state.pauseForCheat
   ) {
@@ -1598,6 +1613,9 @@ function makeGuessLegacy(type) {
 
   const currentComparisonValue = getCurrentEffectiveValue();
   const nextComparisonValue = getNextComparisonValueForGuess(next);
+  const revealDistance = Number.isFinite(nextComparisonValue) && Number.isFinite(currentComparisonValue)
+    ? Math.abs(nextComparisonValue - currentComparisonValue)
+    : 0;
   const nextModifierBeforeGuess = state.nextCardValueModifier || 0;
   const lockySevenCarryModifier = getLockySevenCarryModifier(next, nextComparisonValue, nextModifierBeforeGuess);
   const currentWasBase = state.currentValueModifier === 0;
@@ -1608,8 +1626,10 @@ function makeGuessLegacy(type) {
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
   const marginForErrorWasArmed = !!state.marginForErrorArmed;
+  const hotOrColdWasArmed = !!state.hotOrColdArmed;
   const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
   const higherHigherHigherRemainingBeforeGuess = Number(state.higherHigherHigherRemaining || 0);
+  const psychoRemainingBeforeGuess = Number(state.psychoRemaining || 0);
   const catch22WasArmed = !!state.catch22Armed;
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
   const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
@@ -1628,6 +1648,7 @@ function makeGuessLegacy(type) {
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
   state.marginForErrorArmed = false;
+  state.hotOrColdArmed = false;
   state.stitchInTimeArmed = false;
   state.catch22Armed = false;
   state.godSaveKingArmed = false;
@@ -1650,6 +1671,7 @@ function makeGuessLegacy(type) {
   let rescuedByCursedShield = false;
   let rescuedBySuitedAndBooted = false;
   let rescuedByMarginForError = false;
+  let rescuedByHotOrCold = false;
   let rescuedByStitchInTime = false;
 
   const forcedNudgeDirection =
@@ -1734,6 +1756,7 @@ function makeGuessLegacy(type) {
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
     rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && revealDistance <= 2;
+    rescuedByHotOrCold = !comparisonCorrect && hotOrColdWasArmed && revealDistance <= 3;
     rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && getNextComparisonValueForGuess(next) === 13;
     rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (next.suit === SUITS[0] || next.suit === SUITS[3]);
@@ -1745,6 +1768,7 @@ function makeGuessLegacy(type) {
       rescuedByLucky7 ||
       rescuedByFiveAlive ||
       rescuedByMarginForError ||
+      rescuedByHotOrCold ||
       rescuedByStitchInTime ||
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
@@ -1835,6 +1859,7 @@ function makeGuessLegacy(type) {
       lucky7WasArmed,
       fiveAliveWasArmed,
       marginForErrorWasArmed,
+      hotOrColdWasArmed,
       stitchInTimeWasArmed,
       godSaveKingWasArmed,
       alwaysBetBlackWasArmed,
@@ -1907,8 +1932,10 @@ function makeGuessLegacy(type) {
             ? "suited_and_booted"
             : rescuedByMarginForError
               ? "margin_for_error"
-              : rescuedByStitchInTime
-                ? "stitch_in_time_saves"
+              : rescuedByHotOrCold
+                ? "hot_or_cold"
+                : rescuedByStitchInTime
+                  ? "stitch_in_time_saves"
         : lucky7WasArmed
           ? "lucky_7"
           : fiveAliveWasArmed
@@ -2290,8 +2317,10 @@ function makeGuess(type) {
   const lucky7WasArmed = !!state.lucky7Armed;
   const fiveAliveWasArmed = !!state.fiveAliveArmed;
   const marginForErrorWasArmed = !!state.marginForErrorArmed;
+  const hotOrColdWasArmed = !!state.hotOrColdArmed;
   const stitchInTimeWasArmed = !!state.stitchInTimeArmed;
   const higherHigherHigherRemainingBeforeGuess = Number(state.higherHigherHigherRemaining || 0);
+  const psychoRemainingBeforeGuess = Number(state.psychoRemaining || 0);
   const catch22WasArmed = !!state.catch22Armed;
   const godSaveKingWasArmed = !!state.godSaveKingArmed;
   const alwaysBetBlackWasArmed = !!state.alwaysBetBlackArmed;
@@ -2309,6 +2338,7 @@ function makeGuess(type) {
   state.lucky7Armed = false;
   state.fiveAliveArmed = false;
   state.marginForErrorArmed = false;
+  state.hotOrColdArmed = false;
   state.stitchInTimeArmed = false;
   state.catch22Armed = false;
   state.godSaveKingArmed = false;
@@ -2333,6 +2363,7 @@ function makeGuess(type) {
   let rescuedByCursedShield = false;
   let rescuedBySuitedAndBooted = false;
   let rescuedByMarginForError = false;
+  let rescuedByHotOrCold = false;
   let rescuedByStitchInTime = false;
   let comparisonCorrect = false;
   let wlLossSatisfied = false;
@@ -2341,6 +2372,7 @@ function makeGuess(type) {
   let higherHigherHigherCompleted = false;
   let higherHigherHigherBroken = false;
   let catch22Hit = false;
+  let psychoCompleted = false;
 
   const forcedNudgeDirection =
     forcedNextGuessDirection === "higher"
@@ -2438,6 +2470,7 @@ function makeGuess(type) {
     const rescuedByLucky7 = !comparisonCorrect && lucky7WasArmed;
     const rescuedByFiveAlive = !comparisonCorrect && fiveAliveWasArmed;
     rescuedByMarginForError = !comparisonCorrect && marginForErrorWasArmed && revealDistance <= 2;
+    rescuedByHotOrCold = !comparisonCorrect && hotOrColdWasArmed && revealDistance <= 3;
     rescuedByStitchInTime = !comparisonCorrect && stitchInTimeWasArmed;
     const rescuedByGodSaveKing = !comparisonCorrect && godSaveKingWasArmed && getNextComparisonValueForGuess(next) === 13;
     rescuedByAlwaysBetBlack = !comparisonCorrect && alwaysBetBlackWasArmed && (nextSuitForResolution === SUITS[0] || nextSuitForResolution === SUITS[3]);
@@ -2449,6 +2482,7 @@ function makeGuess(type) {
       rescuedByLucky7 ||
       rescuedByFiveAlive ||
       rescuedByMarginForError ||
+      rescuedByHotOrCold ||
       rescuedByStitchInTime ||
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
@@ -2521,6 +2555,7 @@ function makeGuess(type) {
       rescuedByCursedShield,
       rescuedBySuitedAndBooted,
       rescuedByMarginForError,
+      rescuedByHotOrCold,
       rescuedByStitchInTime,
       energyAfter: state.energy || 0,
       message: lossDetail,
@@ -2668,6 +2703,14 @@ function makeGuess(type) {
     }
   }
 
+  if (psychoRemainingBeforeGuess > 0) {
+    state.psychoRemaining = Math.max(0, psychoRemainingBeforeGuess - 1);
+    psychoCompleted = state.psychoRemaining === 0;
+    if (psychoCompleted) {
+      queuePowerAward("psycho");
+    }
+  }
+
   if (wlCompleted) {
     queueCheatAward("wl");
     queueCheatAward("wl");
@@ -2687,8 +2730,10 @@ function makeGuess(type) {
             ? "suited_and_booted"
             : rescuedByMarginForError
               ? "margin_for_error"
-              : rescuedByStitchInTime
-                ? "stitch_in_time_saves"
+              : rescuedByHotOrCold
+                ? "hot_or_cold"
+                : rescuedByStitchInTime
+                  ? "stitch_in_time_saves"
         : lucky7WasArmed
           ? "lucky_7"
           : fiveAliveWasArmed
@@ -2706,10 +2751,13 @@ function makeGuess(type) {
     lucky7WasArmed,
     fiveAliveWasArmed,
     marginForErrorWasArmed,
+    hotOrColdWasArmed,
     stitchInTimeWasArmed,
     higherHigherHigherRemainingBeforeGuess,
     higherHigherHigherCompleted,
     higherHigherHigherBroken,
+    psychoRemainingBeforeGuess,
+    psychoRemainingAfterGuess: state.psychoRemaining || 0,
     catch22WasArmed,
     catch22Hit,
     godSaveKingWasArmed,
@@ -2728,6 +2776,7 @@ function makeGuess(type) {
     rescuedByCursedShield,
     rescuedBySuitedAndBooted,
     rescuedByMarginForError,
+    rescuedByHotOrCold,
     rescuedByStitchInTime,
     blankSpaceWasActive,
     wlStageBeforeGuess,
@@ -2821,6 +2870,19 @@ function makeGuess(type) {
     return;
   }
 
+  if (psychoCompleted) {
+    state.pauseForCheat = true;
+    state.message = appendEnergyFeedback("Psycho complete! Choose a new Power.", revealDistance);
+    render();
+    setTimeout(() => {
+      state.pauseForCheat = false;
+      const nextReason = state.pendingPowerAwardQueue.shift() || "psycho";
+      offerRewardPowerChoice(nextReason);
+      render();
+    }, 1000);
+    return;
+  }
+
   if (equals11Hit) {
     let equalsMessage = `Equals 11 hit! ${valueToRank(currentComparisonValue)} + ${valueToRank(nextComparisonValue)} = 11. Choose 3 bonus cheats.`;
     if (state.streak >= getCheatRewardThreshold()) {
@@ -2859,7 +2921,7 @@ function makeGuess(type) {
     : higherHigherHigherRemainingBeforeGuess > 0 && !higherHigherHigherCompleted
       ? ` Higher, Higher, Higher: ${state.higherHigherHigherRemaining} to go.`
       : "";
-  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}${higherHigherHigherText}`;
+  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByHotOrCold ? " Margin Of Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}${higherHigherHigherText}`;
 
 
   if (state.streak >= getCheatRewardThreshold()) {

@@ -459,25 +459,25 @@ function showTooltip(titleText, bodyText, el) {
   const tooltipRect = tooltip.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const edgePadding = 10;
-  const halfTooltipWidth = tooltipRect.width / 2;
+  const edgePadding = 12;
+  const tooltipWidth = Math.min(tooltipRect.width || 260, Math.max(160, viewportWidth - (edgePadding * 2)));
+  const tooltipHeight = tooltipRect.height || 72;
   const targetCenterX = rect.left + rect.width / 2;
-  const preferredCenterX =
+  const preferredLeft =
     rect.left > viewportWidth * 0.58
-      ? rect.left - 12 - halfTooltipWidth
-      : targetCenterX;
-  const minCenterX = edgePadding + halfTooltipWidth;
-  const maxCenterX = viewportWidth - edgePadding - halfTooltipWidth;
-  const safeCenterX = Math.min(Math.max(preferredCenterX, minCenterX), Math.max(minCenterX, maxCenterX));
+      ? rect.left - tooltipWidth - 14
+      : targetCenterX - (tooltipWidth / 2);
+  const maxLeft = Math.max(edgePadding, viewportWidth - tooltipWidth - edgePadding);
+  const safeLeft = Math.min(Math.max(preferredLeft, edgePadding), maxLeft);
 
-  tooltip.style.left = safeCenterX + "px";
-  const prefersBelow = rect.top < tooltipRect.height + 28;
-  tooltip.style.top = prefersBelow ? (rect.bottom + 10) + "px" : (rect.top - 10) + "px";
-  tooltip.style.transform = prefersBelow ? "translate(-50%, 0)" : "translate(-50%, -110%)";
-  const tooltipBottom = (prefersBelow ? rect.bottom + 10 + tooltipRect.height : rect.top - 10);
-  if (prefersBelow && tooltipBottom > viewportHeight - edgePadding) {
-    tooltip.style.top = Math.max(edgePadding, viewportHeight - tooltipRect.height - edgePadding) + "px";
-  }
+  const prefersBelow = rect.top < tooltipHeight + 28;
+  const preferredTop = prefersBelow ? rect.bottom + 10 : rect.top - tooltipHeight - 14;
+  const maxTop = Math.max(edgePadding, viewportHeight - tooltipHeight - edgePadding);
+  const safeTop = Math.min(Math.max(preferredTop, edgePadding), maxTop);
+
+  tooltip.style.left = safeLeft + "px";
+  tooltip.style.top = safeTop + "px";
+  tooltip.style.transform = "none";
   tooltip.dataset.sourceId = el.id || "";
   tooltip.dataset.sourceRole = el.dataset.tooltipRole || "";
 }
@@ -583,7 +583,7 @@ const CHEAT_ICON_BY_NAME = Object.freeze({
   "Suited and Booted": "♠B",
   "Always Bet On The Black": "♠♣",
   "Locky 7s": "7🔒",
-  "Hot or Cold?": "℃",
+  "Margin Of Error": "±3",
   "Corporate Icebreaker": "💬",
   "Tear Corner": "◰",
   "Swap": "⇄",
@@ -596,10 +596,9 @@ function getCheatIcon(name) {
 
 function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
-  if (name === "Blank Space") return "[]";
   if (name === "WL") return "W/L";
   if (name === "One of Next 2 Higher?") return "?↑";
-  if (name === "Margin For Error") return "+/-2";
+  if (name === "Psycho") return "PSY";
   if (name === "Higher, Higher, Higher") return "^^^";
   if (name === "Back To Square One") return "A1";
   if (name === "A Stitch In Time Saves...") return "9+";
@@ -610,7 +609,6 @@ function getCheatIcon(name) {
 
 function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
-  if (name === "Blank Space") return "[]";
   if (name === "WL") return "W/L";
   return CHEAT_ICON_BY_NAME[name] || "✦";
 }
@@ -776,7 +774,7 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
 function renderBlankSpaceFaceMarkup(displayValue) {
   const shownValue = Number.isFinite(displayValue) ? valueToRank(displayValue) : "?";
   return `
-    <div class="blank-space-chip">BLANK SPACE</div>
+    <div class="blank-space-chip">BLANK CARD</div>
     <div class="blank-space-icon">[]</div>
     <div class="blank-space-copy">Next card treated as</div>
     <div class="blank-space-value">${shownValue}</div>
@@ -942,6 +940,7 @@ function renderNudgeControls() {
     !!state.pendingRevealAnimation ||
     state.pendingCheatOptions.length > 0 ||
     state.pendingPowerOptions.length > 0 ||
+    (state.psychoRemaining || 0) > 0 ||
     !!state.pauseForCheat;
 
   const revealLocked = !!state.pendingRevealAnimation;
@@ -1693,6 +1692,11 @@ function renderCheats() {
       if (state.gameOver || state.pendingRevealAnimation || state.pendingCheatOptions.length || state.pendingPowerOptions.length) return;
       if (state.sixSevenArmed) {
         state.message = "6/7 is armed — no other cheats or nudges can be used on this card.";
+        render();
+        return;
+      }
+      if ((state.psychoRemaining || 0) > 0) {
+        state.message = `Psycho is active - no Cheats or Nudges for ${state.psychoRemaining} more turn${state.psychoRemaining === 1 ? "" : "s"}.`;
         render();
         return;
       }
