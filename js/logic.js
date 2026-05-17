@@ -98,6 +98,10 @@ let victoryEffectTimer = null;
 let cardRevealAnimationToken = null;
 const revealEffectRules = [];
 
+function isDevModeRun() {
+  return !!(window.devModeEnabled || state?.devMode);
+}
+
 function getComparisonDirection(currentValue, nextValue) {
   if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) return "unknown";
   if (nextValue === currentValue) return "match";
@@ -225,13 +229,39 @@ function spawnVictoryConfetti() {
   waveOffsets.forEach((waveOffset, waveIndex) => {
     for (let i = 0; i < piecesPerWave; i += 1) {
       const piece = document.createElement("span");
+      const driftX = Math.round((Math.random() - 0.5) * 140);
+      const swayAmplitude = 14 + Math.round(Math.random() * 34);
+      const swayDirection = Math.random() < 0.5 ? -1 : 1;
+      const swayTiming = 0.72 + Math.random() * 0.56;
+      const swayPhase = Math.random() * Math.PI * 2;
+      const spinDirection = Math.random() < 0.5 ? -1 : 1;
+      const spinAmount = spinDirection * (160 + Math.round(Math.random() * 380));
+      const fallDuration = 3300 + Math.round(Math.random() * 1900);
+      const setWavePoint = (progress) => {
+        const wave = Math.sin((progress * Math.PI * 2 * 2.35 * swayTiming) + swayPhase);
+        return `${Math.round((driftX * progress) + (wave * swayAmplitude * swayDirection))}px`;
+      };
       piece.className = "confetti-piece";
       piece.style.setProperty("--x", `${Math.random() * 100}%`);
-      piece.style.setProperty("--drift-x", `${Math.round((Math.random() - 0.5) * 180)}px`);
+      piece.style.setProperty("--x-12", setWavePoint(0.12));
+      piece.style.setProperty("--x-24", setWavePoint(0.24));
+      piece.style.setProperty("--x-36", setWavePoint(0.36));
+      piece.style.setProperty("--x-48", setWavePoint(0.48));
+      piece.style.setProperty("--x-60", setWavePoint(0.6));
+      piece.style.setProperty("--x-72", setWavePoint(0.72));
+      piece.style.setProperty("--x-84", setWavePoint(0.84));
+      piece.style.setProperty("--drift-x", `${driftX}px`);
       piece.style.setProperty("--fall-distance", `${105 + Math.round(Math.random() * 30)}vh`);
-      piece.style.setProperty("--spin-amount", `${360 + Math.round(Math.random() * 540)}deg`);
-      piece.style.setProperty("--fall-duration", `${1350 + Math.round(Math.random() * 810)}ms`);
-      piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 220)}ms`);
+      piece.style.setProperty("--spin-12", `${Math.round(spinAmount * 0.12)}deg`);
+      piece.style.setProperty("--spin-24", `${Math.round(spinAmount * 0.24)}deg`);
+      piece.style.setProperty("--spin-36", `${Math.round(spinAmount * 0.36)}deg`);
+      piece.style.setProperty("--spin-48", `${Math.round(spinAmount * 0.48)}deg`);
+      piece.style.setProperty("--spin-60", `${Math.round(spinAmount * 0.6)}deg`);
+      piece.style.setProperty("--spin-72", `${Math.round(spinAmount * 0.72)}deg`);
+      piece.style.setProperty("--spin-84", `${Math.round(spinAmount * 0.84)}deg`);
+      piece.style.setProperty("--spin-amount", `${spinAmount}deg`);
+      piece.style.setProperty("--fall-duration", `${fallDuration}ms`);
+      piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 320)}ms`);
       piece.style.setProperty("--confetti-color", colors[(waveIndex * piecesPerWave + i) % colors.length]);
       confettiEl.appendChild(piece);
     }
@@ -413,7 +443,9 @@ function appendRunDebugLog(type, details = {}) {
 
   const nextLog = [...(Array.isArray(state.runDebugLog) ? state.runDebugLog : []), entry].slice(-RUN_DEBUG_LOG_LIMIT);
   state.runDebugLog = nextLog;
-  saveRunDebugLog(nextLog);
+  if (!isDevModeRun()) {
+    saveRunDebugLog(nextLog);
+  }
   return entry;
 }
 
@@ -767,6 +799,7 @@ function startRunWithPower(powerId) {
     deckLevelClears: loadDeckLevelClears(),
     cheatUnlocks: loadCheatUnlocks(),
     runMode,
+    devMode: !!window.devModeEnabled,
     dailyDateKey,
     dailyCheatOfferCount: 0,
     dailyPowerOfferCount: 0,
@@ -834,13 +867,15 @@ function startRunWithPower(powerId) {
     dailyDateKey,
   });
 
-  if (runMode === "daily") {
+  if (runMode === "daily" && !isDevModeRun()) {
     lockDailyAttempt(dailyDateKey, chosenSeed, loadPreferredPlayerName());
   }
 
-  recordRunStarted(currentDeckKey, runMode);
+  if (!isDevModeRun()) {
+    recordRunStarted(currentDeckKey, runMode);
+  }
 
-  if (runMode !== "daily") {
+  if (runMode !== "daily" && !isDevModeRun()) {
     saveSelectedDeck(currentDeckKey);
     saveSelectedLevel(currentLevelNumber);
     saveLastRunSeed(chosenSeed);
@@ -852,6 +887,7 @@ function startRunWithPower(powerId) {
 }
 
 function handleRunFinished(finalScore) {
+  if (isDevModeRun()) return;
   if (state.runMode !== "daily") return;
 
   const dateKey = state.dailyDateKey || getCurrentDailyDateKey();
@@ -917,6 +953,7 @@ function pickPowerFromChoice(index) {
 }
 
 function updateBestScoreIfNeeded() {
+  if (isDevModeRun()) return;
   const runScore = getRunScoreFromCorrectAnswers(state.correctAnswers);
   if (runScore > state.bestScore) {
     state.bestScore = runScore;
@@ -930,6 +967,56 @@ function getRunScoreFromCorrectAnswers(correctAnswers) {
 
 function getDisplayedRunScore() {
   return state.current ? getRunScoreFromCorrectAnswers(state.correctAnswers) : 0;
+}
+
+function grantNextDevPower() {
+  if (!isDevModeRun()) return false;
+  if (!state.current || state.gameOver) {
+    state.message = "Dev: start a run before adding a power.";
+    render();
+    return false;
+  }
+
+  const ownedPowerIds = new Set(
+    (Array.isArray(state.powers) ? state.powers : [])
+      .filter((powerId) => powerId && powerId !== "nudge_engine")
+  );
+  const nextPower = getUnlockedPowerPool(true).find((power) => power?.id && !ownedPowerIds.has(power.id));
+
+  if (!nextPower) {
+    state.message = "Dev: all powers are already active.";
+    render();
+    return false;
+  }
+
+  grantPowerToCurrentRun(nextPower.id, "dev_hotkey");
+  state.message = `Dev: added power ${nextPower.name}.`;
+  render();
+  return true;
+}
+
+function winCurrentRunForDev() {
+  if (!isDevModeRun()) return false;
+  if (!state.current || !Array.isArray(state.deck) || !state.deck.length) {
+    state.message = "Dev: start a run before forcing a win.";
+    render();
+    return false;
+  }
+
+  state.index = Math.max(0, state.deck.length - 1);
+  state.current = state.deck[state.index] || state.current;
+  state.correctAnswers = Math.max(Number(state.correctAnswers) || 0, Math.max(0, state.deck.length - 1));
+  state.seenCardIds = new Set(state.deck.map((card) => card?.id).filter(Boolean));
+  state.pendingCheatOptions = [];
+  state.pendingPowerOptions = [];
+  state.pendingCheatAwardQueue = [];
+  state.pendingPowerAwardQueue = [];
+  state.gameOver = true;
+  state.victoryPromptShown = true;
+  state.message = "Dev: deck cleared. Records disabled.";
+  render();
+  triggerVictoryEffect();
+  return true;
 }
 
 function peekNext() {
@@ -1258,6 +1345,7 @@ function getGuessContextKey() {
 }
 
 function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
+  if (isDevModeRun()) return;
   if (!card || isJokerCard(card)) return;
   const entry = getCardStatsEntry(card.id);
   const guessBucket = entry.guessStats[getGuessContextKey()];
@@ -1279,6 +1367,7 @@ function recordCurrentCardGuess(card, guessType, wasCorrectGuess) {
 }
 
 function recordCurrentCardNudge(card, direction) {
+  if (isDevModeRun()) return;
   if (!card || isJokerCard(card)) return;
   if (normalizeDeckKey(state.currentDeckKey) !== "blue") return;
   const entry = getCardStatsEntry(card.id);
@@ -1306,10 +1395,12 @@ function recordCurrentCardNudge(card, direction) {
 
 function addMetaProgression(amount = 1) {
   state.metaProgression = (state.metaProgression ?? 0) + amount;
+  if (isDevModeRun()) return;
   saveMetaProgression(state.metaProgression);
 }
 
 function recordFaceDownOutcome(card, endedRun, currentWasBase = true) {
+  if (isDevModeRun()) return;
   if (!card || isJokerCard(card)) return;
   const entry = getCardStatsEntry(card.id);
   if (endedRun) {
@@ -1340,6 +1431,7 @@ function getCardBackStatus(cardId) {
 function setCardBackStatus(cardId, patch) {
   const current = getCardBackStatus(cardId);
   state.cardBackStatuses[cardId] = { ...current, ...patch };
+  if (isDevModeRun()) return;
   saveCardBackStatuses(state.cardBackStatuses);
 }
 
@@ -1827,7 +1919,9 @@ function makeGuessLegacy(type) {
   recordFaceDownOutcome(next, false, currentWasBase);
   advanceToCard(next);
   state.correctAnswers += 1;
-  recordCorrectGuessProgress(1);
+  if (!isDevModeRun()) {
+    recordCorrectGuessProgress(1);
+  }
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
   setCurrentCardFeedback("correct");
@@ -1866,19 +1960,21 @@ function makeGuessLegacy(type) {
       oddOneOutWasArmed,
       sixSevenWasArmed,
     });
-    if (state.runMode !== "daily") {
-      state.deckWins = recordDeckWin(state.currentDeckKey);
-      state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
-      recordDeckClearProgress(state.currentDeckKey);
-    } else {
-      recordDailyClearProgress();
+    if (!isDevModeRun()) {
+      if (state.runMode !== "daily") {
+        state.deckWins = recordDeckWin(state.currentDeckKey);
+        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+        recordDeckClearProgress(state.currentDeckKey);
+      } else {
+        recordDailyClearProgress();
+      }
     }
     state.message = " YOU CLEARED THE DECK!";
     state.gameOver = true;
     render();
     triggerVictoryEffect();
     handleRunFinished(state.correctAnswers);
-    if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+    if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
       if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
       window.setTimeout(() => {
@@ -2286,19 +2382,21 @@ function makeGuess(type) {
     });
 
     if (state.index >= state.deck.length - 1) {
-      if (state.runMode !== "daily") {
-        state.deckWins = recordDeckWin(state.currentDeckKey);
-        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
-        recordDeckClearProgress(state.currentDeckKey);
-      } else {
-        recordDailyClearProgress();
+      if (!isDevModeRun()) {
+        if (state.runMode !== "daily") {
+          state.deckWins = recordDeckWin(state.currentDeckKey);
+          state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+          recordDeckClearProgress(state.currentDeckKey);
+        } else {
+          recordDailyClearProgress();
+        }
       }
       state.message = `Yellow Joker: ${jokerMessage} YOU CLEARED THE DECK!`;
       state.gameOver = true;
       render();
       triggerVictoryEffect();
       handleRunFinished(state.correctAnswers);
-      if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+      if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
         if (state.runMode === "daily") return;
         state.victoryPromptShown = true;
         window.setTimeout(() => {
@@ -2591,7 +2689,9 @@ function makeGuess(type) {
     })),
   });
   state.correctAnswers += 1;
-  recordCorrectGuessProgress(1);
+  if (!isDevModeRun()) {
+    recordCorrectGuessProgress(1);
+  }
   state.currentValueModifier = lockySevenCarryModifier;
   state.streak = (state.streak || 0) + 1;
   addMetaProgression(1);
@@ -2656,19 +2756,21 @@ function makeGuess(type) {
       rescuedBySuitedAndBooted,
       energyAfter: state.energy || 0,
     });
-    if (state.runMode !== "daily") {
-      state.deckWins = recordDeckWin(state.currentDeckKey);
-      state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
-      recordDeckClearProgress(state.currentDeckKey);
-    } else {
-      recordDailyClearProgress();
+    if (!isDevModeRun()) {
+      if (state.runMode !== "daily") {
+        state.deckWins = recordDeckWin(state.currentDeckKey);
+        state.deckLevelClears = recordDeckLevelClear(state.currentDeckKey, state.currentLevelNumber);
+        recordDeckClearProgress(state.currentDeckKey);
+      } else {
+        recordDailyClearProgress();
+      }
     }
     state.message = appendEnergyFeedback(" YOU CLEARED THE DECK!", revealDistance);
     state.gameOver = true;
     render();
     triggerVictoryEffect();
     handleRunFinished(state.correctAnswers);
-    if (!state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+    if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
       if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
       window.setTimeout(() => {

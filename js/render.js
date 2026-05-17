@@ -361,17 +361,52 @@ function setAnimatedText(el, value) {
   el.dataset.renderValue = nextValue;
 }
 
-function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
-  const selectedPowerId = state.selectedStartPowerId;
-  const selectedPowerName = getPowerName(selectedPowerId || "none");
-  const selectedPowerDescription = selectedPowerId
-    ? getPowerDescription(selectedPowerId, { deckKey, levelNumber })
-    : "";
-
-  const activePowerIds = Array.isArray(state.powers)
-    ? state.powers.filter(Boolean)
+function getVisibleHeaderPowerIds(fallbackPowerId = "") {
+  const ids = Array.isArray(state.powers)
+    ? state.powers
     : [];
-  const activePowerLines = activePowerIds.map((powerId) => {
+  const visibleIds = ids.filter((powerId) => powerId && powerId !== "nudge_engine" && getPowerById(powerId));
+
+  if (!visibleIds.length && fallbackPowerId && getPowerById(fallbackPowerId)) {
+    visibleIds.push(fallbackPowerId);
+  }
+
+  return Array.from(new Set(visibleIds));
+}
+
+function buildHeaderPowerStackMarkup(powerIds) {
+  const visibleIds = Array.isArray(powerIds) ? powerIds.filter((powerId) => getPowerById(powerId)) : [];
+
+  if (!visibleIds.length) {
+    return `
+      ${POWER_SHIELD_SVG}
+      <span id="header-power-glyph">·</span>
+    `;
+  }
+
+  const center = (visibleIds.length - 1) / 2;
+  const spacing = visibleIds.length <= 3 ? 8 : 6;
+
+  return `
+    <span class="header-power-stack" aria-hidden="true">
+      ${visibleIds.map((powerId, index) => {
+        const power = getPowerById(powerId);
+        const offset = Math.round((index - center) * spacing);
+        const scale = Math.max(0.84, 1 - Math.max(0, visibleIds.length - 3) * 0.035);
+        return `
+          <span class="header-power-stack-item ${power?.rarity || "common"}" style="--power-offset: ${offset}px; --power-scale: ${scale}; z-index: ${index + 1};">
+            ${POWER_SHIELD_SVG}
+            <span class="header-power-stack-glyph">${getPowerIcon(powerId)}</span>
+          </span>
+        `;
+      }).join("")}
+    </span>
+  `;
+}
+
+function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
+  const visiblePowerIds = getVisibleHeaderPowerIds(state.selectedStartPowerId);
+  const activePowerLines = visiblePowerIds.map((powerId) => {
     const powerName = getPowerName(powerId);
     const description = getPowerDescription(powerId, { deckKey, levelNumber });
     return description
@@ -380,19 +415,10 @@ function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
   });
 
   const bodyLines = [];
-  if (selectedPowerDescription) {
-    bodyLines.push(`Starting Power: ${selectedPowerName}`);
-    bodyLines.push(selectedPowerDescription);
-  } else {
-    bodyLines.push(`Starting Power: ${selectedPowerName}`);
-  }
-
   if (activePowerLines.length) {
-    bodyLines.push("");
-    bodyLines.push(`Current Powers In Play (${activePowerLines.length}):`);
+    bodyLines.push(`Current Powers (${activePowerLines.length}):`);
     bodyLines.push(...activePowerLines);
   } else {
-    bodyLines.push("");
     bodyLines.push("Current Powers In Play: none");
   }
 
@@ -403,15 +429,11 @@ function renderHeaderStatus() {
   const gameEl = document.getElementById("game");
   const brandTitleEl = document.getElementById("brand-title");
   const powerChipEl = document.getElementById("header-power-chip");
-  const powerGlyphEl = document.getElementById("header-power-glyph");
   const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
   const runPowerId = state.selectedStartPowerId || "";
-  const runPowerName = runPowerId ? getPowerName(runPowerId) : "No power selected";
   const runDeckKey = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue");
   const runDeckName = getDeckName(runDeckKey);
-  const runPowerTooltipBody = runPowerId
-    ? buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber)
-    : "";
+  const runPowerTooltipBody = buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber);
 
   if (gameEl) {
     gameEl.dataset.deck = runDeckKey;
@@ -421,19 +443,20 @@ function renderHeaderStatus() {
     brandTitleEl.dataset.deck = runDeckKey;
   }
 
-  if (powerChipEl && powerGlyphEl) {
-    const hasPower = !!runPowerId;
-    const runPower = hasPower ? getPowerById(runPowerId) : null;
+  if (powerChipEl) {
+    const visiblePowerIds = getVisibleHeaderPowerIds(runPowerId);
+    const hasPower = visiblePowerIds.length > 0;
+    const leadPower = hasPower ? getPowerById(visiblePowerIds[visiblePowerIds.length - 1]) : null;
     powerChipEl.classList.remove("common", "normal", "uncommon", "rare", "legendary");
     if (hasPower) {
-      powerChipEl.classList.add(runPower?.rarity || "common");
+      powerChipEl.classList.add(leadPower?.rarity || "common");
     }
-    powerGlyphEl.innerText = hasPower ? getPowerIcon(runPowerId) : "·";
+    powerChipEl.innerHTML = buildHeaderPowerStackMarkup(visiblePowerIds);
     powerChipEl.classList.toggle("has-power", hasPower);
-    powerChipEl.setAttribute("aria-label", hasPower ? `${runPowerName} details` : "No starting power selected");
+    powerChipEl.setAttribute("aria-label", hasPower ? `${visiblePowerIds.length} current power${visiblePowerIds.length === 1 ? "" : "s"} details` : "No starting power selected");
     setupHeaderPowerTooltip(powerChipEl, {
       enabled: hasPower && !!runPowerTooltipBody,
-      title: `${runDeckName} Deck - Level ${runLevelNumber} Starting Power: ${runPowerName}`,
+      title: `${runDeckName} Deck - Level ${runLevelNumber} Powers`,
       description: runPowerTooltipBody,
     });
   }
@@ -493,6 +516,7 @@ function setupHeaderPowerTooltip(el, payload) {
   }
 
   let holdTimer = null;
+  let pointerHoldActive = false;
 
   const clearHold = () => {
     clearTimeout(holdTimer);
@@ -500,18 +524,45 @@ function setupHeaderPowerTooltip(el, payload) {
     hideCheatTooltip();
   };
 
-  el.addEventListener("pointerdown", (event) => {
+  const beginHold = (event) => {
     if (el.dataset.tooltipEnabled !== "1") return;
-    if (event.pointerType === "mouse") return;
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
     clearTimeout(holdTimer);
+    if (event.pointerType === "mouse" || event.type === "mousedown") {
+      showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+      return;
+    }
     holdTimer = setTimeout(() => {
       showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+      const tooltip = document.getElementById("cheat-tooltip");
+      if (tooltip) tooltip.dataset.keepOpenOnce = "1";
     }, 300);
+  };
+
+  el.addEventListener("pointerdown", (event) => {
+    pointerHoldActive = true;
+    beginHold(event);
+  });
+  el.addEventListener("mousedown", (event) => {
+    if (pointerHoldActive) return;
+    beginHold(event);
   });
 
-  el.addEventListener("pointerup", clearHold);
-  el.addEventListener("pointercancel", clearHold);
-  el.addEventListener("pointerleave", clearHold);
+  const clearPointerHold = () => {
+    clearHold();
+    window.setTimeout(() => {
+      pointerHoldActive = false;
+    }, 0);
+  };
+
+  el.addEventListener("pointerup", clearPointerHold);
+  el.addEventListener("pointercancel", clearPointerHold);
+  el.addEventListener("pointerleave", clearPointerHold);
+  el.addEventListener("mouseup", () => {
+    if (pointerHoldActive) return;
+    clearHold();
+  });
   el.addEventListener("mouseenter", () => {
     if (!canUseHoverTooltips()) return;
     if (el.dataset.tooltipEnabled !== "1") return;
@@ -1336,6 +1387,14 @@ function beginCheatChoiceSelection(index, buttonEl) {
 }
 
 function getCheatChoiceFlyTargetRect(targetEntryId, fallbackEl) {
+  if (targetEntryId === "nudge_up" || targetEntryId === "nudge_down") {
+    const nudgeTargetEl = document.getElementById(targetEntryId === "nudge_up" ? "nudge-up-btn" : "nudge-down-btn");
+    const nudgeTargetRect = nudgeTargetEl?.getBoundingClientRect();
+    if (nudgeTargetRect?.width && nudgeTargetRect?.height) {
+      return nudgeTargetRect;
+    }
+  }
+
   const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(targetEntryId || "")}"]`);
   const targetRect = (targetEl || fallbackEl)?.getBoundingClientRect();
   return targetRect;
@@ -1421,7 +1480,7 @@ function playPendingPowerChoiceAnimation() {
 
   const flyoutEl = document.getElementById("power-choice-flyout");
   const targetEl = document.getElementById("header-power-chip");
-  const targetShieldEl = targetEl?.querySelector(".power-shield-svg");
+  const targetShieldEl = targetEl?.querySelector(".header-power-stack") || targetEl?.querySelector(".power-shield-svg");
   if (!flyoutEl || !targetEl || !animation.power) return;
 
   animation.started = true;
@@ -1443,22 +1502,28 @@ function playPendingPowerChoiceAnimation() {
   flyoutEl.classList.remove("is-moving");
 
   const targetRect = (targetShieldEl || targetEl).getBoundingClientRect();
+  const targetScale = Math.min(
+    targetRect.width / Math.max(1, source.width),
+    targetRect.height / Math.max(1, source.height)
+  );
+  const targetLeft = targetRect.left + (targetRect.width / 2) - (source.width / 2);
+  const targetTop = targetRect.top + (targetRect.height / 2) - (source.height / 2);
   void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      if (!state.powerChoiceAnimating || state.powerChoiceAnimating !== animation) return;
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.94";
-      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
-      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
-      flyoutEl.style.width = `${targetRect.width}px`;
-      flyoutEl.style.height = `${targetRect.height}px`;
+      flyoutEl.style.left = `${targetLeft - hostRect.left}px`;
+      flyoutEl.style.top = `${targetTop - hostRect.top}px`;
+      flyoutEl.style.transform = `scale(${targetScale})`;
+
+      powerChoiceAnimationTimer = setTimeout(() => {
+        completePowerChoiceSelectionAnimation();
+      }, POWER_CHOICE_FLY_MS + 20);
     });
   });
-
-  powerChoiceAnimationTimer = setTimeout(() => {
-    completePowerChoiceSelectionAnimation();
-  }, POWER_CHOICE_FLY_MS + 20);
 }
 
 function playPendingCheatChoiceAnimation() {
@@ -1513,25 +1578,33 @@ function playPendingCheatChoiceAnimation() {
   flyoutEl.style.opacity = "1";
   flyoutEl.style.transform = "none";
   flyoutEl.classList.remove("is-moving");
-
-  const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
-  if (!targetRect) return;
   void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      if (!state.cheatChoiceAnimating || state.cheatChoiceAnimating !== animation) return;
+      const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
+      if (!targetRect) {
+        completeCheatChoiceSelectionAnimation(animation.followup);
+        return;
+      }
+      const targetScale = Math.min(
+        targetRect.width / Math.max(1, source.width),
+        targetRect.height / Math.max(1, source.height)
+      );
+      const targetLeft = targetRect.left + (targetRect.width / 2) - (source.width / 2);
+      const targetTop = targetRect.top + (targetRect.height / 2) - (source.height / 2);
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.92";
-      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
-      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
-      flyoutEl.style.setProperty("--flyout-width", `${targetRect.width}px`);
-      flyoutEl.style.setProperty("--flyout-height", `${targetRect.height}px`);
+      flyoutEl.style.left = `${targetLeft - hostRect.left}px`;
+      flyoutEl.style.top = `${targetTop - hostRect.top}px`;
+      flyoutEl.style.transform = `scale(${targetScale})`;
+
+      cheatChoiceAnimationTimer = setTimeout(() => {
+        completeCheatChoiceSelectionAnimation(animation.followup);
+      }, CHEAT_CHOICE_FLY_MS + 20);
     });
   });
-
-  cheatChoiceAnimationTimer = setTimeout(() => {
-    completeCheatChoiceSelectionAnimation(animation.followup);
-  }, CHEAT_CHOICE_FLY_MS + 20);
 }
 
 function renderCheats() {

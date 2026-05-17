@@ -72,6 +72,7 @@ function createEmptyState() {
     deckWins: loadDeckWins(),
     deckLevelClears: loadDeckLevelClears(),
     runMode: "standard",
+    devMode: false,
     dailyDateKey: "",
     dailyCheatOfferCount: 0,
     dailyPowerOfferCount: 0,

@@ -636,7 +636,7 @@ a {
   background: var(--confetti-color, #9ff0ff);
   opacity: 0;
   transform: translate3d(0, 0, 0) rotate(0deg);
-  animation: confetti-fall var(--fall-duration, 1710ms) ease-out forwards;
+  animation: confetti-fall var(--fall-duration, 4200ms) linear forwards;
   animation-delay: var(--fall-delay, 0ms);
 }
 
@@ -1555,7 +1555,31 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
     opacity: 0;
     transform: translate3d(0, 0, 0) rotate(0deg) scale(0.9);
   }
-  8% {
+  7% {
+    opacity: 1;
+  }
+  12% {
+    transform: translate3d(var(--x-12, 14px), 12vh, 0) rotate(var(--spin-12, 32deg)) scale(1);
+  }
+  24% {
+    transform: translate3d(var(--x-24, -18px), 25vh, 0) rotate(var(--spin-24, 64deg)) scale(0.96);
+  }
+  36% {
+    transform: translate3d(var(--x-36, 20px), 38vh, 0) rotate(var(--spin-36, 96deg)) scale(1);
+  }
+  48% {
+    transform: translate3d(var(--x-48, -16px), 52vh, 0) rotate(var(--spin-48, 128deg)) scale(0.98);
+  }
+  60% {
+    transform: translate3d(var(--x-60, 18px), 66vh, 0) rotate(var(--spin-60, 160deg)) scale(1);
+  }
+  72% {
+    transform: translate3d(var(--x-72, -14px), 80vh, 0) rotate(var(--spin-72, 192deg)) scale(0.97);
+  }
+  84% {
+    transform: translate3d(var(--x-84, 12px), 94vh, 0) rotate(var(--spin-84, 224deg)) scale(1);
+  }
+  88% {
     opacity: 1;
   }
   100% {
@@ -3440,6 +3464,8 @@ body.choice-modal-open #controls,
 
 .header-power-chip.common,
 .header-power-chip.normal,
+.header-power-stack-item.common,
+.header-power-stack-item.normal,
 .power-choice-option.common,
 .power-choice-flyout.common {
   --power-shield-color: var(--rarity-common);
@@ -3449,6 +3475,7 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.uncommon,
+.header-power-stack-item.uncommon,
 .power-choice-option.uncommon,
 .power-choice-flyout.uncommon {
   --power-shield-color: var(--rarity-uncommon);
@@ -3458,6 +3485,7 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.rare,
+.header-power-stack-item.rare,
 .power-choice-option.rare,
 .power-choice-flyout.rare {
   --power-shield-color: var(--rarity-rare);
@@ -3467,6 +3495,7 @@ body.choice-modal-open #controls,
 }
 
 .header-power-chip.legendary,
+.header-power-stack-item.legendary,
 .power-choice-option.legendary,
 .power-choice-flyout.legendary {
   --power-shield-color: var(--rarity-legendary);
@@ -3498,15 +3527,20 @@ body.choice-modal-open #controls,
 .menu-button {
   width: 38px;
   height: 38px;
+  padding: 0;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   opacity: 1;
+  display: grid;
+  place-items: center;
 }
 
 .menu-icon {
+  display: block;
   font-size: 1.15rem;
   line-height: 1;
+  transform: translateY(-2px);
 }
 
 .header-menu {
@@ -4264,10 +4298,16 @@ body.choice-modal-open #controls,
   padding: 16px;
 }
 
+/* Cheat pick fade needs to finish before the selected coin is far into its flight. */
 #cheat-choice-container .choice-backdrop,
 #cheat-choice-container .choice-modal,
 #cheat-choice-container .cheat-choice-card,
-#cheat-choice-container .cheat-choice-info,
+#cheat-choice-container .cheat-choice-info {
+  transition:
+    opacity 126ms ease-in-out,
+    transform 126ms ease-in-out;
+}
+
 #power-choice-container .choice-backdrop,
 #power-choice-container .choice-modal,
 #power-choice-container .power-choice-card {
@@ -4678,8 +4718,6 @@ body.choice-modal-open #controls,
     opacity 270ms ease-in-out,
     left 270ms ease-in-out,
     top 270ms ease-in-out,
-    width 270ms ease-in-out,
-    height 270ms ease-in-out,
     transform 270ms ease-in-out;
 }
 
@@ -4714,8 +4752,6 @@ body.choice-modal-open #controls,
     opacity 288ms ease-in-out,
     left 288ms cubic-bezier(0.42, 0, 0.58, 1),
     top 288ms cubic-bezier(0.42, 0, 0.58, 1),
-    width 288ms cubic-bezier(0.42, 0, 0.58, 1),
-    height 288ms cubic-bezier(0.42, 0, 0.58, 1),
     transform 288ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 
@@ -4907,11 +4943,21 @@ body.choice-modal-open #controls,
   box-shadow: none !important;
   position: relative;
   overflow: visible;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 .header-power-chip.has-power {
   color: var(--power-shield-text) !important;
   background: transparent !important;
+}
+
+.header-power-chip * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .header-power-chip .power-shield-fill {
@@ -4924,6 +4970,44 @@ body.choice-modal-open #controls,
   z-index: 1;
   transform: translateY(-1px);
   line-height: 1;
+}
+
+.header-power-stack {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.header-power-stack-item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 38px;
+  color: var(--power-shield-text, var(--rarity-common-text));
+  transform:
+    translate(calc(-50% + var(--power-offset, 0px)), -50%)
+    scale(var(--power-scale, 1));
+  transform-origin: center;
+}
+
+.header-power-stack-item .power-shield-svg {
+  filter: drop-shadow(0 6px 10px var(--power-shield-glow, rgba(255,255,255,0.12)));
+}
+
+.header-power-stack-glyph {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--power-shield-text, var(--rarity-common-text));
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-1px);
 }
 
 @media (max-height: 760px) {

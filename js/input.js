@@ -1224,6 +1224,12 @@ document.getElementById("victory-form")?.addEventListener("submit", async (e) =>
 
   if (!inputEl || !statusEl || !submitBtn) return;
 
+  if (window.devModeEnabled || state.devMode) {
+    statusEl.innerText = "Dev mode: hero run not saved.";
+    setTimeout(() => closeVictoryModal(), 700);
+    return;
+  }
+
   submitBtn.disabled = true;
   const result = await submitHeroWin(
     inputEl.value,
@@ -1255,6 +1261,7 @@ document.getElementById("victory-modal")?.addEventListener("click", (e) => {
 
 window.addEventListener("pagehide", () => {
   if (window.skipAutoSnapshot) return;
+  if (window.devModeEnabled || state.devMode) return;
   saveGameStateSnapshot(state);
 });
 
@@ -1297,6 +1304,19 @@ window.addEventListener("wheel", () => {
 window.addEventListener("keydown", (e) => {
   const debugEnabled = !!window.testModeEnabled;
   const matchesKey = (key, code) => e.key === key || e.key === key.toUpperCase() || e.code === code;
+
+  if (window.devModeEnabled && e.shiftKey && matchesKey("p", "KeyP")) {
+    e.preventDefault();
+    grantNextDevPower();
+    return;
+  }
+
+  if (window.devModeEnabled && e.shiftKey && matchesKey("w", "KeyW")) {
+    e.preventDefault();
+    winCurrentRunForDev();
+    return;
+  }
+
   if (debugEnabled) {
     if (matchesKey("c", "KeyC")) {
       clearCheatsForDebug();

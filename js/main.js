@@ -41,6 +41,7 @@ function getTestModeFlags() {
 
   return {
     enabled: has("test") || has("debug"),
+    dev: params.get("dev") === "true",
     addCheats: has("addcheats"),
     clearCheats: has("clearcheats"),
     resetStats: has("resetstats"),
@@ -51,6 +52,7 @@ function getTestModeFlags() {
 function applyDebugActionsFromUrl() {
   const flags = getTestModeFlags();
   window.testModeEnabled = flags.enabled;
+  window.devModeEnabled = flags.dev;
 
   if (!flags.enabled) return;
 
@@ -107,8 +109,10 @@ function applyDeckLevelSelectionFromUrl() {
   state.pendingLevelNumber = selectedLevelNumber;
   state.bestScore = loadBestScore(selectedDeckKey, selectedLevelNumber);
 
-  saveSelectedDeck(selectedDeckKey);
-  saveSelectedLevel(selectedLevelNumber);
+  if (!window.devModeEnabled) {
+    saveSelectedDeck(selectedDeckKey);
+    saveSelectedLevel(selectedLevelNumber);
+  }
 }
 
 function restoreGameStateFromUrlIfNeeded() {

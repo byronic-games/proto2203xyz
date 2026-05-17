@@ -123,6 +123,7 @@ function hasCheatBeenDiscovered(cheatId) {
 function markCheatDiscovered(cheat, source = "random") {
   if (!cheat) return false;
   if (hasCheatBeenDiscovered(cheat.id)) return false;
+  if (typeof isDevModeRun === "function" && isDevModeRun()) return false;
 
   state.cheatUnlocks[cheat.id] = {
     discovered: true,
