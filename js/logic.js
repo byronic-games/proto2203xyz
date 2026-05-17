@@ -95,11 +95,22 @@ let currentCardNudgeAnimationTimer = null;
 let gameShellFlashTimer = null;
 let recentlySeenCardTimer = null;
 let victoryEffectTimer = null;
+let victoryConfettiWaveTimer = null;
+let victoryConfettiClearTimer = null;
+let gameOverMessageTimer = null;
 let cardRevealAnimationToken = null;
 const revealEffectRules = [];
+const GAME_OVER_MESSAGE_REVEAL_DELAY_MS = 520;
+const VICTORY_CONFETTI_FADE_MS = 420;
 
 function isDevModeRun() {
   return !!(window.devModeEnabled || state?.devMode);
+}
+
+function setTemporaryMessage(message, durationMs = 2000) {
+  state.message = String(message || "");
+  state.temporaryMessageText = state.message;
+  state.temporaryMessageUntil = Date.now() + Math.max(0, Number(durationMs) || 0);
 }
 
 function getComparisonDirection(currentValue, nextValue) {
@@ -166,6 +177,10 @@ function queueCardRevealAnimation(options = {}) {
     ? options.fromEffectiveValue
     : fromCard?.value ?? null;
   const fromIsTemp = !!fromCard && Number.isFinite(fromEffectiveValue) && fromEffectiveValue !== fromCard.value;
+  if (options.triggerGameOver) {
+    state.gameOverMessageReady = false;
+    state.gameOverMessageJustReleased = false;
+  }
 
   state.pendingRevealAnimation = {
     id: cardRevealAnimationToken,
@@ -178,6 +193,8 @@ function queueCardRevealAnimation(options = {}) {
     fromCard,
     fromEffectiveValue,
     fromIsTemp,
+    messageReleased: false,
+    messageJustReleased: false,
     effectId: String(options.effectId || ""),
     feedbackEffect: String(options.feedbackEffect || normalizedOutcome),
     triggerGameOver: !!options.triggerGameOver,
@@ -188,6 +205,10 @@ function queueCardRevealAnimation(options = {}) {
 function clearGameOverEffects() {
   const gameEl = document.getElementById("game");
   const detailEl = document.getElementById("game-over-detail");
+  if (gameOverMessageTimer) {
+    clearTimeout(gameOverMessageTimer);
+    gameOverMessageTimer = null;
+  }
   if (gameEl) {
     gameEl.classList.remove("game-over-effect");
   }
@@ -196,7 +217,8 @@ function clearGameOverEffects() {
   }
 }
 
-function clearVictoryEffects() {
+function clearVictoryEffects(options = {}) {
+  const fade = !!options.fade;
   const gameEl = document.getElementById("game");
   const bannerEl = document.getElementById("victory-banner");
   const confettiEl = document.getElementById("victory-confetti");
@@ -204,11 +226,31 @@ function clearVictoryEffects() {
   if (gameEl) {
     gameEl.classList.remove("victory-effect-active");
   }
+  state.victoryMessageActive = false;
+  state.victoryMessageJustReleased = false;
   if (bannerEl) {
     bannerEl.innerText = "";
   }
+  if (victoryConfettiWaveTimer) {
+    clearInterval(victoryConfettiWaveTimer);
+    victoryConfettiWaveTimer = null;
+  }
+  if (victoryConfettiClearTimer) {
+    clearTimeout(victoryConfettiClearTimer);
+    victoryConfettiClearTimer = null;
+  }
   if (confettiEl) {
-    confettiEl.innerHTML = "";
+    if (fade && confettiEl.childElementCount > 0) {
+      confettiEl.classList.add("is-fading");
+      victoryConfettiClearTimer = setTimeout(() => {
+        confettiEl.innerHTML = "";
+        confettiEl.classList.remove("is-fading");
+        victoryConfettiClearTimer = null;
+      }, VICTORY_CONFETTI_FADE_MS);
+    } else {
+      confettiEl.innerHTML = "";
+      confettiEl.classList.remove("is-fading");
+    }
   }
   if (victoryEffectTimer) {
     clearTimeout(victoryEffectTimer);
@@ -221,12 +263,13 @@ function spawnVictoryConfetti() {
   if (!confettiEl) return;
 
   const colors = ["#9ff0ff", "#5bdbfb", "#c7ff54", "#f5ebff", "#ffcf72", "#f77df6"];
-  const piecesPerWave = 70;
-  const waveOffsets = [0, 320, 640];
+  const piecesPerWave = 34;
+  let waveIndex = 0;
 
   confettiEl.innerHTML = "";
+  confettiEl.classList.remove("is-fading");
 
-  waveOffsets.forEach((waveOffset, waveIndex) => {
+  const spawnWave = (waveOffset = 0) => {
     for (let i = 0; i < piecesPerWave; i += 1) {
       const piece = document.createElement("span");
       const driftX = Math.round((Math.random() - 0.5) * 140);
@@ -264,42 +307,65 @@ function spawnVictoryConfetti() {
       piece.style.setProperty("--fall-delay", `${waveOffset + Math.round(Math.random() * 320)}ms`);
       piece.style.setProperty("--confetti-color", colors[(waveIndex * piecesPerWave + i) % colors.length]);
       confettiEl.appendChild(piece);
+      window.setTimeout(() => {
+        piece.remove();
+      }, waveOffset + fallDuration + 700);
     }
-  });
+    waveIndex += 1;
+  };
+
+  spawnWave(0);
+  spawnWave(320);
+  spawnWave(640);
+  victoryConfettiWaveTimer = setInterval(() => {
+    spawnWave(0);
+  }, 900);
 }
 
 function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
   if (!ENABLE_VICTORY_EFFECTS) return;
 
   const gameEl = document.getElementById("game");
-  const bannerEl = document.getElementById("victory-banner");
-  if (!gameEl || !bannerEl) return;
+  if (!gameEl) return;
 
   clearGameOverEffects();
   clearVictoryEffects();
-  bannerEl.innerText = titleText;
+  state.victoryMessageActive = true;
+  state.victoryMessageJustReleased = true;
+  state.message = titleText;
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
   spawnVictoryConfetti();
   void gameEl.offsetWidth;
   gameEl.classList.add("victory-effect-active");
-
-  victoryEffectTimer = setTimeout(() => {
-    clearVictoryEffects();
-  }, 3600);
+  if (typeof renderMessage === "function") renderMessage();
 }
 
 function triggerGameOverEffect(detailText = "") {
-  if (!ENABLE_GAME_OVER_EFFECTS) return;
+  if (!ENABLE_GAME_OVER_EFFECTS) {
+    state.gameOverMessageReady = true;
+    state.gameOverMessageJustReleased = true;
+    return;
+  }
 
   const gameEl = document.getElementById("game");
   const detailEl = document.getElementById("game-over-detail");
   if (!gameEl) return;
 
   clearGameOverEffects();
+  state.gameOverMessageReady = false;
+  state.gameOverMessageJustReleased = false;
   void gameEl.offsetWidth;
   gameEl.classList.add("game-over-effect");
   if (detailEl) {
     detailEl.innerText = detailText || "";
   }
+  gameOverMessageTimer = setTimeout(() => {
+    state.gameOverMessageReady = true;
+    state.gameOverMessageJustReleased = true;
+    gameOverMessageTimer = null;
+    if (state.gameOver && typeof render === "function") render();
+  }, GAME_OVER_MESSAGE_REVEAL_DELAY_MS);
 }
 
 function flashGameShell(effect) {
@@ -527,13 +593,9 @@ function offerRewardPowerChoice(reason = "bonus") {
   state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
   state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
   state.activePowerAwardReason = String(reason || "bonus");
-  state.message = state.activePowerAwardReason === "brucie_bonus"
-    ? "Brucie Bonus! Choose 1 power:"
-    : state.activePowerAwardReason === "blank_space"
-      ? "Blank Space hit! Choose 1 power:"
-    : state.activePowerAwardReason === "psycho"
-      ? "Psycho complete! Choose 1 power:"
-    : "Choose 1 power:";
+  state.message = "";
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
 
   appendRunDebugLog("power_offer_presented", {
     awardReason: state.activePowerAwardReason,
@@ -596,15 +658,21 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.selectedStartPowerId = null;
   state.powers = [];
   state.gameOverDisplayCards = null;
+  state.gameOverMessageReady = true;
+  state.gameOverMessageJustReleased = false;
+  state.victoryMessageActive = false;
+  state.victoryMessageJustReleased = false;
   state.currentCardFeedback = "";
   state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
   state.message = "";
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
 }
 
 function openPowerChoice(forceRandom = false) {
   clearGameOverEffects();
-  clearVictoryEffects();
+  clearVictoryEffects({ fade: state.victoryMessageActive || state.gameOver });
   const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
   const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   const { chosenSeed, deck } = buildRunFromControls(forceRandom, selectedDeckKey, selectedLevelNumber);
@@ -632,7 +700,9 @@ function openPowerChoice(forceRandom = false) {
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
   previewPendingRunBehindPowerChoice(deck, "standard", state.pendingDeckKey, state.pendingLevelNumber);
-  state.message = `Choose 1 power for the ${getDeckName(state.pendingDeckKey)} Deck Level ${state.pendingLevelNumber} run.`;
+  state.message = "";
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
   render();
   if (typeof window.maybeStartPowerChoiceTutorial === "function") {
     window.setTimeout(() => window.maybeStartPowerChoiceTutorial(), 0);
@@ -641,7 +711,7 @@ function openPowerChoice(forceRandom = false) {
 
 function openDailyPowerChoice(dateKey = "") {
   clearGameOverEffects();
-  clearVictoryEffects();
+  clearVictoryEffects({ fade: state.victoryMessageActive || state.gameOver });
   const { chosenDateKey, chosenSeed, deck } = buildDailyRun(dateKey);
 
   state.pendingRunSeed = chosenSeed;
@@ -664,7 +734,9 @@ function openDailyPowerChoice(dateKey = "") {
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
   previewPendingRunBehindPowerChoice(deck, "daily", "blue", DEFAULT_LEVEL_NUMBER);
-  state.message = `Daily for ${chosenDateKey}: choose 1 power.`;
+  state.message = "";
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
   render();
 }
 
@@ -778,7 +850,13 @@ function startRunWithPower(powerId) {
             .map(getPowerName)
             .join(", ")}.`
         : `Run started with seed ${chosenSeed}.`,
+    temporaryMessageText: "",
+    temporaryMessageUntil: 0,
     gameOver: false,
+    gameOverMessageReady: true,
+    gameOverMessageJustReleased: false,
+    victoryMessageActive: false,
+    victoryMessageJustReleased: false,
     handCard: null,
     currentValueModifier: 0,
     correctAnswers: 0,
@@ -934,11 +1012,7 @@ function pickPowerFromChoice(index) {
     state.powerChoiceLockedUntil = 0;
     const rewardReason = state.activePowerAwardReason;
     state.activePowerAwardReason = "";
-    state.message = gained
-      ? rewardReason === "brucie_bonus"
-        ? `Brucie Bonus! Gained power: ${power.name}.`
-        : `Power gained: ${power.name}.`
-      : `${power.name} is already active.`;
+    setTemporaryMessage(gained ? `${power.name} selected!` : `${power.name} is already active.`);
     if (resolvePendingRewardQueues()) {
       return;
     }
@@ -948,7 +1022,7 @@ function pickPowerFromChoice(index) {
 
   startRunWithPower(power.id);
   state.activePowerAwardReason = "";
-  state.message = `Power picked: ${power.name}.`;
+  setTemporaryMessage(`${power.name} selected!`);
   render();
 }
 

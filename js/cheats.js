@@ -1679,38 +1679,37 @@ function pickCheatFromChoice(index, options = {}) {
   let addedToHand = false;
   let bankedNudgeDirection = "";
   let bankedEnergyAmount = 0;
+  const setCheatSelectionMessage = (message) => {
+    if (typeof setTemporaryMessage === "function") {
+      setTemporaryMessage(message);
+      return;
+    }
+    state.message = message;
+  };
 
   if (cheat.id === "nudge_up") {
     state.nudgeUpCharges = (state.nudgeUpCharges || 0) + 1;
-    state.message = wasNew
-      ? "Picked NEW reward: Nudge +1 charge banked."
-      : "Picked reward: Nudge +1 charge banked.";
+    setCheatSelectionMessage(`${cheat.name} added`);
     selectionOutcome = "banked_nudge";
     bankedNudgeDirection = "up";
   } else if (cheat.id === "nudge_down") {
     state.nudgeDownCharges = (state.nudgeDownCharges || 0) + 1;
-    state.message = wasNew
-      ? "Picked NEW reward: Nudge -1 charge banked."
-      : "Picked reward: Nudge -1 charge banked.";
+    setCheatSelectionMessage(`${cheat.name} added`);
     selectionOutcome = "banked_nudge";
     bankedNudgeDirection = "down";
   } else if (cheat.id === "green_energy_boost") {
     state.energy = Math.max(0, (state.energy || 0) + 5);
-    state.message = wasNew
-      ? `Picked NEW reward: +5 Energy applied. Energy is now ${state.energy}.`
-      : `Picked reward: +5 Energy applied. Energy is now ${state.energy}.`;
+    setCheatSelectionMessage(`${cheat.name} added`);
     selectionOutcome = "banked_energy";
     bankedEnergyAmount = 5;
   } else if (canAddCheatToHand(cheat)) {
     state.cheats.push({ ...cheat });
 
-    state.message = wasNew
-      ? `Picked NEW cheat: ${cheat.name}`
-      : `Picked: ${cheat.name}`;
+    setCheatSelectionMessage(`${cheat.name} added`);
     selectionOutcome = "added_to_hand";
     addedToHand = true;
   } else {
-    state.message = `${cheat.name} already in hand.`;
+    setCheatSelectionMessage(`${cheat.name} already in hand.`);
   }
 
   appendRunDebugLog("cheat_selected", {

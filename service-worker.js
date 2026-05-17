@@ -1,5 +1,6 @@
-const CACHE_VERSION = "20260516d";
+const CACHE_VERSION = "20260517d";
 const CACHE_NAME = `byronic-52-${CACHE_VERSION}`;
+const GAME_ASSET_VERSION = "20260517d";
 
 const APP_SHELL = [
   "./",
@@ -18,7 +19,7 @@ const APP_SHELL = [
   "./images/icons/icon-512.png",
   "./images/icons/icon-maskable-512.png",
   "./intro.css",
-  "./styles.css",
+  `./styles.css?v=${GAME_ASSET_VERSION}`,
   "./daily.css",
   "./settings.css",
   "./profile.css",
@@ -26,13 +27,13 @@ const APP_SHELL = [
   "./cheat-index.css",
   "./js/constants.js",
   "./js/storage.js",
-  "./js/state.js",
+  `./js/state.js?v=${GAME_ASSET_VERSION}`,
   "./js/powers.js",
-  "./js/cheats.js",
+  `./js/cheats.js?v=${GAME_ASSET_VERSION}`,
   "./js/cheat-balance-overrides.js",
   "./js/apply-cheat-balance-overrides.js",
-  "./js/logic.js",
-  "./js/render.js",
+  `./js/logic.js?v=${GAME_ASSET_VERSION}`,
+  `./js/render.js?v=${GAME_ASSET_VERSION}`,
   "./js/input.js",
   "./js/main.js",
   "./js/fullscreen.js",
@@ -43,22 +44,25 @@ const APP_SHELL = [
   "./js/heroes.js",
   "./js/leaderboard.js",
   "./js/cheat-index.js",
-  "./js/pwa-update.js",
+  `./js/pwa-update.js?v=${GAME_ASSET_VERSION}`,
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)),
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => Promise.all(
-      cacheNames
-        .filter((cacheName) => cacheName.startsWith("byronic-52-") && cacheName !== CACHE_NAME)
-        .map((cacheName) => caches.delete(cacheName)),
-    )),
+    caches.keys()
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith("byronic-52-") && cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName)),
+      ))
+      .then(() => self.clients.claim()),
   );
 });
 

@@ -8,6 +8,8 @@ function getDeckBackColor(deckKey) {
 
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
+let messageExpiryTimer = null;
+let messageFadeTimer = null;
 let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
 let suppressNextCheatEntryIntroId = "";
@@ -242,6 +244,8 @@ function playPendingCardRevealAnimation() {
         revealAnimationResetTimer = null;
         if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
         state.pendingRevealAnimation.phase = pending.outcome === "correct" ? "sliding" : "finishing";
+        state.pendingRevealAnimation.messageReleased = true;
+        state.pendingRevealAnimation.messageJustReleased = true;
         state.pendingRevealAnimation.started = false;
         render();
       }, halfFlipMs + REVEAL_HOLD_MS);
@@ -2270,12 +2274,82 @@ function renderMessage() {
   const el = document.getElementById("message-bar");
   if (!el) return;
 
-  el.classList.remove("is-game-over");
+  clearTimeout(messageExpiryTimer);
+  messageExpiryTimer = null;
+  el.classList.remove("is-game-over", "is-victory", "is-awaiting-reveal", "is-expiring", "message-pop");
   el.dataset.messageDensity = "normal";
+  const pendingReveal = state.pendingRevealAnimation;
+  const temporaryText = state.temporaryMessageText || "";
+
+  if (temporaryText && state.message !== temporaryText) {
+    state.temporaryMessageText = "";
+    state.temporaryMessageUntil = 0;
+  }
+
+  if (pendingReveal && !pendingReveal.messageReleased) {
+    el.classList.add("has-message", "is-awaiting-reveal");
+    return;
+  }
+
+  if (state.gameOver && state.gameOverMessageReady === false) {
+    el.innerText = "";
+    el.classList.remove("has-message");
+    return;
+  }
+
+  if (pendingReveal?.messageReleased && state.message && !state.gameOver && !state.temporaryMessageText) {
+    state.temporaryMessageText = state.message;
+    state.temporaryMessageUntil = Date.now() + 2000;
+  }
+
+  if (state.temporaryMessageText && state.temporaryMessageUntil > 0) {
+    const remainingMs = state.temporaryMessageUntil - Date.now();
+    if (remainingMs <= 0) {
+      el.classList.add("has-message", "is-expiring");
+      const expiringText = state.temporaryMessageText;
+      clearTimeout(messageFadeTimer);
+      messageFadeTimer = setTimeout(() => {
+        if (state.message === expiringText && state.temporaryMessageText === expiringText) {
+          state.message = "";
+        }
+        if (state.temporaryMessageText === expiringText) {
+          state.temporaryMessageText = "";
+          state.temporaryMessageUntil = 0;
+        }
+        messageFadeTimer = null;
+        renderMessage();
+      }, 170);
+      return;
+    }
+
+    messageExpiryTimer = setTimeout(renderMessage, remainingMs);
+  }
+
+  if (state.victoryMessageActive) {
+    const shouldPop = state.victoryMessageJustReleased;
+    el.innerText = state.message || "CONGRATULATIONS!";
+    if (shouldPop) {
+      el.classList.remove("has-message");
+      void el.offsetWidth;
+      el.classList.add("message-pop");
+      state.victoryMessageJustReleased = false;
+    }
+    el.classList.add("has-message", "is-victory");
+    return;
+  }
 
   if (state.gameOver) {
+    const shouldPop = pendingReveal?.messageJustReleased || state.gameOverMessageJustReleased;
     el.innerText = "GAME OVER";
-    el.classList.add("has-message", "is-game-over");
+    el.classList.add("is-game-over");
+    if (shouldPop) {
+      el.classList.remove("has-message");
+      void el.offsetWidth;
+      el.classList.add("message-pop");
+      if (pendingReveal) pendingReveal.messageJustReleased = false;
+      state.gameOverMessageJustReleased = false;
+    }
+    el.classList.add("has-message");
     return;
   }
 
@@ -2285,7 +2359,14 @@ function renderMessage() {
     return;
   }
 
+  const shouldPop = pendingReveal?.messageJustReleased;
   el.innerText = state.message;
+  if (shouldPop) {
+    el.classList.remove("has-message");
+    void el.offsetWidth;
+    el.classList.add("message-pop");
+    pendingReveal.messageJustReleased = false;
+  }
   el.classList.add("has-message");
   const densitySteps = ["normal", "compact", "tight"];
   for (const density of densitySteps) {
