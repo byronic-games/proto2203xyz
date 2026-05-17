@@ -12,6 +12,8 @@ let messageExpiryTimer = null;
 let messageFadeTimer = null;
 let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
+let experienceBankingStartTimer = null;
+let experienceBankingAnimationFrame = null;
 let suppressNextCheatEntryIntroId = "";
 let lastRenderedCheatCounts = new Map();
 let cheatChoiceConfirmIndex = -1;
@@ -27,6 +29,9 @@ const REVEAL_FLIP_MS = 378;
 const REVEAL_HOLD_MS = 144;
 const REVEAL_SLIDE_MS = 360;
 const REVEAL_FAILURE_HOLD_MS = 162;
+const EXPERIENCE_BANKING_BEAT_MS = 430;
+const EXPERIENCE_CARD_STAGGER_MS = 82;
+const EXPERIENCE_CARD_FLIGHT_MS = 560;
 const POWER_SHIELD_SVG = `
   <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
     <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
@@ -149,6 +154,10 @@ function finalizePendingReveal(pending) {
   removeRevealStateClasses(faceDownDeckEl);
   removeRevealStateClasses(overlayEl);
   setRevealOverlayHidden(true);
+
+  if (pending.outcome === "correct") {
+    markCardSeen(pending.revealCard);
+  }
 
   if (pending.triggerGameOver && state.gameOver) {
     state.gameOverDisplayCards = {
@@ -294,6 +303,277 @@ function playPendingCardRevealAnimation() {
   }, REVEAL_FAILURE_HOLD_MS);
 }
 
+function getStoredExperienceValue() {
+  if (Number.isFinite(Number(state.experience))) {
+    return Math.max(0, Math.floor(Number(state.experience)));
+  }
+  return typeof loadExperience === "function" ? loadExperience() : 0;
+}
+
+function getDisplayedExperienceValue() {
+  if (state.experienceBanking && Number.isFinite(Number(state.displayExperience))) {
+    return Math.max(0, Math.floor(Number(state.displayExperience)));
+  }
+  return getStoredExperienceValue();
+}
+
+function renderExperienceCounter(pop = false) {
+  const xpEl = document.getElementById("experience-value");
+  const xpWrap = document.getElementById("header-experience");
+  if (!xpEl || !xpWrap) return;
+
+  const enabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  xpWrap.hidden = !enabled;
+  xpWrap.setAttribute("aria-hidden", enabled ? "false" : "true");
+  state.experience = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  if (!enabled) {
+    xpWrap.classList.remove("xp-pop");
+    setAnimatedText(xpEl, state.experience);
+    return;
+  }
+
+  setAnimatedText(xpEl, getDisplayedExperienceValue());
+  if (pop) {
+    xpWrap.classList.remove("xp-pop");
+    void xpWrap.offsetWidth;
+    xpWrap.classList.add("xp-pop");
+  }
+}
+
+function clearExperienceBankingTimers() {
+  if (experienceBankingStartTimer) {
+    clearTimeout(experienceBankingStartTimer);
+    experienceBankingStartTimer = null;
+  }
+  if (experienceBankingAnimationFrame) {
+    cancelAnimationFrame(experienceBankingAnimationFrame);
+    experienceBankingAnimationFrame = null;
+  }
+}
+
+function getRunExperienceReward() {
+  const foundCount = state.seenCardIds instanceof Set ? state.seenCardIds.size : 0;
+  const scoreCount = typeof getRunScoreFromCorrectAnswers === "function"
+    ? getRunScoreFromCorrectAnswers(state.correctAnswers)
+    : 0;
+  return Math.min(52, Math.max(foundCount, scoreCount));
+}
+
+function completeExperienceBankingAnimation(options = {}) {
+  const banking = state.experienceBanking;
+  const hadPendingStart = !!experienceBankingStartTimer;
+  clearExperienceBankingTimers();
+  if (!banking && hadPendingStart && state.gameOver && !state.experienceAwardedForRun) {
+    awardExperienceForCurrentRun({ animate: false, pulse: false });
+    return true;
+  }
+  if (!banking) return false;
+
+  state.displayExperience = banking.finalValue;
+  state.experience = banking.finalValue;
+  state.experienceBanking = null;
+  state.experienceBankedCardIds = new Set();
+  renderExperienceCounter(false);
+
+  const clones = Array.from(document.querySelectorAll(".xp-fly-card"));
+  clones.forEach((clone) => {
+    if (options.fade !== false) {
+      clone.classList.add("is-fading");
+      window.setTimeout(() => clone.remove(), 170);
+    } else {
+      clone.remove();
+    }
+  });
+  return true;
+}
+
+function awardExperienceForCurrentRun(options = {}) {
+  if (state.experienceAwardedForRun || (typeof isDevModeRun === "function" && isDevModeRun())) return false;
+
+  const gained = getRunExperienceReward();
+  if (gained <= 0) return false;
+
+  const startValue = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  const finalValue = typeof saveExperience === "function"
+    ? saveExperience(startValue + gained)
+    : startValue + gained;
+
+  state.experienceAwardedForRun = true;
+  state.experience = finalValue;
+
+  if (!options.animate) {
+    state.displayExperience = finalValue;
+    state.experienceBanking = null;
+    state.experienceBankedCardIds = new Set();
+    renderExperienceCounter(!!options.pulse);
+    return true;
+  }
+
+  state.displayExperience = startValue;
+  state.experienceBanking = {
+    active: true,
+    gained,
+    startValue,
+    finalValue,
+    delivered: 0,
+    launched: 0,
+    cards: [],
+    startedAt: 0,
+  };
+  renderExperienceCounter(false);
+  if (options.delayStart) {
+    experienceBankingStartTimer = setTimeout(() => {
+      experienceBankingStartTimer = null;
+      startExperienceBankingAnimation();
+    }, EXPERIENCE_BANKING_BEAT_MS);
+    return true;
+  }
+  startExperienceBankingAnimation();
+  return true;
+}
+
+function scheduleExperienceBankingAfterGameOver() {
+  if (state.experienceBanking) return;
+  clearExperienceBankingTimers();
+  if (state.experienceAwardedForRun || !state.gameOver) return;
+  if (typeof loadExperienceDisplayEnabled === "function" && !loadExperienceDisplayEnabled()) {
+    awardExperienceForCurrentRun({ animate: false, pulse: false });
+    return;
+  }
+  awardExperienceForCurrentRun({ animate: true, delayStart: true });
+}
+
+function easeInOutSine(t) {
+  return -(Math.cos(Math.PI * t) - 1) / 2;
+}
+
+function startExperienceBankingAnimation() {
+  const banking = state.experienceBanking;
+  const targetEl = document.getElementById("experience-value");
+  if (!banking || !targetEl) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const targetRect = targetEl.getBoundingClientRect();
+  const targetX = targetRect.left + targetRect.width / 2;
+  const targetY = targetRect.top + targetRect.height / 2;
+  const sourceCells = Array.from(document.querySelectorAll("#seen-grid .grid-cell.seen"))
+    .filter((cell) => cell.getBoundingClientRect().width > 0 && cell.getBoundingClientRect().height > 0);
+
+  if (!sourceCells.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const shuffled = sourceCells
+    .map((cell) => ({ cell, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map((entry) => entry.cell)
+    .slice(0, banking.gained);
+  state.experienceBankedCardIds = new Set(shuffled.map((cell) => cell.dataset.cardId).filter(Boolean));
+  const now = performance.now();
+
+  banking.cards = shuffled.map((cell, index) => {
+    const rect = cell.getBoundingClientRect();
+    const clone = cell.cloneNode(true);
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top + rect.height / 2;
+    const curveDirection = Math.random() < 0.5 ? -1 : 1;
+    const curveAmount = curveDirection * (28 + Math.random() * 54);
+    const midpointX = (startX + targetX) / 2 + curveAmount;
+    const midpointY = (startY + targetY) / 2 - (32 + Math.random() * 42);
+
+    clone.classList.add("xp-fly-card");
+    clone.classList.remove("fresh");
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.opacity = "0";
+    clone.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1)`;
+    document.body.appendChild(clone);
+
+    return {
+      cell,
+      clone,
+      startX,
+      startY,
+      targetX,
+      targetY,
+      midpointX,
+      midpointY,
+      width: rect.width,
+      height: rect.height,
+      startTime: now + index * EXPERIENCE_CARD_STAGGER_MS + Math.random() * 36,
+      duration: EXPERIENCE_CARD_FLIGHT_MS + Math.random() * 160,
+      launched: false,
+      delivered: false,
+    };
+  });
+
+  banking.startedAt = now;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking) {
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    let allDelivered = true;
+    activeBanking.cards.forEach((card) => {
+      if (card.delivered) return;
+      allDelivered = false;
+      const elapsed = timestamp - card.startTime;
+      if (elapsed < 0) return;
+
+      if (!card.launched) {
+        card.launched = true;
+        card.cell.classList.add("xp-banked-source");
+        card.clone.style.opacity = "1";
+      }
+
+      const progress = Math.min(1, elapsed / card.duration);
+      const eased = easeInOutSine(progress);
+      const inverse = 1 - eased;
+      const centerX =
+        (inverse * inverse * card.startX) +
+        (2 * inverse * eased * card.midpointX) +
+        (eased * eased * card.targetX);
+      const centerY =
+        (inverse * inverse * card.startY) +
+        (2 * inverse * eased * card.midpointY) +
+        (eased * eased * card.targetY);
+      const scale = 1 - eased * 0.56;
+      const left = centerX - card.width / 2;
+      const top = centerY - card.height / 2;
+      card.clone.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${scale})`;
+      card.clone.style.opacity = String(Math.max(0.12, 1 - eased * 0.1));
+
+      if (progress >= 1) {
+        card.delivered = true;
+        card.clone.remove();
+        activeBanking.delivered += 1;
+        state.displayExperience = Math.min(activeBanking.finalValue, activeBanking.startValue + activeBanking.delivered);
+        renderExperienceCounter(true);
+      }
+    });
+
+    if (allDelivered || activeBanking.delivered >= activeBanking.gained) {
+      state.displayExperience = activeBanking.finalValue;
+      state.experience = activeBanking.finalValue;
+      state.experienceBanking = null;
+      state.experienceBankedCardIds = new Set();
+      renderExperienceCounter(false);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
@@ -313,6 +593,7 @@ function renderScores() {
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, `BEST: ${state.bestScore}`);
+  renderExperienceCounter(false);
   if (jokerCountEl) {
     const showJokerCount = hudDeckKey === "yellow";
     const remainingJokers = showJokerCount && typeof getRemainingJokerCount === "function"
@@ -605,8 +886,8 @@ const CHEAT_ICON_BY_NAME = Object.freeze({
   "Product of Next Two": "∏2",
   "Top Half / Bottom Half": "◐",
   "Face Card Ahead?": "JQK",
-  "One of Next 2 Higher?": "∃↑",
-  "One of Next 2 Lower?": "∃↓",
+  "One of Next 2 Higher?": "2↑",
+  "One of Next 2 Lower?": "2↓",
   "Higher of Next Two": "⇈",
   "Lower of Next Two": "⇊",
   "Next Card Parity": "⊕",
@@ -646,25 +927,14 @@ const CHEAT_ICON_BY_NAME = Object.freeze({
 });
 
 function getCheatIcon(name) {
-  return CHEAT_ICON_BY_NAME[name] || "✦";
-}
-
-function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
   if (name === "WL") return "W/L";
-  if (name === "One of Next 2 Higher?") return "?↑";
   if (name === "Psycho") return "PSY";
   if (name === "Higher, Higher, Higher") return "^^^";
   if (name === "Back To Square One") return "A1";
   if (name === "A Stitch In Time Saves...") return "9+";
   if (name === "Catch-22") return "22";
   if (name === "Sixth Sense") return "6?";
-  return CHEAT_ICON_BY_NAME[name] || "âœ¦";
-}
-
-function getCheatIcon(name) {
-  if (name === "Equals 11") return "=11";
-  if (name === "WL") return "W/L";
   return CHEAT_ICON_BY_NAME[name] || "✦";
 }
 
@@ -2233,8 +2503,11 @@ function renderSeenGrid() {
       const cardId = getCardId(suit, rank.r);
       const seen = state.seenCardIds.has(cardId);
       const isFresh = state.recentlySeenCardId === cardId;
+      const isBanked = state.experienceBankedCardIds instanceof Set && state.experienceBankedCardIds.has(cardId);
       const cell = document.createElement("div");
-      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed(card) ? "red" : "black"}`.trim();
+      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isBanked ? "xp-banked-source" : ""} ${isRed(card) ? "red" : "black"}`.trim();
+      cell.dataset.cardId = cardId;
+      cell.dataset.seen = seen ? "true" : "false";
       cell.setAttribute("aria-label", `${describeCard(card)} ${seen ? "found" : "not found"}`);
       if (seen) {
         if (document.body.dataset.visuals === "new") {

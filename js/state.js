@@ -1,23 +1,5 @@
 function createDeck(seedString) {
   const deck = [];
-
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      deck.push({
-        id: getCardId(suit, rank.r),
-        suit,
-        rank: rank.r,
-        value: rank.v,
-      });
-    }
-  }
-
-  seededShuffle(deck, seedString);
-  return deck;
-}
-
-function createDeck(seedString) {
-  const deck = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
       deck.push({
@@ -53,10 +35,15 @@ function createEmptyState() {
     temporaryMessageText: "",
     temporaryMessageUntil: 0,
     gameOver: true,
-    gameOverMessageReady: true,
+    gameOverMessageReady: false,
     gameOverMessageJustReleased: false,
     victoryMessageActive: false,
     victoryMessageJustReleased: false,
+    experience: loadExperience(),
+    displayExperience: null,
+    experienceAwardedForRun: false,
+    experienceBanking: null,
+    experienceBankedCardIds: new Set(),
     handCard: null,
     currentValueModifier: 0,
     nextCardValueModifier: 0,

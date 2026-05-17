@@ -1593,20 +1593,19 @@ function offerCheatChoice(reason = "") {
   state.cheatChoiceAnimating = null;
 
   if ((state.sixSevenRewardChoicesRemaining || 0) > 0) {
-    const pickNumber = 4 - state.sixSevenRewardChoicesRemaining;
-    state.message = `Choose bonus cheat ${pickNumber} of 3:`;
+    state.message = "";
   } else if (state.activeCheatAwardReason === "brucie_bonus") {
-    state.message = "Brucie Bonus! Choose 1 cheat:";
+    state.message = "";
   } else if (state.activeCheatAwardReason === "cheat_a_cheater") {
-    state.message = "You Can Cheat A Cheater! Choose a bonus cheat:";
+    state.message = "";
   } else if (state.activeCheatAwardReason === "equals_11") {
-    state.message = "Equals 11! Choose a bonus cheat:";
+    state.message = "";
   } else if (state.activeCheatAwardReason === "wl") {
-    state.message = "WL! Choose a bonus cheat:";
+    state.message = "";
   } else if (newlyMetaUnlocked.length) {
     state.message = `Unlocked: ${newlyMetaUnlocked.map((c) => c.name).join(", ")}`;
   } else {
-    state.message = "Choose 1 cheat:";
+    state.message = "";
   }
 
   appendRunDebugLog("cheat_offer_presented", {

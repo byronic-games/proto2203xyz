@@ -357,11 +357,17 @@ a {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: #ffe5ff;
-  font-size: 0.84rem;
-  line-height: 1.32;
-  font-weight: 700;
+  color: #dff5ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-align: center;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
   align-items: center;
   justify-content: center;
   overflow: visible;
@@ -400,14 +406,14 @@ a {
 
 #message-bar[data-message-density="compact"] {
   padding: 0 10px !important;
-  font-size: 0.8rem !important;
-  line-height: 1.24 !important;
+  font-size: clamp(0.9rem, 3.1cqw, 1.06rem) !important;
+  line-height: 1 !important;
 }
 
 #message-bar[data-message-density="tight"] {
   padding: 0 9px !important;
-  font-size: 0.75rem !important;
-  line-height: 1.18 !important;
+  font-size: clamp(0.78rem, 2.65cqw, 0.94rem) !important;
+  line-height: 1 !important;
 }
 
 #message-bar[data-message-density="scroll"] {
@@ -416,8 +422,8 @@ a {
   overflow: visible !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  font-size: 0.74rem !important;
-  line-height: 1.16 !important;
+  font-size: clamp(0.72rem, 2.3cqw, 0.86rem) !important;
+  line-height: 1 !important;
   text-align: center !important;
 }
 
@@ -2140,6 +2146,27 @@ body.choice-modal-open #controls,
   transform-origin: center;
 }
 
+.grid-cell.xp-banked-source {
+  opacity: 0;
+  transition: opacity 120ms ease-in;
+}
+
+.xp-fly-card {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  pointer-events: none;
+  z-index: 1400;
+  will-change: transform, opacity;
+  transform-origin: center;
+}
+
+.xp-fly-card.is-fading {
+  opacity: 0 !important;
+  transition: opacity 150ms ease-in;
+}
+
 @keyframes seen-stamp {
   0% {
     transform: scale(0.58);
@@ -3560,6 +3587,31 @@ body.choice-modal-open #controls,
 
 .header-menu-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-experience {
+  min-width: 2ch;
+  display: grid;
+  place-items: center;
+  color: #dff5ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-align: right;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
+  pointer-events: none;
+}
+
+.header-experience.xp-pop {
+  animation: energy-counter-pop 216ms cubic-bezier(0.18, 0.9, 0.22, 1.35);
 }
 
 .menu-button {
@@ -3626,8 +3678,16 @@ body.choice-modal-open #controls,
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  font-size: 0.78rem !important;
-  line-height: 1.18 !important;
+  color: #dff5ff !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25) !important;
 }
 
 #message-bar.has-message {
@@ -4246,14 +4306,26 @@ body.choice-modal-open #controls,
   position: relative;
   min-width: 0;
   min-height: 0;
-  padding-left: clamp(10px, 3.2cqw, 16px);
+  padding-left: clamp(14px, 4cqw, 20px);
   border-left: 0;
-  background-image: linear-gradient(rgba(226, 232, 240, 0.38), rgba(226, 232, 240, 0.38));
-  background-position: left center;
-  background-repeat: no-repeat;
-  background-size: 1px var(--nudge-card-height);
+  background: transparent;
   overflow: hidden;
   container-type: size;
+}
+
+.cheat-scroll-window::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: var(--nudge-card-height);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  box-shadow: 0 0 8px rgba(255,255,255,0.08);
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 1;
 }
 
 .cheat-button,
@@ -4865,23 +4937,26 @@ body.choice-modal-open #controls,
 
 #message-bar.is-game-over {
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(0.96rem, 2.75cqw, 1.16rem) !important;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem) !important;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 232, 238, 0.98);
+  color: #dff5ff;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
 }
 
 #message-bar.is-victory {
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(0.98rem, 2.85cqw, 1.2rem) !important;
-  font-weight: 900;
-  letter-spacing: 0.16em;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem) !important;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(198, 255, 247, 0.98);
+  color: #dff5ff;
   text-shadow:
-    0 0 18px rgba(0, 232, 255, 0.24),
-    0 0 30px rgba(199, 255, 84, 0.14);
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
 }
 
 #game.game-over-effect #play-area,

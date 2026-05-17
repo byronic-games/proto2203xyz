@@ -754,6 +754,7 @@ function refreshSettingsModalState() {
   const visualsSelect = document.getElementById("settings-visuals-select");
   const buttonOrderSelect = document.getElementById("settings-button-order-select");
   const nudgeOrderSelect = document.getElementById("settings-nudge-order-select");
+  const experienceToggle = document.getElementById("settings-experience-toggle");
   const unlockDecksToggle = document.getElementById("settings-unlock-decks-toggle");
   const shareLogBtn = document.getElementById("settings-share-log-btn");
   const downloadLogBtn = document.getElementById("settings-download-log-btn");
@@ -770,6 +771,9 @@ function refreshSettingsModalState() {
   }
   if (nudgeOrderSelect) {
     nudgeOrderSelect.value = loadNudgeButtonOrder();
+  }
+  if (experienceToggle) {
+    experienceToggle.checked = loadExperienceDisplayEnabled();
   }
   if (unlockDecksToggle) {
     unlockDecksToggle.checked = loadUnlockDecks();
@@ -1013,6 +1017,18 @@ document.getElementById("settings-nudge-order-select")?.addEventListener("change
   setSettingsModalStatus(event.target.value === "up-down"
     ? "Nudges set to Up / Down."
     : "Nudges set to Down / Up.");
+});
+
+document.getElementById("settings-experience-toggle")?.addEventListener("change", (event) => {
+  const enabled = saveExperienceDisplayEnabled(!!event.target.checked);
+  if (!enabled && typeof completeExperienceBankingAnimation === "function") {
+    completeExperienceBankingAnimation({ fade: true });
+    state.experienceBankedCardIds = new Set();
+  }
+  render();
+  setSettingsModalStatus(enabled
+    ? "Experience display enabled."
+    : "Experience is still tracked, but hidden.");
 });
 
 document.getElementById("settings-unlock-decks-toggle")?.addEventListener("change", (event) => {

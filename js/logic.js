@@ -209,6 +209,9 @@ function clearGameOverEffects() {
     clearTimeout(gameOverMessageTimer);
     gameOverMessageTimer = null;
   }
+  if (typeof completeExperienceBankingAnimation === "function") {
+    completeExperienceBankingAnimation({ fade: true });
+  }
   if (gameEl) {
     gameEl.classList.remove("game-over-effect");
   }
@@ -335,6 +338,9 @@ function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
   state.message = titleText;
   state.temporaryMessageText = "";
   state.temporaryMessageUntil = 0;
+  if (typeof awardExperienceForCurrentRun === "function") {
+    awardExperienceForCurrentRun({ animate: false, pulse: true });
+  }
   spawnVictoryConfetti();
   void gameEl.offsetWidth;
   gameEl.classList.add("victory-effect-active");
@@ -345,6 +351,9 @@ function triggerGameOverEffect(detailText = "") {
   if (!ENABLE_GAME_OVER_EFFECTS) {
     state.gameOverMessageReady = true;
     state.gameOverMessageJustReleased = true;
+    if (typeof scheduleExperienceBankingAfterGameOver === "function") {
+      scheduleExperienceBankingAfterGameOver();
+    }
     return;
   }
 
@@ -365,6 +374,9 @@ function triggerGameOverEffect(detailText = "") {
     state.gameOverMessageJustReleased = true;
     gameOverMessageTimer = null;
     if (state.gameOver && typeof render === "function") render();
+    if (typeof scheduleExperienceBankingAfterGameOver === "function") {
+      scheduleExperienceBankingAfterGameOver();
+    }
   }, GAME_OVER_MESSAGE_REVEAL_DELAY_MS);
 }
 
@@ -658,10 +670,15 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.selectedStartPowerId = null;
   state.powers = [];
   state.gameOverDisplayCards = null;
-  state.gameOverMessageReady = true;
+  state.gameOverMessageReady = false;
   state.gameOverMessageJustReleased = false;
   state.victoryMessageActive = false;
   state.victoryMessageJustReleased = false;
+  state.experience = loadExperience();
+  state.displayExperience = null;
+  state.experienceAwardedForRun = false;
+  state.experienceBanking = null;
+  state.experienceBankedCardIds = new Set();
   state.currentCardFeedback = "";
   state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
@@ -853,10 +870,15 @@ function startRunWithPower(powerId) {
     temporaryMessageText: "",
     temporaryMessageUntil: 0,
     gameOver: false,
-    gameOverMessageReady: true,
+    gameOverMessageReady: false,
     gameOverMessageJustReleased: false,
     victoryMessageActive: false,
     victoryMessageJustReleased: false,
+    experience: loadExperience(),
+    displayExperience: null,
+    experienceAwardedForRun: false,
+    experienceBanking: null,
+    experienceBankedCardIds: new Set(),
     handCard: null,
     currentValueModifier: 0,
     correctAnswers: 0,
@@ -1122,7 +1144,6 @@ function advanceToCard(card) {
   state.current = card;
   state.index += 1;
   state.cheatUsesOnCurrentCard = 0;
-  markCardSeen(card);
 }
 
 function removeCheatAt(index) {
@@ -1664,6 +1685,8 @@ function fullResetAllStateForDebug() {
   localStorage.removeItem(BEST_SCORES_BY_MODE_KEY);
   localStorage.removeItem(SELECTED_LEVEL_KEY);
   localStorage.removeItem(META_PROGRESSION_KEY);
+  localStorage.removeItem(EXPERIENCE_KEY);
+  localStorage.removeItem(EXPERIENCE_DISPLAY_KEY);
   localStorage.removeItem(CHEAT_UNLOCKS_KEY);
   localStorage.removeItem(PROFILE_STATS_KEY);
   localStorage.removeItem(SELECTED_DECK_KEY);
