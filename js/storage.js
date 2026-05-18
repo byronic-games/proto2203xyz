@@ -479,6 +479,35 @@ function saveProfileStats(stats) {
   return normalized;
 }
 
+function loadExperience() {
+  const value = Number(localStorage.getItem(EXPERIENCE_KEY));
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+function saveExperience(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  localStorage.setItem(EXPERIENCE_KEY, String(normalized));
+  return normalized;
+}
+
+function addExperience(amount = 0) {
+  const gained = Math.max(0, Math.floor(Number(amount) || 0));
+  return saveExperience(loadExperience() + gained);
+}
+
+function loadExperienceDisplayEnabled() {
+  return localStorage.getItem(EXPERIENCE_DISPLAY_KEY) !== "0";
+}
+
+function saveExperienceDisplayEnabled(enabled) {
+  if (enabled) {
+    localStorage.removeItem(EXPERIENCE_DISPLAY_KEY);
+    return true;
+  }
+  localStorage.setItem(EXPERIENCE_DISPLAY_KEY, "0");
+  return false;
+}
+
 function recordRunStarted(deckKey, runMode = "standard") {
   const stats = loadProfileStats();
   stats.runsStarted += 1;
@@ -545,6 +574,16 @@ function serializeGameStateSnapshot(sourceState) {
   return {
     ...sourceState,
     seenCardIds: Array.from(sourceState.seenCardIds || []),
+    experience: loadExperience(),
+    displayExperience: null,
+    experienceBanking: null,
+    experienceBankedCardIds: [],
+    experiencePreviewUntil: 0,
+    experienceMilestonesAwarded: Array.from(sourceState.experienceMilestonesAwarded || []),
+    pendingExperienceBonuses: Array.isArray(sourceState.pendingExperienceBonuses)
+      ? sourceState.pendingExperienceBonuses
+      : [],
+    unusedCheatExperienceAwarded: !!sourceState.unusedCheatExperienceAwarded,
     cheats: (sourceState.cheats || []).map((cheat) => cheat?.id).filter(Boolean),
     pendingCheatOptions: (sourceState.pendingCheatOptions || []).map((cheat) => cheat?.id).filter(Boolean),
     pendingPowerOptions: (sourceState.pendingPowerOptions || []).map((power) => power?.id).filter(Boolean),
@@ -574,6 +613,13 @@ function loadGameStateSnapshot() {
       ...createEmptyState(),
       ...parsed,
       seenCardIds: new Set(Array.isArray(parsed.seenCardIds) ? parsed.seenCardIds : []),
+      displayExperience: null,
+      experienceBanking: null,
+      experienceBankedCardIds: new Set(Array.isArray(parsed.experienceBankedCardIds) ? parsed.experienceBankedCardIds : []),
+      experiencePreviewUntil: 0,
+      experienceMilestonesAwarded: new Set(Array.isArray(parsed.experienceMilestonesAwarded) ? parsed.experienceMilestonesAwarded : []),
+      pendingExperienceBonuses: Array.isArray(parsed.pendingExperienceBonuses) ? parsed.pendingExperienceBonuses : [],
+      unusedCheatExperienceAwarded: !!parsed.unusedCheatExperienceAwarded,
       cheats: (parsed.cheats || []).map((id) => CHEATS.find((cheat) => cheat.id === id)).filter(Boolean).map((cheat) => ({ ...cheat })),
       pendingCheatOptions: (parsed.pendingCheatOptions || []).map((id) => CHEATS.find((cheat) => cheat.id === id)).filter(Boolean),
       pendingPowerOptions: (parsed.pendingPowerOptions || []).map((id) => getPowerById(id)).filter(Boolean),

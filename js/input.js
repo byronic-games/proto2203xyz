@@ -754,6 +754,7 @@ function refreshSettingsModalState() {
   const visualsSelect = document.getElementById("settings-visuals-select");
   const buttonOrderSelect = document.getElementById("settings-button-order-select");
   const nudgeOrderSelect = document.getElementById("settings-nudge-order-select");
+  const experienceToggle = document.getElementById("settings-experience-toggle");
   const unlockDecksToggle = document.getElementById("settings-unlock-decks-toggle");
   const shareLogBtn = document.getElementById("settings-share-log-btn");
   const downloadLogBtn = document.getElementById("settings-download-log-btn");
@@ -770,6 +771,9 @@ function refreshSettingsModalState() {
   }
   if (nudgeOrderSelect) {
     nudgeOrderSelect.value = loadNudgeButtonOrder();
+  }
+  if (experienceToggle) {
+    experienceToggle.checked = loadExperienceDisplayEnabled();
   }
   if (unlockDecksToggle) {
     unlockDecksToggle.checked = loadUnlockDecks();
@@ -1015,6 +1019,18 @@ document.getElementById("settings-nudge-order-select")?.addEventListener("change
     : "Nudges set to Down / Up.");
 });
 
+document.getElementById("settings-experience-toggle")?.addEventListener("change", (event) => {
+  const enabled = saveExperienceDisplayEnabled(!!event.target.checked);
+  if (!enabled && typeof completeExperienceBankingAnimation === "function") {
+    completeExperienceBankingAnimation({ fade: true });
+    state.experienceBankedCardIds = new Set();
+  }
+  render();
+  setSettingsModalStatus(enabled
+    ? "Experience display enabled."
+    : "Experience is still tracked, but hidden.");
+});
+
 document.getElementById("settings-unlock-decks-toggle")?.addEventListener("change", (event) => {
   saveUnlockDecks(!!event.target.checked);
   setSettingsModalStatus(event.target.checked
@@ -1224,6 +1240,12 @@ document.getElementById("victory-form")?.addEventListener("submit", async (e) =>
 
   if (!inputEl || !statusEl || !submitBtn) return;
 
+  if (window.devModeEnabled || state.devMode) {
+    statusEl.innerText = "Dev mode: hero run not saved.";
+    setTimeout(() => closeVictoryModal(), 700);
+    return;
+  }
+
   submitBtn.disabled = true;
   const result = await submitHeroWin(
     inputEl.value,
@@ -1255,6 +1277,7 @@ document.getElementById("victory-modal")?.addEventListener("click", (e) => {
 
 window.addEventListener("pagehide", () => {
   if (window.skipAutoSnapshot) return;
+  if (window.devModeEnabled || state.devMode) return;
   saveGameStateSnapshot(state);
 });
 
@@ -1297,6 +1320,19 @@ window.addEventListener("wheel", () => {
 window.addEventListener("keydown", (e) => {
   const debugEnabled = !!window.testModeEnabled;
   const matchesKey = (key, code) => e.key === key || e.key === key.toUpperCase() || e.code === code;
+
+  if (window.devModeEnabled && e.shiftKey && matchesKey("p", "KeyP")) {
+    e.preventDefault();
+    grantNextDevPower();
+    return;
+  }
+
+  if (window.devModeEnabled && e.shiftKey && matchesKey("w", "KeyW")) {
+    e.preventDefault();
+    winCurrentRunForDev();
+    return;
+  }
+
   if (debugEnabled) {
     if (matchesKey("c", "KeyC")) {
       clearCheatsForDebug();

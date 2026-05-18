@@ -8,8 +8,13 @@ function getDeckBackColor(deckKey) {
 
 let revealAnimationResetTimer = null;
 let revealGameOverTimer = null;
+let messageExpiryTimer = null;
+let messageFadeTimer = null;
 let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
+let experienceBankingStartTimer = null;
+let experienceBankingAnimationFrame = null;
+let experiencePreviewResetTimer = null;
 let suppressNextCheatEntryIntroId = "";
 let lastRenderedCheatCounts = new Map();
 let cheatChoiceConfirmIndex = -1;
@@ -25,6 +30,17 @@ const REVEAL_FLIP_MS = 378;
 const REVEAL_HOLD_MS = 144;
 const REVEAL_SLIDE_MS = 360;
 const REVEAL_FAILURE_HOLD_MS = 162;
+const EXPERIENCE_BANKING_BEAT_MS = 430;
+const EXPERIENCE_CARD_STAGGER_MS = 82;
+const EXPERIENCE_CARD_FLIGHT_MS = 560;
+const EXPERIENCE_DECK_CLEAR_BONUS = 100;
+const EXPERIENCE_UNUSED_CHEAT_BONUS = 20;
+const EXPERIENCE_UNUSED_CHEAT_STAGGER_MS = 250;
+const EXPERIENCE_CARD_MILESTONES = Object.freeze([
+  { count: 13, bonus: 10 },
+  { count: 26, bonus: 25 },
+  { count: 39, bonus: 50 },
+]);
 const POWER_SHIELD_SVG = `
   <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
     <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
@@ -148,6 +164,13 @@ function finalizePendingReveal(pending) {
   removeRevealStateClasses(overlayEl);
   setRevealOverlayHidden(true);
 
+  if (pending.outcome === "correct") {
+    markCardSeen(pending.revealCard);
+    if (state.seenCardIds instanceof Set) {
+      awardExperienceMilestonesForFoundCount(state.seenCardIds.size);
+    }
+  }
+
   if (pending.triggerGameOver && state.gameOver) {
     state.gameOverDisplayCards = {
       leftCard: pending.fromCard || null,
@@ -242,6 +265,8 @@ function playPendingCardRevealAnimation() {
         revealAnimationResetTimer = null;
         if (!state.pendingRevealAnimation || state.pendingRevealAnimation.id !== pending.id) return;
         state.pendingRevealAnimation.phase = pending.outcome === "correct" ? "sliding" : "finishing";
+        state.pendingRevealAnimation.messageReleased = true;
+        state.pendingRevealAnimation.messageJustReleased = true;
         state.pendingRevealAnimation.started = false;
         render();
       }, halfFlipMs + REVEAL_HOLD_MS);
@@ -290,6 +315,698 @@ function playPendingCardRevealAnimation() {
   }, REVEAL_FAILURE_HOLD_MS);
 }
 
+function getStoredExperienceValue() {
+  if (Number.isFinite(Number(state.experience))) {
+    return Math.max(0, Math.floor(Number(state.experience)));
+  }
+  return typeof loadExperience === "function" ? loadExperience() : 0;
+}
+
+function getDisplayedExperienceValue() {
+  if (state.experienceBanking && Number.isFinite(Number(state.displayExperience))) {
+    return Math.max(0, Math.floor(Number(state.displayExperience)));
+  }
+  if (
+    Number.isFinite(Number(state.experiencePreviewUntil)) &&
+    Date.now() < Number(state.experiencePreviewUntil) &&
+    Number.isFinite(Number(state.displayExperience))
+  ) {
+    return Math.max(0, Math.floor(Number(state.displayExperience)));
+  }
+  return getStoredExperienceValue();
+}
+
+function renderExperienceCounter(pop = false) {
+  const xpEl = document.getElementById("experience-value");
+  const xpWrap = document.getElementById("header-experience");
+  if (!xpEl || !xpWrap) return;
+
+  const enabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  xpWrap.hidden = !enabled;
+  xpWrap.setAttribute("aria-hidden", enabled ? "false" : "true");
+  state.experience = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  if (!enabled) {
+    xpWrap.classList.remove("xp-pop");
+    setAnimatedText(xpEl, state.experience);
+    return;
+  }
+
+  setAnimatedText(xpEl, getDisplayedExperienceValue());
+  if (pop) {
+    xpWrap.classList.remove("xp-pop");
+    void xpWrap.offsetWidth;
+    xpWrap.classList.add("xp-pop");
+  }
+}
+
+function clearExperienceBankingTimers() {
+  if (experienceBankingStartTimer) {
+    clearTimeout(experienceBankingStartTimer);
+    experienceBankingStartTimer = null;
+  }
+  if (experienceBankingAnimationFrame) {
+    cancelAnimationFrame(experienceBankingAnimationFrame);
+    experienceBankingAnimationFrame = null;
+  }
+  if (experiencePreviewResetTimer) {
+    clearTimeout(experiencePreviewResetTimer);
+    experiencePreviewResetTimer = null;
+  }
+}
+
+function getRunExperienceReward() {
+  const foundCount = state.seenCardIds instanceof Set ? state.seenCardIds.size : 0;
+  const scoreCount = typeof getRunScoreFromCorrectAnswers === "function"
+    ? getRunScoreFromCorrectAnswers(state.correctAnswers)
+    : 0;
+  return Math.min(52, Math.max(foundCount, scoreCount));
+}
+
+function getDeckCompletionExperienceBonus() {
+  const deckLength = Array.isArray(state.deck) ? state.deck.length : 0;
+  if (!state.gameOver || deckLength <= 0) return 0;
+  const requiredCorrectAnswers = Math.max(0, deckLength - 1);
+  return (Number(state.correctAnswers) || 0) >= requiredCorrectAnswers
+    ? EXPERIENCE_DECK_CLEAR_BONUS
+    : 0;
+}
+
+function finishExperienceBanking(banking, pop = false) {
+  const isPreview = !!banking?.preview;
+  state.displayExperience = banking.finalValue;
+  state.experience = isPreview ? getStoredExperienceValue() : banking.finalValue;
+  state.experienceBanking = null;
+  state.experienceBankedCardIds = new Set();
+
+  if (isPreview) {
+    state.experiencePreviewUntil = Date.now() + 1600;
+    renderExperienceCounter(pop);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 120);
+    experiencePreviewResetTimer = setTimeout(() => {
+      experiencePreviewResetTimer = null;
+      if (Date.now() < Number(state.experiencePreviewUntil || 0)) return;
+      state.displayExperience = null;
+      state.experiencePreviewUntil = 0;
+      renderExperienceCounter(false);
+    }, 1620);
+    return;
+  }
+
+  if (banking?.persistOnFinish && typeof saveExperience === "function") {
+    state.displayExperience = saveExperience(banking.finalValue);
+    state.experience = state.displayExperience;
+  }
+
+  state.experiencePreviewUntil = 0;
+  renderExperienceCounter(pop);
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 120);
+}
+
+function getExperienceMilestoneSet() {
+  if (state.experienceMilestonesAwarded instanceof Set) return state.experienceMilestonesAwarded;
+  state.experienceMilestonesAwarded = new Set(Array.isArray(state.experienceMilestonesAwarded) ? state.experienceMilestonesAwarded : []);
+  return state.experienceMilestonesAwarded;
+}
+
+function experienceBonusIsBlockedByChoiceFlow() {
+  return !!(
+    state.pauseForCheat ||
+    state.cheatChoiceAnimating ||
+    state.powerChoiceAnimating ||
+    (Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0) ||
+    (Array.isArray(state.pendingPowerOptions) && state.pendingPowerOptions.length > 0)
+  );
+}
+
+function queueExperienceBonus(amount, options = {}) {
+  if (!Array.isArray(state.pendingExperienceBonuses)) {
+    state.pendingExperienceBonuses = [];
+  }
+  state.pendingExperienceBonuses.push({
+    amount: Math.max(0, Math.floor(Number(amount) || 0)),
+    type: options.type || "milestone_bonus",
+    animate: options.animate !== false,
+    allowDevPreview: !!options.allowDevPreview,
+    persist: options.persist !== false,
+    sourceCheatIds: Array.isArray(options.sourceCheatIds) ? options.sourceCheatIds : [],
+    unitValue: Math.max(1, Math.floor(Number(options.unitValue) || 1)),
+  });
+}
+
+function flushPendingExperienceBonusesIfReady() {
+  if (!Array.isArray(state.pendingExperienceBonuses) || state.pendingExperienceBonuses.length === 0) return false;
+  if (experienceBonusIsBlockedByChoiceFlow() || state.experienceBanking) return false;
+
+  const nextBonus = state.pendingExperienceBonuses.shift();
+  awardExperienceBonus(nextBonus.amount, nextBonus);
+  return true;
+}
+
+function awardOrQueueExperienceBonus(amount, options = {}) {
+  if (experienceBonusIsBlockedByChoiceFlow() || state.experienceBanking) {
+    queueExperienceBonus(amount, options);
+    return true;
+  }
+  return awardExperienceBonus(amount, options);
+}
+
+function awardExperienceBonus(amount, options = {}) {
+  const bonus = Math.max(0, Math.floor(Number(amount) || 0));
+  if (bonus <= 0) return false;
+
+  const devPreview = !!options.allowDevPreview && typeof isDevModeRun === "function" && isDevModeRun();
+  if (typeof isDevModeRun === "function" && isDevModeRun() && !devPreview) return false;
+
+  if (experiencePreviewResetTimer) {
+    clearTimeout(experiencePreviewResetTimer);
+    experiencePreviewResetTimer = null;
+  }
+
+  if (state.experienceBanking) {
+    completeExperienceBankingAnimation({ fade: false });
+  }
+
+  const startValue = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  const finalValue = startValue + bonus;
+  const displayEnabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  const shouldPersist = options.persist !== false && !devPreview;
+
+  if (!displayEnabled || options.animate === false) {
+    if (shouldPersist && typeof saveExperience === "function") {
+      state.experience = saveExperience(finalValue);
+    } else {
+      state.experience = getStoredExperienceValue();
+    }
+    state.displayExperience = null;
+    state.experienceBanking = null;
+    state.experiencePreviewUntil = 0;
+    renderExperienceCounter(false);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
+    return true;
+  }
+
+  state.displayExperience = startValue;
+  state.experienceBanking = {
+    type: options.type || "milestone_bonus",
+    active: true,
+    gained: bonus,
+    startValue,
+    finalValue,
+    delivered: 0,
+    launched: 0,
+    cards: [],
+    startedAt: 0,
+    preview: !shouldPersist,
+    persistOnFinish: shouldPersist,
+    sourceCheatIds: Array.isArray(options.sourceCheatIds) ? options.sourceCheatIds : [],
+    unitValue: Math.max(1, Math.floor(Number(options.unitValue) || 1)),
+  };
+  renderExperienceCounter(false);
+  startExperienceBankingAnimation();
+  return true;
+}
+
+function awardUnusedCheatExperienceForRunEnd() {
+  if (state.unusedCheatExperienceAwarded) return false;
+  if (getDeckCompletionExperienceBonus() <= 0) return false;
+  const cheatIds = Array.isArray(state.cheats)
+    ? state.cheats
+        .map((cheat) => cheat?.id)
+        .filter((id) => id && id !== "nudge_up" && id !== "nudge_down")
+    : [];
+  if (!cheatIds.length) return false;
+
+  state.unusedCheatExperienceAwarded = true;
+  return awardOrQueueExperienceBonus(cheatIds.length * EXPERIENCE_UNUSED_CHEAT_BONUS, {
+    type: "unused_cheats_bonus",
+    animate: true,
+    allowDevPreview: true,
+    persist: !(typeof isDevModeRun === "function" && isDevModeRun()),
+    sourceCheatIds: cheatIds,
+    unitValue: EXPERIENCE_UNUSED_CHEAT_BONUS,
+  });
+}
+
+function awardExperienceMilestonesForFoundCount(foundCount) {
+  const count = Math.max(0, Math.floor(Number(foundCount) || 0));
+  if (count <= 0) return;
+
+  const awarded = getExperienceMilestoneSet();
+  EXPERIENCE_CARD_MILESTONES.forEach((milestone) => {
+    const milestoneKey = String(milestone.count);
+    if (count < milestone.count || awarded.has(milestoneKey)) return;
+    awarded.add(milestoneKey);
+    awardOrQueueExperienceBonus(milestone.bonus, {
+      type: "milestone_bonus",
+      animate: true,
+      allowDevPreview: true,
+      persist: !(typeof isDevModeRun === "function" && isDevModeRun()),
+    });
+  });
+}
+
+function completeExperienceBankingAnimation(options = {}) {
+  const banking = state.experienceBanking;
+  const hadPendingStart = !!experienceBankingStartTimer;
+  clearExperienceBankingTimers();
+  if (!banking && hadPendingStart && state.gameOver && !state.experienceAwardedForRun) {
+    awardExperienceForCurrentRun({ animate: false, pulse: false });
+    return true;
+  }
+  if (!banking) return false;
+
+  finishExperienceBanking(banking, false);
+
+  const clones = Array.from(document.querySelectorAll(".xp-fly-card, .xp-bonus-fly, .xp-cheat-fly"));
+  clones.forEach((clone) => {
+    if (options.fade !== false) {
+      clone.classList.add("is-fading");
+      window.setTimeout(() => clone.remove(), 170);
+    } else {
+      clone.remove();
+    }
+  });
+  return true;
+}
+
+function awardExperienceForCurrentRun(options = {}) {
+  const devPreview = !!options.allowDevPreview && typeof isDevModeRun === "function" && isDevModeRun();
+  if (state.experienceAwardedForRun || (typeof isDevModeRun === "function" && isDevModeRun() && !devPreview)) return false;
+
+  const runReward = getRunExperienceReward();
+  const completionBonus = getDeckCompletionExperienceBonus();
+  const gained = runReward + completionBonus;
+  if (gained <= 0) return false;
+
+  const startValue = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  const shouldPersist = options.persist !== false && !devPreview;
+  const finalValue = shouldPersist && typeof saveExperience === "function"
+    ? saveExperience(startValue + gained)
+    : startValue + gained;
+
+  state.experienceAwardedForRun = true;
+  state.experience = finalValue;
+
+  const displayEnabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  if (displayEnabled && options.animateCompletionBonus && completionBonus > 0) {
+    state.displayExperience = finalValue - completionBonus;
+    state.experienceBanking = {
+      type: "completion_bonus",
+      active: true,
+      gained: completionBonus,
+      startValue: finalValue - completionBonus,
+      finalValue,
+      delivered: 0,
+      launched: 0,
+      cards: [],
+      startedAt: 0,
+      preview: !shouldPersist,
+    };
+    awardUnusedCheatExperienceForRunEnd();
+    renderExperienceCounter(false);
+    startExperienceBankingAnimation();
+    return true;
+  }
+
+  if (!options.animate) {
+    state.displayExperience = finalValue;
+    state.experienceBanking = null;
+    state.experienceBankedCardIds = new Set();
+    renderExperienceCounter(!!options.pulse);
+    awardUnusedCheatExperienceForRunEnd();
+    return true;
+  }
+
+  state.displayExperience = startValue;
+  state.experienceBanking = {
+    active: true,
+    gained,
+    startValue,
+    finalValue,
+    delivered: 0,
+    launched: 0,
+    cards: [],
+    startedAt: 0,
+    preview: !shouldPersist,
+  };
+  awardUnusedCheatExperienceForRunEnd();
+  renderExperienceCounter(false);
+  if (options.delayStart) {
+    experienceBankingStartTimer = setTimeout(() => {
+      experienceBankingStartTimer = null;
+      startExperienceBankingAnimation();
+    }, EXPERIENCE_BANKING_BEAT_MS);
+    return true;
+  }
+  startExperienceBankingAnimation();
+  return true;
+}
+
+function scheduleExperienceBankingAfterGameOver() {
+  if (state.experienceBanking) return;
+  clearExperienceBankingTimers();
+  if (state.experienceAwardedForRun || !state.gameOver) return;
+  if (typeof loadExperienceDisplayEnabled === "function" && !loadExperienceDisplayEnabled()) {
+    awardExperienceForCurrentRun({ animate: false, pulse: false });
+    return;
+  }
+  awardExperienceForCurrentRun({ animate: true, delayStart: true });
+}
+
+function easeInOutSine(t) {
+  return -(Math.cos(Math.PI * t) - 1) / 2;
+}
+
+function startCompletionBonusExperienceAnimation(banking, targetX, targetY) {
+  const statsEl = document.getElementById("seen-grid-stats");
+  const sourceRect = statsEl?.getBoundingClientRect();
+  if (!sourceRect?.width || !sourceRect?.height) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const startX = sourceRect.left + sourceRect.width / 2;
+  const startY = sourceRect.top + sourceRect.height / 2;
+  const marker = document.createElement("div");
+  marker.className = "xp-bonus-fly";
+  marker.textContent = `+${banking.gained}`;
+  marker.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(0.72)`;
+  marker.style.opacity = "0";
+  document.body.appendChild(marker);
+
+  banking.startedAt = performance.now();
+  const duration = 760;
+  const midpointX = (startX + targetX) / 2 + 28;
+  const midpointY = (startY + targetY) / 2 - 76;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking || activeBanking !== banking) {
+      marker.remove();
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    const progress = Math.min(1, (timestamp - banking.startedAt) / duration);
+    const eased = easeInOutSine(progress);
+    const inverse = 1 - eased;
+    const centerX =
+      (inverse * inverse * startX) +
+      (2 * inverse * eased * midpointX) +
+      (eased * eased * targetX);
+    const centerY =
+      (inverse * inverse * startY) +
+      (2 * inverse * eased * midpointY) +
+      (eased * eased * targetY);
+    const scale = 0.72 + Math.sin(Math.PI * eased) * 0.22 - eased * 0.12;
+    marker.style.opacity = String(progress < 0.08 ? progress / 0.08 : Math.max(0.18, 1 - eased * 0.08));
+    marker.style.transform = `translate3d(${centerX}px, ${centerY}px, 0) translate(-50%, -50%) scale(${scale})`;
+
+    if (progress >= 1) {
+      marker.remove();
+      banking.delivered = banking.gained;
+      state.displayExperience = banking.finalValue;
+      finishExperienceBanking(banking, true);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
+function getCheatBonusSourceRect(cheatId) {
+  const escapedId = typeof CSS !== "undefined" && CSS.escape
+    ? CSS.escape(String(cheatId || ""))
+    : String(cheatId || "").replaceAll('"', '\\"');
+  const sourceEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${escapedId}"]`);
+  const sourceRect = sourceEl?.getBoundingClientRect();
+  if (sourceRect?.width && sourceRect?.height) {
+    return { sourceEl, sourceRect };
+  }
+
+  const fallbackEl = document.getElementById("cheat-list") || document.getElementById("seen-grid-stats");
+  const fallbackRect = fallbackEl?.getBoundingClientRect();
+  if (fallbackRect?.width && fallbackRect?.height) {
+    return { sourceEl: fallbackEl, sourceRect: fallbackRect };
+  }
+
+  return { sourceEl: null, sourceRect: null };
+}
+
+function startUnusedCheatExperienceAnimation(banking, targetX, targetY) {
+  const cheatIds = Array.isArray(banking.sourceCheatIds) ? banking.sourceCheatIds.filter(Boolean) : [];
+  const unitValue = Math.max(1, Number(banking.unitValue) || EXPERIENCE_UNUSED_CHEAT_BONUS);
+  if (!cheatIds.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const now = performance.now();
+  const duration = 680;
+  const items = cheatIds.map((cheatId, index) => {
+    const { sourceEl, sourceRect } = getCheatBonusSourceRect(cheatId);
+    if (!sourceRect) return null;
+
+    const clone = sourceEl?.cloneNode(true) || document.createElement("div");
+    clone.classList.add("xp-cheat-fly");
+    clone.classList.remove("has-count-pulse", "is-click-pulsing", "is-consuming", "is-awarded-new");
+    clone.removeAttribute("id");
+    clone.setAttribute("aria-hidden", "true");
+    clone.style.width = `${sourceRect.width}px`;
+    clone.style.height = `${sourceRect.height}px`;
+    clone.style.opacity = "0";
+    clone.style.transform = `translate3d(${sourceRect.left}px, ${sourceRect.top}px, 0) scale(1)`;
+    document.body.appendChild(clone);
+
+    const startX = sourceRect.left + sourceRect.width / 2;
+    const startY = sourceRect.top + sourceRect.height / 2;
+    const curveDirection = index % 2 === 0 ? 1 : -1;
+    const midpointX = (startX + targetX) / 2 + curveDirection * (24 + Math.random() * 22);
+    const midpointY = (startY + targetY) / 2 - (54 + Math.random() * 34);
+
+    return {
+      sourceEl,
+      clone,
+      startX,
+      startY,
+      targetX,
+      targetY,
+      midpointX,
+      midpointY,
+      width: sourceRect.width,
+      height: sourceRect.height,
+      startTime: now + index * EXPERIENCE_UNUSED_CHEAT_STAGGER_MS,
+      delivered: false,
+      launched: false,
+    };
+  }).filter(Boolean);
+
+  if (!items.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  banking.cards = items;
+  banking.startedAt = now;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking || activeBanking !== banking) {
+      items.forEach((item) => item.clone.remove());
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    let allDelivered = true;
+    items.forEach((item) => {
+      if (item.delivered) return;
+      allDelivered = false;
+      const elapsed = timestamp - item.startTime;
+      if (elapsed < 0) return;
+
+      if (!item.launched) {
+        item.launched = true;
+        if (item.sourceEl?.classList) {
+          item.sourceEl.classList.add("xp-cheat-source-hidden");
+        }
+        item.clone.style.opacity = "1";
+      }
+
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeInOutSine(progress);
+      const inverse = 1 - eased;
+      const centerX =
+        (inverse * inverse * item.startX) +
+        (2 * inverse * eased * item.midpointX) +
+        (eased * eased * item.targetX);
+      const centerY =
+        (inverse * inverse * item.startY) +
+        (2 * inverse * eased * item.midpointY) +
+        (eased * eased * item.targetY);
+      const scale = 1 - eased * 0.76;
+      const left = centerX - item.width / 2;
+      const top = centerY - item.height / 2;
+      item.clone.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${scale})`;
+      item.clone.style.opacity = String(Math.max(0.12, 1 - eased * 0.18));
+
+      if (progress >= 1) {
+        item.delivered = true;
+        item.clone.remove();
+        activeBanking.delivered += 1;
+        state.displayExperience = Math.min(activeBanking.finalValue, activeBanking.startValue + activeBanking.delivered * unitValue);
+        renderExperienceCounter(true);
+      }
+    });
+
+    if (allDelivered || activeBanking.delivered >= items.length) {
+      finishExperienceBanking(activeBanking, false);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
+function startExperienceBankingAnimation() {
+  const banking = state.experienceBanking;
+  const targetEl = document.getElementById("experience-value");
+  if (!banking || !targetEl) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const targetRect = targetEl.getBoundingClientRect();
+  const targetX = targetRect.left + targetRect.width / 2;
+  const targetY = targetRect.top + targetRect.height / 2;
+
+  if (banking.type === "completion_bonus" || banking.type === "milestone_bonus") {
+    startCompletionBonusExperienceAnimation(banking, targetX, targetY);
+    return;
+  }
+
+  if (banking.type === "unused_cheats_bonus") {
+    startUnusedCheatExperienceAnimation(banking, targetX, targetY);
+    return;
+  }
+
+  const sourceCells = Array.from(document.querySelectorAll("#seen-grid .grid-cell.seen"))
+    .filter((cell) => cell.getBoundingClientRect().width > 0 && cell.getBoundingClientRect().height > 0);
+
+  if (!sourceCells.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const shuffled = sourceCells
+    .map((cell) => ({ cell, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map((entry) => entry.cell)
+    .slice(0, banking.gained);
+  state.experienceBankedCardIds = new Set(shuffled.map((cell) => cell.dataset.cardId).filter(Boolean));
+  const now = performance.now();
+
+  banking.cards = shuffled.map((cell, index) => {
+    const rect = cell.getBoundingClientRect();
+    const clone = cell.cloneNode(true);
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top + rect.height / 2;
+    const curveDirection = Math.random() < 0.5 ? -1 : 1;
+    const curveAmount = curveDirection * (28 + Math.random() * 54);
+    const midpointX = (startX + targetX) / 2 + curveAmount;
+    const midpointY = (startY + targetY) / 2 - (32 + Math.random() * 42);
+
+    clone.classList.add("xp-fly-card");
+    clone.classList.remove("fresh");
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.opacity = "0";
+    clone.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1)`;
+    document.body.appendChild(clone);
+
+    return {
+      cell,
+      clone,
+      startX,
+      startY,
+      targetX,
+      targetY,
+      midpointX,
+      midpointY,
+      width: rect.width,
+      height: rect.height,
+      startTime: now + index * EXPERIENCE_CARD_STAGGER_MS + Math.random() * 36,
+      duration: EXPERIENCE_CARD_FLIGHT_MS + Math.random() * 160,
+      launched: false,
+      delivered: false,
+    };
+  });
+
+  banking.startedAt = now;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking) {
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    let allDelivered = true;
+    activeBanking.cards.forEach((card) => {
+      if (card.delivered) return;
+      allDelivered = false;
+      const elapsed = timestamp - card.startTime;
+      if (elapsed < 0) return;
+
+      if (!card.launched) {
+        card.launched = true;
+        card.cell.classList.add("xp-banked-source");
+        card.clone.style.opacity = "1";
+      }
+
+      const progress = Math.min(1, elapsed / card.duration);
+      const eased = easeInOutSine(progress);
+      const inverse = 1 - eased;
+      const centerX =
+        (inverse * inverse * card.startX) +
+        (2 * inverse * eased * card.midpointX) +
+        (eased * eased * card.targetX);
+      const centerY =
+        (inverse * inverse * card.startY) +
+        (2 * inverse * eased * card.midpointY) +
+        (eased * eased * card.targetY);
+      const scale = 1 - eased * 0.56;
+      const left = centerX - card.width / 2;
+      const top = centerY - card.height / 2;
+      card.clone.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${scale})`;
+      card.clone.style.opacity = String(Math.max(0.12, 1 - eased * 0.1));
+
+      if (progress >= 1) {
+        card.delivered = true;
+        card.clone.remove();
+        activeBanking.delivered += 1;
+        state.displayExperience = Math.min(activeBanking.finalValue, activeBanking.startValue + activeBanking.delivered);
+        renderExperienceCounter(true);
+      }
+    });
+
+    if (allDelivered || activeBanking.delivered >= activeBanking.gained) {
+      finishExperienceBanking(activeBanking, false);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
 function renderScores() {
   const scoreEl = document.getElementById("score");
   const bestScoreEl = document.getElementById("best-score");
@@ -309,6 +1026,7 @@ function renderScores() {
   state.bestScore = loadBestScore(bestDeckKey, bestLevelNumber);
   if (scoreEl) setAnimatedText(scoreEl, getDisplayedRunScore());
   if (bestScoreEl) setAnimatedText(bestScoreEl, `BEST: ${state.bestScore}`);
+  renderExperienceCounter(false);
   if (jokerCountEl) {
     const showJokerCount = hudDeckKey === "yellow";
     const remainingJokers = showJokerCount && typeof getRemainingJokerCount === "function"
@@ -361,17 +1079,52 @@ function setAnimatedText(el, value) {
   el.dataset.renderValue = nextValue;
 }
 
-function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
-  const selectedPowerId = state.selectedStartPowerId;
-  const selectedPowerName = getPowerName(selectedPowerId || "none");
-  const selectedPowerDescription = selectedPowerId
-    ? getPowerDescription(selectedPowerId, { deckKey, levelNumber })
-    : "";
-
-  const activePowerIds = Array.isArray(state.powers)
-    ? state.powers.filter(Boolean)
+function getVisibleHeaderPowerIds(fallbackPowerId = "") {
+  const ids = Array.isArray(state.powers)
+    ? state.powers
     : [];
-  const activePowerLines = activePowerIds.map((powerId) => {
+  const visibleIds = ids.filter((powerId) => powerId && powerId !== "nudge_engine" && getPowerById(powerId));
+
+  if (!visibleIds.length && fallbackPowerId && getPowerById(fallbackPowerId)) {
+    visibleIds.push(fallbackPowerId);
+  }
+
+  return Array.from(new Set(visibleIds));
+}
+
+function buildHeaderPowerStackMarkup(powerIds) {
+  const visibleIds = Array.isArray(powerIds) ? powerIds.filter((powerId) => getPowerById(powerId)) : [];
+
+  if (!visibleIds.length) {
+    return `
+      ${POWER_SHIELD_SVG}
+      <span id="header-power-glyph">·</span>
+    `;
+  }
+
+  const center = (visibleIds.length - 1) / 2;
+  const spacing = visibleIds.length <= 3 ? 8 : 6;
+
+  return `
+    <span class="header-power-stack" aria-hidden="true">
+      ${visibleIds.map((powerId, index) => {
+        const power = getPowerById(powerId);
+        const offset = Math.round((index - center) * spacing);
+        const scale = Math.max(0.84, 1 - Math.max(0, visibleIds.length - 3) * 0.035);
+        return `
+          <span class="header-power-stack-item ${power?.rarity || "common"}" style="--power-offset: ${offset}px; --power-scale: ${scale}; z-index: ${index + 1};">
+            ${POWER_SHIELD_SVG}
+            <span class="header-power-stack-glyph">${getPowerIcon(powerId)}</span>
+          </span>
+        `;
+      }).join("")}
+    </span>
+  `;
+}
+
+function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
+  const visiblePowerIds = getVisibleHeaderPowerIds(state.selectedStartPowerId);
+  const activePowerLines = visiblePowerIds.map((powerId) => {
     const powerName = getPowerName(powerId);
     const description = getPowerDescription(powerId, { deckKey, levelNumber });
     return description
@@ -380,19 +1133,10 @@ function buildHeaderPowerTooltipBody(deckKey, levelNumber) {
   });
 
   const bodyLines = [];
-  if (selectedPowerDescription) {
-    bodyLines.push(`Starting Power: ${selectedPowerName}`);
-    bodyLines.push(selectedPowerDescription);
-  } else {
-    bodyLines.push(`Starting Power: ${selectedPowerName}`);
-  }
-
   if (activePowerLines.length) {
-    bodyLines.push("");
-    bodyLines.push(`Current Powers In Play (${activePowerLines.length}):`);
+    bodyLines.push(`Current Powers (${activePowerLines.length}):`);
     bodyLines.push(...activePowerLines);
   } else {
-    bodyLines.push("");
     bodyLines.push("Current Powers In Play: none");
   }
 
@@ -403,15 +1147,11 @@ function renderHeaderStatus() {
   const gameEl = document.getElementById("game");
   const brandTitleEl = document.getElementById("brand-title");
   const powerChipEl = document.getElementById("header-power-chip");
-  const powerGlyphEl = document.getElementById("header-power-glyph");
   const runLevelNumber = normalizeLevelNumber(state.currentLevelNumber || state.selectedLevelNumber || loadSelectedLevel());
   const runPowerId = state.selectedStartPowerId || "";
-  const runPowerName = runPowerId ? getPowerName(runPowerId) : "No power selected";
   const runDeckKey = normalizeDeckKey(state.currentDeckKey || state.selectedDeckKey || "blue");
   const runDeckName = getDeckName(runDeckKey);
-  const runPowerTooltipBody = runPowerId
-    ? buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber)
-    : "";
+  const runPowerTooltipBody = buildHeaderPowerTooltipBody(runDeckKey, runLevelNumber);
 
   if (gameEl) {
     gameEl.dataset.deck = runDeckKey;
@@ -421,19 +1161,20 @@ function renderHeaderStatus() {
     brandTitleEl.dataset.deck = runDeckKey;
   }
 
-  if (powerChipEl && powerGlyphEl) {
-    const hasPower = !!runPowerId;
-    const runPower = hasPower ? getPowerById(runPowerId) : null;
+  if (powerChipEl) {
+    const visiblePowerIds = getVisibleHeaderPowerIds(runPowerId);
+    const hasPower = visiblePowerIds.length > 0;
+    const leadPower = hasPower ? getPowerById(visiblePowerIds[visiblePowerIds.length - 1]) : null;
     powerChipEl.classList.remove("common", "normal", "uncommon", "rare", "legendary");
     if (hasPower) {
-      powerChipEl.classList.add(runPower?.rarity || "common");
+      powerChipEl.classList.add(leadPower?.rarity || "common");
     }
-    powerGlyphEl.innerText = hasPower ? getPowerIcon(runPowerId) : "·";
+    powerChipEl.innerHTML = buildHeaderPowerStackMarkup(visiblePowerIds);
     powerChipEl.classList.toggle("has-power", hasPower);
-    powerChipEl.setAttribute("aria-label", hasPower ? `${runPowerName} details` : "No starting power selected");
+    powerChipEl.setAttribute("aria-label", hasPower ? `${visiblePowerIds.length} current power${visiblePowerIds.length === 1 ? "" : "s"} details` : "No starting power selected");
     setupHeaderPowerTooltip(powerChipEl, {
       enabled: hasPower && !!runPowerTooltipBody,
-      title: `${runDeckName} Deck - Level ${runLevelNumber} Starting Power: ${runPowerName}`,
+      title: `${runDeckName} Deck - Level ${runLevelNumber} Powers`,
       description: runPowerTooltipBody,
     });
   }
@@ -493,6 +1234,7 @@ function setupHeaderPowerTooltip(el, payload) {
   }
 
   let holdTimer = null;
+  let pointerHoldActive = false;
 
   const clearHold = () => {
     clearTimeout(holdTimer);
@@ -500,18 +1242,45 @@ function setupHeaderPowerTooltip(el, payload) {
     hideCheatTooltip();
   };
 
-  el.addEventListener("pointerdown", (event) => {
+  const beginHold = (event) => {
     if (el.dataset.tooltipEnabled !== "1") return;
-    if (event.pointerType === "mouse") return;
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
     clearTimeout(holdTimer);
+    if (event.pointerType === "mouse" || event.type === "mousedown") {
+      showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+      return;
+    }
     holdTimer = setTimeout(() => {
       showTooltip(el.dataset.tooltipTitle, el.dataset.tooltipBody, el);
+      const tooltip = document.getElementById("cheat-tooltip");
+      if (tooltip) tooltip.dataset.keepOpenOnce = "1";
     }, 300);
+  };
+
+  el.addEventListener("pointerdown", (event) => {
+    pointerHoldActive = true;
+    beginHold(event);
+  });
+  el.addEventListener("mousedown", (event) => {
+    if (pointerHoldActive) return;
+    beginHold(event);
   });
 
-  el.addEventListener("pointerup", clearHold);
-  el.addEventListener("pointercancel", clearHold);
-  el.addEventListener("pointerleave", clearHold);
+  const clearPointerHold = () => {
+    clearHold();
+    window.setTimeout(() => {
+      pointerHoldActive = false;
+    }, 0);
+  };
+
+  el.addEventListener("pointerup", clearPointerHold);
+  el.addEventListener("pointercancel", clearPointerHold);
+  el.addEventListener("pointerleave", clearPointerHold);
+  el.addEventListener("mouseup", () => {
+    if (pointerHoldActive) return;
+    clearHold();
+  });
   el.addEventListener("mouseenter", () => {
     if (!canUseHoverTooltips()) return;
     if (el.dataset.tooltipEnabled !== "1") return;
@@ -550,8 +1319,8 @@ const CHEAT_ICON_BY_NAME = Object.freeze({
   "Product of Next Two": "∏2",
   "Top Half / Bottom Half": "◐",
   "Face Card Ahead?": "JQK",
-  "One of Next 2 Higher?": "∃↑",
-  "One of Next 2 Lower?": "∃↓",
+  "One of Next 2 Higher?": "2↑",
+  "One of Next 2 Lower?": "2↓",
   "Higher of Next Two": "⇈",
   "Lower of Next Two": "⇊",
   "Next Card Parity": "⊕",
@@ -591,25 +1360,14 @@ const CHEAT_ICON_BY_NAME = Object.freeze({
 });
 
 function getCheatIcon(name) {
-  return CHEAT_ICON_BY_NAME[name] || "✦";
-}
-
-function getCheatIcon(name) {
   if (name === "Equals 11") return "=11";
   if (name === "WL") return "W/L";
-  if (name === "One of Next 2 Higher?") return "?↑";
   if (name === "Psycho") return "PSY";
   if (name === "Higher, Higher, Higher") return "^^^";
   if (name === "Back To Square One") return "A1";
   if (name === "A Stitch In Time Saves...") return "9+";
   if (name === "Catch-22") return "22";
   if (name === "Sixth Sense") return "6?";
-  return CHEAT_ICON_BY_NAME[name] || "âœ¦";
-}
-
-function getCheatIcon(name) {
-  if (name === "Equals 11") return "=11";
-  if (name === "WL") return "W/L";
   return CHEAT_ICON_BY_NAME[name] || "✦";
 }
 
@@ -1276,9 +2034,11 @@ function completeCheatChoiceSelectionAnimation(followup) {
   state.cheatChoiceAnimating = null;
   if (typeof runDeferredCheatChoiceFollowup === "function") {
     runDeferredCheatChoiceFollowup(followup);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
   render();
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
 }
 
 function beginCheatChoiceSelection(index, buttonEl) {
@@ -1308,9 +2068,11 @@ function beginCheatChoiceSelection(index, buttonEl) {
     cheatChoiceConfirmAfter = 0;
     if (typeof runDeferredCheatChoiceFollowup === "function") {
       runDeferredCheatChoiceFollowup(selectionResult?.followup || { type: "render" });
+      window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
       return;
     }
     render();
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
 
@@ -1336,6 +2098,14 @@ function beginCheatChoiceSelection(index, buttonEl) {
 }
 
 function getCheatChoiceFlyTargetRect(targetEntryId, fallbackEl) {
+  if (targetEntryId === "nudge_up" || targetEntryId === "nudge_down") {
+    const nudgeTargetEl = document.getElementById(targetEntryId === "nudge_up" ? "nudge-up-btn" : "nudge-down-btn");
+    const nudgeTargetRect = nudgeTargetEl?.getBoundingClientRect();
+    if (nudgeTargetRect?.width && nudgeTargetRect?.height) {
+      return nudgeTargetRect;
+    }
+  }
+
   const targetEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${CSS.escape(targetEntryId || "")}"]`);
   const targetRect = (targetEl || fallbackEl)?.getBoundingClientRect();
   return targetRect;
@@ -1391,9 +2161,11 @@ function completePowerChoiceSelectionAnimation() {
   state.powerChoiceAnimating = null;
   if (Number.isInteger(selectedIndex)) {
     pickPowerFromChoice(selectedIndex);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
   render();
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
 }
 
 function playPendingPowerChoiceAnimation() {
@@ -1421,7 +2193,7 @@ function playPendingPowerChoiceAnimation() {
 
   const flyoutEl = document.getElementById("power-choice-flyout");
   const targetEl = document.getElementById("header-power-chip");
-  const targetShieldEl = targetEl?.querySelector(".power-shield-svg");
+  const targetShieldEl = targetEl?.querySelector(".header-power-stack") || targetEl?.querySelector(".power-shield-svg");
   if (!flyoutEl || !targetEl || !animation.power) return;
 
   animation.started = true;
@@ -1443,22 +2215,28 @@ function playPendingPowerChoiceAnimation() {
   flyoutEl.classList.remove("is-moving");
 
   const targetRect = (targetShieldEl || targetEl).getBoundingClientRect();
+  const targetScale = Math.min(
+    targetRect.width / Math.max(1, source.width),
+    targetRect.height / Math.max(1, source.height)
+  );
+  const targetLeft = targetRect.left + (targetRect.width / 2) - (source.width / 2);
+  const targetTop = targetRect.top + (targetRect.height / 2) - (source.height / 2);
   void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      if (!state.powerChoiceAnimating || state.powerChoiceAnimating !== animation) return;
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.94";
-      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
-      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
-      flyoutEl.style.width = `${targetRect.width}px`;
-      flyoutEl.style.height = `${targetRect.height}px`;
+      flyoutEl.style.left = `${targetLeft - hostRect.left}px`;
+      flyoutEl.style.top = `${targetTop - hostRect.top}px`;
+      flyoutEl.style.transform = `scale(${targetScale})`;
+
+      powerChoiceAnimationTimer = setTimeout(() => {
+        completePowerChoiceSelectionAnimation();
+      }, POWER_CHOICE_FLY_MS + 20);
     });
   });
-
-  powerChoiceAnimationTimer = setTimeout(() => {
-    completePowerChoiceSelectionAnimation();
-  }, POWER_CHOICE_FLY_MS + 20);
 }
 
 function playPendingCheatChoiceAnimation() {
@@ -1513,25 +2291,33 @@ function playPendingCheatChoiceAnimation() {
   flyoutEl.style.opacity = "1";
   flyoutEl.style.transform = "none";
   flyoutEl.classList.remove("is-moving");
-
-  const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
-  if (!targetRect) return;
   void flyoutEl.offsetWidth;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      if (!state.cheatChoiceAnimating || state.cheatChoiceAnimating !== animation) return;
+      const targetRect = getCheatChoiceFlyTargetRect(animation.targetEntryId, cheatListEl);
+      if (!targetRect) {
+        completeCheatChoiceSelectionAnimation(animation.followup);
+        return;
+      }
+      const targetScale = Math.min(
+        targetRect.width / Math.max(1, source.width),
+        targetRect.height / Math.max(1, source.height)
+      );
+      const targetLeft = targetRect.left + (targetRect.width / 2) - (source.width / 2);
+      const targetTop = targetRect.top + (targetRect.height / 2) - (source.height / 2);
       flyoutEl.classList.add("is-moving");
       flyoutEl.style.opacity = "0.92";
-      flyoutEl.style.left = `${targetRect.left - hostRect.left}px`;
-      flyoutEl.style.top = `${targetRect.top - hostRect.top}px`;
-      flyoutEl.style.setProperty("--flyout-width", `${targetRect.width}px`);
-      flyoutEl.style.setProperty("--flyout-height", `${targetRect.height}px`);
+      flyoutEl.style.left = `${targetLeft - hostRect.left}px`;
+      flyoutEl.style.top = `${targetTop - hostRect.top}px`;
+      flyoutEl.style.transform = `scale(${targetScale})`;
+
+      cheatChoiceAnimationTimer = setTimeout(() => {
+        completeCheatChoiceSelectionAnimation(animation.followup);
+      }, CHEAT_CHOICE_FLY_MS + 20);
     });
   });
-
-  cheatChoiceAnimationTimer = setTimeout(() => {
-    completeCheatChoiceSelectionAnimation(animation.followup);
-  }, CHEAT_CHOICE_FLY_MS + 20);
 }
 
 function renderCheats() {
@@ -2156,8 +2942,11 @@ function renderSeenGrid() {
       const cardId = getCardId(suit, rank.r);
       const seen = state.seenCardIds.has(cardId);
       const isFresh = state.recentlySeenCardId === cardId;
+      const isBanked = state.experienceBankedCardIds instanceof Set && state.experienceBankedCardIds.has(cardId);
       const cell = document.createElement("div");
-      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isRed(card) ? "red" : "black"}`.trim();
+      cell.className = `grid-cell ${seen ? "seen" : ""} ${isFresh ? "fresh" : ""} ${isBanked ? "xp-banked-source" : ""} ${isRed(card) ? "red" : "black"}`.trim();
+      cell.dataset.cardId = cardId;
+      cell.dataset.seen = seen ? "true" : "false";
       cell.setAttribute("aria-label", `${describeCard(card)} ${seen ? "found" : "not found"}`);
       if (seen) {
         if (document.body.dataset.visuals === "new") {
@@ -2197,12 +2986,70 @@ function renderMessage() {
   const el = document.getElementById("message-bar");
   if (!el) return;
 
-  el.classList.remove("is-game-over");
+  clearTimeout(messageExpiryTimer);
+  messageExpiryTimer = null;
+  el.classList.remove("is-game-over", "is-victory", "is-awaiting-reveal", "is-expiring", "message-pop");
   el.dataset.messageDensity = "normal";
+  const pendingReveal = state.pendingRevealAnimation;
+  const temporaryText = state.temporaryMessageText || "";
+
+  if (temporaryText && state.message !== temporaryText) {
+    state.temporaryMessageText = "";
+    state.temporaryMessageUntil = 0;
+  }
+
+  if (pendingReveal && !pendingReveal.messageReleased) {
+    el.classList.add("has-message", "is-awaiting-reveal");
+    return;
+  }
+
+  if (state.victoryMessageActive) {
+    el.innerText = state.message || "CONGRATULATIONS!";
+    state.victoryMessageJustReleased = false;
+    el.classList.add("has-message", "is-victory");
+    return;
+  }
+
+  if (state.gameOver && state.gameOverMessageReady === false) {
+    el.innerText = "";
+    el.classList.remove("has-message");
+    return;
+  }
+
+  if (pendingReveal?.messageReleased && state.message && !state.gameOver && !state.temporaryMessageText) {
+    state.temporaryMessageText = state.message;
+    state.temporaryMessageUntil = Date.now() + 2000;
+  }
+
+  if (state.temporaryMessageText && state.temporaryMessageUntil > 0) {
+    const remainingMs = state.temporaryMessageUntil - Date.now();
+    if (remainingMs <= 0) {
+      el.classList.add("has-message", "is-expiring");
+      const expiringText = state.temporaryMessageText;
+      clearTimeout(messageFadeTimer);
+      messageFadeTimer = setTimeout(() => {
+        if (state.message === expiringText && state.temporaryMessageText === expiringText) {
+          state.message = "";
+        }
+        if (state.temporaryMessageText === expiringText) {
+          state.temporaryMessageText = "";
+          state.temporaryMessageUntil = 0;
+        }
+        messageFadeTimer = null;
+        renderMessage();
+      }, 170);
+      return;
+    }
+
+    messageExpiryTimer = setTimeout(renderMessage, remainingMs);
+  }
 
   if (state.gameOver) {
     el.innerText = "GAME OVER";
-    el.classList.add("has-message", "is-game-over");
+    el.classList.add("is-game-over");
+    if (pendingReveal) pendingReveal.messageJustReleased = false;
+    state.gameOverMessageJustReleased = false;
+    el.classList.add("has-message");
     return;
   }
 
@@ -2213,6 +3060,7 @@ function renderMessage() {
   }
 
   el.innerText = state.message;
+  if (pendingReveal) pendingReveal.messageJustReleased = false;
   el.classList.add("has-message");
   const densitySteps = ["normal", "compact", "tight"];
   for (const density of densitySteps) {
