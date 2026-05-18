@@ -166,6 +166,13 @@ function finalizePendingReveal(pending) {
   setRevealOverlayHidden(true);
 
   if (pending.outcome === "correct") {
+    if (pending.initialDeal && pending.revealCard) {
+      state.current = pending.revealCard;
+      const dealtIndex = Array.isArray(state.deck)
+        ? state.deck.findIndex((card) => card?.id === pending.revealCard?.id)
+        : -1;
+      state.index = dealtIndex >= 0 ? dealtIndex : 0;
+    }
     markCardSeen(pending.revealCard);
     if (state.seenCardIds instanceof Set) {
       awardExperienceMilestonesForFoundCount(state.seenCardIds.size);
@@ -194,6 +201,10 @@ function finalizePendingReveal(pending) {
 
   if (state.pendingRevealAnimation && state.pendingRevealAnimation.id === pending.id) {
     state.pendingRevealAnimation = null;
+  }
+
+  if (pending.initialDeal && state.powerChoiceRevealPending && typeof revealPowerChoiceAfterOpeningDeal === "function") {
+    revealPowerChoiceAfterOpeningDeal();
   }
 
   if (pending.triggerGameOver && state.gameOver) {
@@ -1550,14 +1561,15 @@ function renderCurrentCard() {
   const pendingReveal = state.pendingRevealAnimation;
   const gameOverCards = state.gameOver ? state.gameOverDisplayCards : null;
   const showPinnedCurrentCard = !!pendingReveal && !!pendingReveal.fromCard;
-  const cardToRender = showPinnedCurrentCard
-    ? pendingReveal.fromCard
-    : gameOverCards?.leftCard || state.current;
+  const cardToRender = pendingReveal?.initialDeal
+    ? null
+    : showPinnedCurrentCard
+      ? pendingReveal.fromCard
+      : gameOverCards?.leftCard || state.current;
 
   if (!cardToRender) {
-    const idleBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
-    currentCardEl.className = `card-back card-back-${idleBackColor}${getPreservedTutorialFocusClass(currentCardEl)}`;
-    currentCardEl.innerHTML = `<div class="card-back-symbol">🂠</div>`;
+    currentCardEl.className = `card-empty-slot${getPreservedTutorialFocusClass(currentCardEl)}`.trim();
+    currentCardEl.innerHTML = "";
     currentValueEl.innerText = "";
     return;
   }
@@ -1729,7 +1741,10 @@ function renderFaceDownDeck() {
     const idleDeckBackColor = getDeckBackColor(state.currentDeckKey || state.selectedDeckKey);
     deckEl.className = `card-back card-back-${idleDeckBackColor}${getPreservedTutorialFocusClass(deckEl)}`;
     deckEl.removeAttribute("data-back-color");
-    if (remainingValueEl) remainingValueEl.innerText = "00";
+    if (remainingValueEl) {
+      const openingCount = Array.isArray(state.deck) ? state.deck.length : 0;
+      setAnimatedText(remainingValueEl, String(openingCount).padStart(2, "0"));
+    }
     return;
   }
 
@@ -2807,6 +2822,17 @@ function renderPowerChoice() {
       ? animation.optionsSnapshot
       : [];
   list.dataset.count = String(choiceOptions.length || 0);
+
+  if (state.powerChoiceRevealPending && !animation) {
+    document.body.classList.remove("choice-modal-open", "power-choice-open");
+    container.classList.add("hidden");
+    container.setAttribute("aria-hidden", "true");
+    if (currentCardEl) {
+      currentCardEl.innerText = "";
+      currentCardEl.classList.add("hidden");
+    }
+    return;
+  }
 
   if (!choiceOptions.length) {
     document.body.classList.remove("choice-modal-open", "power-choice-open");

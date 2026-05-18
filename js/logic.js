@@ -199,7 +199,29 @@ function queueCardRevealAnimation(options = {}) {
     feedbackEffect: String(options.feedbackEffect || normalizedOutcome),
     triggerGameOver: !!options.triggerGameOver,
     gameOverDetail: String(options.gameOverDetail || ""),
+    initialDeal: !!options.initialDeal,
   };
+}
+
+function queueOpeningDealAnimation(deck) {
+  const openingCard = Array.isArray(deck) ? deck[0] : null;
+  if (!openingCard) return;
+  queueCardRevealAnimation({
+    outcome: "correct",
+    revealCard: openingCard,
+    revealEffectiveValue: openingCard.value ?? null,
+    initialDeal: true,
+  });
+}
+
+function revealPowerChoiceAfterOpeningDeal() {
+  state.powerChoiceRevealPending = false;
+  state.pendingOpeningCardRevealed = true;
+  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
+  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
+  if (typeof window.maybeStartPowerChoiceTutorial === "function" && state.pendingRunMode !== "daily") {
+    window.setTimeout(() => window.maybeStartPowerChoiceTutorial(), 0);
+  }
 }
 
 function clearGameOverEffects(options = {}) {
@@ -667,8 +689,8 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
     : normalizeLevelNumber(levelNumber);
 
   state.deck = [...deck];
-  state.index = 0;
-  state.current = deck[0];
+  state.index = -1;
+  state.current = null;
   state.gameOver = false;
   state.openingPreview = false;
   state.handCard = null;
@@ -676,7 +698,7 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.nextCardValueModifier = 0;
   state.correctAnswers = 0;
   state.streak = 0;
-  state.seenCardIds = new Set([deck[0].id]);
+  state.seenCardIds = new Set();
   state.cheats = [];
   state.nudgeUpCharges = 0;
   state.nudgeDownCharges = 0;
@@ -704,6 +726,8 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.currentCardFeedback = "";
   state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
+  state.powerChoiceRevealPending = false;
+  state.pendingOpeningCardRevealed = false;
   state.message = "";
   state.temporaryMessageText = "";
   state.temporaryMessageUntil = 0;
@@ -769,6 +793,9 @@ function openPowerChoice(forceRandom = false) {
   state.pendingRunSeed = chosenSeed;
   state.pendingRunDeck = deck;
   const tutorialAssistActive = shouldApplyTutorialAssistForStandardRun("standard");
+  if (tutorialAssistActive) {
+    makeTutorialFriendlyOpeningCard(deck);
+  }
   state.pendingPowerOptions = tutorialAssistActive
     ? getTutorialNudgePowerOptions(2, chosenSeed)
     : getRandomPowerOptions(2, chosenSeed);
@@ -782,20 +809,19 @@ function openPowerChoice(forceRandom = false) {
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
   state.powerChoiceAnimating = null;
-  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
-  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
+  state.powerChoiceRevealPending = true;
+  state.pendingOpeningCardRevealed = false;
+  state.powerChoiceLockedUntil = 0;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
   previewPendingRunBehindPowerChoice(deck, "standard", state.pendingDeckKey, state.pendingLevelNumber);
+  queueOpeningDealAnimation(deck);
   state.message = "";
   state.temporaryMessageText = "";
   state.temporaryMessageUntil = 0;
   render();
-  if (typeof window.maybeStartPowerChoiceTutorial === "function") {
-    window.setTimeout(() => window.maybeStartPowerChoiceTutorial(), 0);
-  }
 }
 
 function openDailyPowerChoice(dateKey = "") {
@@ -816,13 +842,15 @@ function openDailyPowerChoice(dateKey = "") {
   state.cheatChoicePreviewIndex = -1;
   state.cheatChoiceAnimating = null;
   state.powerChoiceAnimating = null;
-  state.powerChoiceLockedUntil = Date.now() + POWER_CHOICE_LOCK_MS;
-  state.powerChoiceIntroToken = (state.powerChoiceIntroToken || 0) + 1;
+  state.powerChoiceRevealPending = true;
+  state.pendingOpeningCardRevealed = false;
+  state.powerChoiceLockedUntil = 0;
   state.activePowerAwardReason = "";
   state.pauseForCheat = false;
   state.restartConfirmArmed = false;
   state.deckStatsTooltipOpen = false;
   previewPendingRunBehindPowerChoice(deck, "daily", "blue", DEFAULT_LEVEL_NUMBER);
+  queueOpeningDealAnimation(deck);
   state.message = "";
   state.temporaryMessageText = "";
   state.temporaryMessageUntil = 0;
@@ -923,8 +951,19 @@ function startRunWithPower(powerId) {
     : selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
     : ["nudge_engine"];
+  const openingDealAlreadyStarted =
+    !blackRun &&
+    deck[0]?.id &&
+    (
+      !!state.pendingOpeningCardRevealed ||
+      state.current?.id === deck[0].id ||
+      (
+        !!state.pendingRevealAnimation?.initialDeal &&
+        state.pendingRevealAnimation?.revealCard?.id === deck[0].id
+      )
+    );
 
-  if (!blackRun && shouldApplyTutorialAssistForStandardRun(runMode)) {
+  if (!blackRun && !openingDealAlreadyStarted && shouldApplyTutorialAssistForStandardRun(runMode)) {
     makeTutorialFriendlyOpeningCard(deck);
   }
 
@@ -990,6 +1029,8 @@ function startRunWithPower(powerId) {
     powerChoiceLockedUntil: 0,
     pauseForCheat: false,
     pendingPowerOptions: [],
+    powerChoiceRevealPending: false,
+    pendingOpeningCardRevealed: false,
     pendingRunSeed: "",
     pendingRunDeck: [],
     pendingRunMode: "standard",
@@ -1037,6 +1078,10 @@ function startRunWithPower(powerId) {
     catch22Armed: false,
     wlStage: "",
   };
+
+  if (!openingDealAlreadyStarted) {
+    queueOpeningDealAnimation(deck);
+  }
 
   applyRunPowerSetup(selectedPowerId);
   clearRunDebugLog();

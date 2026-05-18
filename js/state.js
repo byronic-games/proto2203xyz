@@ -24,6 +24,8 @@ function createEmptyState() {
     pendingCheatAwardQueue: [],
     pendingPowerOptions: [],
     pendingPowerAwardQueue: [],
+    powerChoiceRevealPending: false,
+    pendingOpeningCardRevealed: false,
     pendingRunSeed: "",
     pendingRunDeck: [],
     pendingRunMode: "standard",
