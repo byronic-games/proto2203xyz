@@ -592,7 +592,7 @@ document.getElementById("restart-btn").onclick = () => {
   }
 
   if (!runIsActive) {
-    startRun(true);
+    startRun(!state.openingPreview);
     return;
   }
 
@@ -1330,6 +1330,12 @@ window.addEventListener("keydown", (e) => {
   if (window.devModeEnabled && e.shiftKey && matchesKey("w", "KeyW")) {
     e.preventDefault();
     winCurrentRunForDev();
+    return;
+  }
+
+  if (window.devModeEnabled && e.shiftKey && matchesKey("l", "KeyL")) {
+    e.preventDefault();
+    nearlyCompleteRunForDev();
     return;
   }
 

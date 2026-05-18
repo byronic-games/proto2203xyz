@@ -35,6 +35,7 @@ function createEmptyState() {
     temporaryMessageText: "",
     temporaryMessageUntil: 0,
     gameOver: true,
+    openingPreview: false,
     gameOverMessageReady: false,
     gameOverMessageJustReleased: false,
     victoryMessageActive: false,
