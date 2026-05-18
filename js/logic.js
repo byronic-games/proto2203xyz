@@ -339,7 +339,13 @@ function triggerVictoryEffect(titleText = "CONGRATULATIONS!") {
   state.temporaryMessageText = "";
   state.temporaryMessageUntil = 0;
   if (typeof awardExperienceForCurrentRun === "function") {
-    awardExperienceForCurrentRun({ animate: false, pulse: true });
+    awardExperienceForCurrentRun({
+      animate: false,
+      animateCompletionBonus: true,
+      allowDevPreview: isDevModeRun(),
+      persist: !isDevModeRun(),
+      pulse: true,
+    });
   }
   spawnVictoryConfetti();
   void gameEl.offsetWidth;
@@ -679,6 +685,7 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.experienceAwardedForRun = false;
   state.experienceBanking = null;
   state.experienceBankedCardIds = new Set();
+  state.experiencePreviewUntil = 0;
   state.currentCardFeedback = "";
   state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
@@ -879,6 +886,7 @@ function startRunWithPower(powerId) {
     experienceAwardedForRun: false,
     experienceBanking: null,
     experienceBankedCardIds: new Set(),
+    experiencePreviewUntil: 0,
     handCard: null,
     currentValueModifier: 0,
     correctAnswers: 0,

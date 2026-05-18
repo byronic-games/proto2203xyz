@@ -14,6 +14,7 @@ let cheatChoiceAnimationTimer = null;
 let powerChoiceAnimationTimer = null;
 let experienceBankingStartTimer = null;
 let experienceBankingAnimationFrame = null;
+let experiencePreviewResetTimer = null;
 let suppressNextCheatEntryIntroId = "";
 let lastRenderedCheatCounts = new Map();
 let cheatChoiceConfirmIndex = -1;
@@ -32,6 +33,7 @@ const REVEAL_FAILURE_HOLD_MS = 162;
 const EXPERIENCE_BANKING_BEAT_MS = 430;
 const EXPERIENCE_CARD_STAGGER_MS = 82;
 const EXPERIENCE_CARD_FLIGHT_MS = 560;
+const EXPERIENCE_DECK_CLEAR_BONUS = 100;
 const POWER_SHIELD_SVG = `
   <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
     <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
@@ -314,6 +316,13 @@ function getDisplayedExperienceValue() {
   if (state.experienceBanking && Number.isFinite(Number(state.displayExperience))) {
     return Math.max(0, Math.floor(Number(state.displayExperience)));
   }
+  if (
+    Number.isFinite(Number(state.experiencePreviewUntil)) &&
+    Date.now() < Number(state.experiencePreviewUntil) &&
+    Number.isFinite(Number(state.displayExperience))
+  ) {
+    return Math.max(0, Math.floor(Number(state.displayExperience)));
+  }
   return getStoredExperienceValue();
 }
 
@@ -349,6 +358,10 @@ function clearExperienceBankingTimers() {
     cancelAnimationFrame(experienceBankingAnimationFrame);
     experienceBankingAnimationFrame = null;
   }
+  if (experiencePreviewResetTimer) {
+    clearTimeout(experiencePreviewResetTimer);
+    experiencePreviewResetTimer = null;
+  }
 }
 
 function getRunExperienceReward() {
@@ -357,6 +370,39 @@ function getRunExperienceReward() {
     ? getRunScoreFromCorrectAnswers(state.correctAnswers)
     : 0;
   return Math.min(52, Math.max(foundCount, scoreCount));
+}
+
+function getDeckCompletionExperienceBonus() {
+  const deckLength = Array.isArray(state.deck) ? state.deck.length : 0;
+  if (!state.gameOver || deckLength <= 0) return 0;
+  const requiredCorrectAnswers = Math.max(0, deckLength - 1);
+  return (Number(state.correctAnswers) || 0) >= requiredCorrectAnswers
+    ? EXPERIENCE_DECK_CLEAR_BONUS
+    : 0;
+}
+
+function finishExperienceBanking(banking, pop = false) {
+  const isPreview = !!banking?.preview;
+  state.displayExperience = banking.finalValue;
+  state.experience = isPreview ? getStoredExperienceValue() : banking.finalValue;
+  state.experienceBanking = null;
+  state.experienceBankedCardIds = new Set();
+
+  if (isPreview) {
+    state.experiencePreviewUntil = Date.now() + 1600;
+    renderExperienceCounter(pop);
+    experiencePreviewResetTimer = setTimeout(() => {
+      experiencePreviewResetTimer = null;
+      if (Date.now() < Number(state.experiencePreviewUntil || 0)) return;
+      state.displayExperience = null;
+      state.experiencePreviewUntil = 0;
+      renderExperienceCounter(false);
+    }, 1620);
+    return;
+  }
+
+  state.experiencePreviewUntil = 0;
+  renderExperienceCounter(pop);
 }
 
 function completeExperienceBankingAnimation(options = {}) {
@@ -369,13 +415,9 @@ function completeExperienceBankingAnimation(options = {}) {
   }
   if (!banking) return false;
 
-  state.displayExperience = banking.finalValue;
-  state.experience = banking.finalValue;
-  state.experienceBanking = null;
-  state.experienceBankedCardIds = new Set();
-  renderExperienceCounter(false);
+  finishExperienceBanking(banking, false);
 
-  const clones = Array.from(document.querySelectorAll(".xp-fly-card"));
+  const clones = Array.from(document.querySelectorAll(".xp-fly-card, .xp-bonus-fly"));
   clones.forEach((clone) => {
     if (options.fade !== false) {
       clone.classList.add("is-fading");
@@ -388,18 +430,42 @@ function completeExperienceBankingAnimation(options = {}) {
 }
 
 function awardExperienceForCurrentRun(options = {}) {
-  if (state.experienceAwardedForRun || (typeof isDevModeRun === "function" && isDevModeRun())) return false;
+  const devPreview = !!options.allowDevPreview && typeof isDevModeRun === "function" && isDevModeRun();
+  if (state.experienceAwardedForRun || (typeof isDevModeRun === "function" && isDevModeRun() && !devPreview)) return false;
 
-  const gained = getRunExperienceReward();
+  const runReward = getRunExperienceReward();
+  const completionBonus = getDeckCompletionExperienceBonus();
+  const gained = runReward + completionBonus;
   if (gained <= 0) return false;
 
   const startValue = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
-  const finalValue = typeof saveExperience === "function"
+  const shouldPersist = options.persist !== false && !devPreview;
+  const finalValue = shouldPersist && typeof saveExperience === "function"
     ? saveExperience(startValue + gained)
     : startValue + gained;
 
   state.experienceAwardedForRun = true;
   state.experience = finalValue;
+
+  const displayEnabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  if (displayEnabled && options.animateCompletionBonus && completionBonus > 0) {
+    state.displayExperience = finalValue - completionBonus;
+    state.experienceBanking = {
+      type: "completion_bonus",
+      active: true,
+      gained: completionBonus,
+      startValue: finalValue - completionBonus,
+      finalValue,
+      delivered: 0,
+      launched: 0,
+      cards: [],
+      startedAt: 0,
+      preview: !shouldPersist,
+    };
+    renderExperienceCounter(false);
+    startExperienceBankingAnimation();
+    return true;
+  }
 
   if (!options.animate) {
     state.displayExperience = finalValue;
@@ -419,6 +485,7 @@ function awardExperienceForCurrentRun(options = {}) {
     launched: 0,
     cards: [],
     startedAt: 0,
+    preview: !shouldPersist,
   };
   renderExperienceCounter(false);
   if (options.delayStart) {
@@ -447,6 +514,66 @@ function easeInOutSine(t) {
   return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
+function startCompletionBonusExperienceAnimation(banking, targetX, targetY) {
+  const statsEl = document.getElementById("seen-grid-stats");
+  const sourceRect = statsEl?.getBoundingClientRect();
+  if (!sourceRect?.width || !sourceRect?.height) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const startX = sourceRect.left + sourceRect.width / 2;
+  const startY = sourceRect.top + sourceRect.height / 2;
+  const marker = document.createElement("div");
+  marker.className = "xp-bonus-fly";
+  marker.textContent = `+${banking.gained}`;
+  marker.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(0.72)`;
+  marker.style.opacity = "0";
+  document.body.appendChild(marker);
+
+  banking.startedAt = performance.now();
+  const duration = 760;
+  const midpointX = (startX + targetX) / 2 + 28;
+  const midpointY = (startY + targetY) / 2 - 76;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking || activeBanking !== banking) {
+      marker.remove();
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    const progress = Math.min(1, (timestamp - banking.startedAt) / duration);
+    const eased = easeInOutSine(progress);
+    const inverse = 1 - eased;
+    const centerX =
+      (inverse * inverse * startX) +
+      (2 * inverse * eased * midpointX) +
+      (eased * eased * targetX);
+    const centerY =
+      (inverse * inverse * startY) +
+      (2 * inverse * eased * midpointY) +
+      (eased * eased * targetY);
+    const scale = 0.72 + Math.sin(Math.PI * eased) * 0.22 - eased * 0.12;
+    marker.style.opacity = String(progress < 0.08 ? progress / 0.08 : Math.max(0.18, 1 - eased * 0.08));
+    marker.style.transform = `translate3d(${centerX}px, ${centerY}px, 0) translate(-50%, -50%) scale(${scale})`;
+
+    if (progress >= 1) {
+      marker.remove();
+      banking.delivered = banking.gained;
+      state.displayExperience = banking.finalValue;
+      finishExperienceBanking(banking, true);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
 function startExperienceBankingAnimation() {
   const banking = state.experienceBanking;
   const targetEl = document.getElementById("experience-value");
@@ -458,6 +585,12 @@ function startExperienceBankingAnimation() {
   const targetRect = targetEl.getBoundingClientRect();
   const targetX = targetRect.left + targetRect.width / 2;
   const targetY = targetRect.top + targetRect.height / 2;
+
+  if (banking.type === "completion_bonus") {
+    startCompletionBonusExperienceAnimation(banking, targetX, targetY);
+    return;
+  }
+
   const sourceCells = Array.from(document.querySelectorAll("#seen-grid .grid-cell.seen"))
     .filter((cell) => cell.getBoundingClientRect().width > 0 && cell.getBoundingClientRect().height > 0);
 
@@ -559,11 +692,7 @@ function startExperienceBankingAnimation() {
     });
 
     if (allDelivered || activeBanking.delivered >= activeBanking.gained) {
-      state.displayExperience = activeBanking.finalValue;
-      state.experience = activeBanking.finalValue;
-      state.experienceBanking = null;
-      state.experienceBankedCardIds = new Set();
-      renderExperienceCounter(false);
+      finishExperienceBanking(activeBanking, false);
       experienceBankingAnimationFrame = null;
       return;
     }
@@ -2564,6 +2693,19 @@ function renderMessage() {
     return;
   }
 
+  if (state.victoryMessageActive) {
+    const shouldPop = state.victoryMessageJustReleased;
+    el.innerText = state.message || "CONGRATULATIONS!";
+    if (shouldPop) {
+      el.classList.remove("has-message");
+      void el.offsetWidth;
+      el.classList.add("message-pop");
+      state.victoryMessageJustReleased = false;
+    }
+    el.classList.add("has-message", "is-victory");
+    return;
+  }
+
   if (state.gameOver && state.gameOverMessageReady === false) {
     el.innerText = "";
     el.classList.remove("has-message");
@@ -2596,19 +2738,6 @@ function renderMessage() {
     }
 
     messageExpiryTimer = setTimeout(renderMessage, remainingMs);
-  }
-
-  if (state.victoryMessageActive) {
-    const shouldPop = state.victoryMessageJustReleased;
-    el.innerText = state.message || "CONGRATULATIONS!";
-    if (shouldPop) {
-      el.classList.remove("has-message");
-      void el.offsetWidth;
-      el.classList.add("message-pop");
-      state.victoryMessageJustReleased = false;
-    }
-    el.classList.add("has-message", "is-victory");
-    return;
   }
 
   if (state.gameOver) {

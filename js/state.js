@@ -44,6 +44,7 @@ function createEmptyState() {
     experienceAwardedForRun: false,
     experienceBanking: null,
     experienceBankedCardIds: new Set(),
+    experiencePreviewUntil: 0,
     handCard: null,
     currentValueModifier: 0,
     nextCardValueModifier: 0,

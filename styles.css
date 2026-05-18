@@ -2162,7 +2162,34 @@ body.choice-modal-open #controls,
   transform-origin: center;
 }
 
+.xp-bonus-fly {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  pointer-events: none;
+  z-index: 1400;
+  color: #dff5ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 3.8cqw, 1.24rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(95, 228, 255, 0.45),
+    0 0 16px rgba(95, 228, 255, 0.25);
+  will-change: transform, opacity;
+  transform-origin: center;
+}
+
 .xp-fly-card.is-fading {
+  opacity: 0 !important;
+  transition: opacity 150ms ease-in;
+}
+
+.xp-bonus-fly.is-fading {
   opacity: 0 !important;
   transition: opacity 150ms ease-in;
 }
