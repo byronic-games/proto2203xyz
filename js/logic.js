@@ -686,6 +686,9 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.experienceBanking = null;
   state.experienceBankedCardIds = new Set();
   state.experiencePreviewUntil = 0;
+  state.experienceMilestonesAwarded = new Set();
+  state.pendingExperienceBonuses = [];
+  state.unusedCheatExperienceAwarded = false;
   state.currentCardFeedback = "";
   state.currentNudgeAnimation = null;
   state.pendingRevealAnimation = null;
@@ -887,6 +890,9 @@ function startRunWithPower(powerId) {
     experienceBanking: null,
     experienceBankedCardIds: new Set(),
     experiencePreviewUntil: 0,
+    experienceMilestonesAwarded: new Set(),
+    pendingExperienceBonuses: [],
+    unusedCheatExperienceAwarded: false,
     handCard: null,
     currentValueModifier: 0,
     correctAnswers: 0,

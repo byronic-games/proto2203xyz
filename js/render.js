@@ -34,6 +34,13 @@ const EXPERIENCE_BANKING_BEAT_MS = 430;
 const EXPERIENCE_CARD_STAGGER_MS = 82;
 const EXPERIENCE_CARD_FLIGHT_MS = 560;
 const EXPERIENCE_DECK_CLEAR_BONUS = 100;
+const EXPERIENCE_UNUSED_CHEAT_BONUS = 20;
+const EXPERIENCE_UNUSED_CHEAT_STAGGER_MS = 250;
+const EXPERIENCE_CARD_MILESTONES = Object.freeze([
+  { count: 13, bonus: 10 },
+  { count: 26, bonus: 25 },
+  { count: 39, bonus: 50 },
+]);
 const POWER_SHIELD_SVG = `
   <svg class="power-shield-svg" viewBox="0 0 100 128" aria-hidden="true" focusable="false">
     <path class="power-shield-fill" d="M50 121 C24 110 10 82 9 41 L9 18 C31 13 69 13 91 18 L91 41 C90 82 76 110 50 121 Z"></path>
@@ -159,6 +166,9 @@ function finalizePendingReveal(pending) {
 
   if (pending.outcome === "correct") {
     markCardSeen(pending.revealCard);
+    if (state.seenCardIds instanceof Set) {
+      awardExperienceMilestonesForFoundCount(state.seenCardIds.size);
+    }
   }
 
   if (pending.triggerGameOver && state.gameOver) {
@@ -391,6 +401,7 @@ function finishExperienceBanking(banking, pop = false) {
   if (isPreview) {
     state.experiencePreviewUntil = Date.now() + 1600;
     renderExperienceCounter(pop);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 120);
     experiencePreviewResetTimer = setTimeout(() => {
       experiencePreviewResetTimer = null;
       if (Date.now() < Number(state.experiencePreviewUntil || 0)) return;
@@ -401,8 +412,157 @@ function finishExperienceBanking(banking, pop = false) {
     return;
   }
 
+  if (banking?.persistOnFinish && typeof saveExperience === "function") {
+    state.displayExperience = saveExperience(banking.finalValue);
+    state.experience = state.displayExperience;
+  }
+
   state.experiencePreviewUntil = 0;
   renderExperienceCounter(pop);
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 120);
+}
+
+function getExperienceMilestoneSet() {
+  if (state.experienceMilestonesAwarded instanceof Set) return state.experienceMilestonesAwarded;
+  state.experienceMilestonesAwarded = new Set(Array.isArray(state.experienceMilestonesAwarded) ? state.experienceMilestonesAwarded : []);
+  return state.experienceMilestonesAwarded;
+}
+
+function experienceBonusIsBlockedByChoiceFlow() {
+  return !!(
+    state.pauseForCheat ||
+    state.cheatChoiceAnimating ||
+    state.powerChoiceAnimating ||
+    (Array.isArray(state.pendingCheatOptions) && state.pendingCheatOptions.length > 0) ||
+    (Array.isArray(state.pendingPowerOptions) && state.pendingPowerOptions.length > 0)
+  );
+}
+
+function queueExperienceBonus(amount, options = {}) {
+  if (!Array.isArray(state.pendingExperienceBonuses)) {
+    state.pendingExperienceBonuses = [];
+  }
+  state.pendingExperienceBonuses.push({
+    amount: Math.max(0, Math.floor(Number(amount) || 0)),
+    type: options.type || "milestone_bonus",
+    animate: options.animate !== false,
+    allowDevPreview: !!options.allowDevPreview,
+    persist: options.persist !== false,
+    sourceCheatIds: Array.isArray(options.sourceCheatIds) ? options.sourceCheatIds : [],
+    unitValue: Math.max(1, Math.floor(Number(options.unitValue) || 1)),
+  });
+}
+
+function flushPendingExperienceBonusesIfReady() {
+  if (!Array.isArray(state.pendingExperienceBonuses) || state.pendingExperienceBonuses.length === 0) return false;
+  if (experienceBonusIsBlockedByChoiceFlow() || state.experienceBanking) return false;
+
+  const nextBonus = state.pendingExperienceBonuses.shift();
+  awardExperienceBonus(nextBonus.amount, nextBonus);
+  return true;
+}
+
+function awardOrQueueExperienceBonus(amount, options = {}) {
+  if (experienceBonusIsBlockedByChoiceFlow() || state.experienceBanking) {
+    queueExperienceBonus(amount, options);
+    return true;
+  }
+  return awardExperienceBonus(amount, options);
+}
+
+function awardExperienceBonus(amount, options = {}) {
+  const bonus = Math.max(0, Math.floor(Number(amount) || 0));
+  if (bonus <= 0) return false;
+
+  const devPreview = !!options.allowDevPreview && typeof isDevModeRun === "function" && isDevModeRun();
+  if (typeof isDevModeRun === "function" && isDevModeRun() && !devPreview) return false;
+
+  if (experiencePreviewResetTimer) {
+    clearTimeout(experiencePreviewResetTimer);
+    experiencePreviewResetTimer = null;
+  }
+
+  if (state.experienceBanking) {
+    completeExperienceBankingAnimation({ fade: false });
+  }
+
+  const startValue = typeof loadExperience === "function" ? loadExperience() : getStoredExperienceValue();
+  const finalValue = startValue + bonus;
+  const displayEnabled = typeof loadExperienceDisplayEnabled !== "function" || loadExperienceDisplayEnabled();
+  const shouldPersist = options.persist !== false && !devPreview;
+
+  if (!displayEnabled || options.animate === false) {
+    if (shouldPersist && typeof saveExperience === "function") {
+      state.experience = saveExperience(finalValue);
+    } else {
+      state.experience = getStoredExperienceValue();
+    }
+    state.displayExperience = null;
+    state.experienceBanking = null;
+    state.experiencePreviewUntil = 0;
+    renderExperienceCounter(false);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
+    return true;
+  }
+
+  state.displayExperience = startValue;
+  state.experienceBanking = {
+    type: options.type || "milestone_bonus",
+    active: true,
+    gained: bonus,
+    startValue,
+    finalValue,
+    delivered: 0,
+    launched: 0,
+    cards: [],
+    startedAt: 0,
+    preview: !shouldPersist,
+    persistOnFinish: shouldPersist,
+    sourceCheatIds: Array.isArray(options.sourceCheatIds) ? options.sourceCheatIds : [],
+    unitValue: Math.max(1, Math.floor(Number(options.unitValue) || 1)),
+  };
+  renderExperienceCounter(false);
+  startExperienceBankingAnimation();
+  return true;
+}
+
+function awardUnusedCheatExperienceForRunEnd() {
+  if (state.unusedCheatExperienceAwarded) return false;
+  if (getDeckCompletionExperienceBonus() <= 0) return false;
+  const cheatIds = Array.isArray(state.cheats)
+    ? state.cheats
+        .map((cheat) => cheat?.id)
+        .filter((id) => id && id !== "nudge_up" && id !== "nudge_down")
+    : [];
+  if (!cheatIds.length) return false;
+
+  state.unusedCheatExperienceAwarded = true;
+  return awardOrQueueExperienceBonus(cheatIds.length * EXPERIENCE_UNUSED_CHEAT_BONUS, {
+    type: "unused_cheats_bonus",
+    animate: true,
+    allowDevPreview: true,
+    persist: !(typeof isDevModeRun === "function" && isDevModeRun()),
+    sourceCheatIds: cheatIds,
+    unitValue: EXPERIENCE_UNUSED_CHEAT_BONUS,
+  });
+}
+
+function awardExperienceMilestonesForFoundCount(foundCount) {
+  const count = Math.max(0, Math.floor(Number(foundCount) || 0));
+  if (count <= 0) return;
+
+  const awarded = getExperienceMilestoneSet();
+  EXPERIENCE_CARD_MILESTONES.forEach((milestone) => {
+    const milestoneKey = String(milestone.count);
+    if (count < milestone.count || awarded.has(milestoneKey)) return;
+    awarded.add(milestoneKey);
+    awardOrQueueExperienceBonus(milestone.bonus, {
+      type: "milestone_bonus",
+      animate: true,
+      allowDevPreview: true,
+      persist: !(typeof isDevModeRun === "function" && isDevModeRun()),
+    });
+  });
 }
 
 function completeExperienceBankingAnimation(options = {}) {
@@ -417,7 +577,7 @@ function completeExperienceBankingAnimation(options = {}) {
 
   finishExperienceBanking(banking, false);
 
-  const clones = Array.from(document.querySelectorAll(".xp-fly-card, .xp-bonus-fly"));
+  const clones = Array.from(document.querySelectorAll(".xp-fly-card, .xp-bonus-fly, .xp-cheat-fly"));
   clones.forEach((clone) => {
     if (options.fade !== false) {
       clone.classList.add("is-fading");
@@ -462,6 +622,7 @@ function awardExperienceForCurrentRun(options = {}) {
       startedAt: 0,
       preview: !shouldPersist,
     };
+    awardUnusedCheatExperienceForRunEnd();
     renderExperienceCounter(false);
     startExperienceBankingAnimation();
     return true;
@@ -472,6 +633,7 @@ function awardExperienceForCurrentRun(options = {}) {
     state.experienceBanking = null;
     state.experienceBankedCardIds = new Set();
     renderExperienceCounter(!!options.pulse);
+    awardUnusedCheatExperienceForRunEnd();
     return true;
   }
 
@@ -487,6 +649,7 @@ function awardExperienceForCurrentRun(options = {}) {
     startedAt: 0,
     preview: !shouldPersist,
   };
+  awardUnusedCheatExperienceForRunEnd();
   renderExperienceCounter(false);
   if (options.delayStart) {
     experienceBankingStartTimer = setTimeout(() => {
@@ -574,6 +737,142 @@ function startCompletionBonusExperienceAnimation(banking, targetX, targetY) {
   experienceBankingAnimationFrame = requestAnimationFrame(tick);
 }
 
+function getCheatBonusSourceRect(cheatId) {
+  const escapedId = typeof CSS !== "undefined" && CSS.escape
+    ? CSS.escape(String(cheatId || ""))
+    : String(cheatId || "").replaceAll('"', '\\"');
+  const sourceEl = document.querySelector(`#cheat-list [data-cheat-entry-id="${escapedId}"]`);
+  const sourceRect = sourceEl?.getBoundingClientRect();
+  if (sourceRect?.width && sourceRect?.height) {
+    return { sourceEl, sourceRect };
+  }
+
+  const fallbackEl = document.getElementById("cheat-list") || document.getElementById("seen-grid-stats");
+  const fallbackRect = fallbackEl?.getBoundingClientRect();
+  if (fallbackRect?.width && fallbackRect?.height) {
+    return { sourceEl: fallbackEl, sourceRect: fallbackRect };
+  }
+
+  return { sourceEl: null, sourceRect: null };
+}
+
+function startUnusedCheatExperienceAnimation(banking, targetX, targetY) {
+  const cheatIds = Array.isArray(banking.sourceCheatIds) ? banking.sourceCheatIds.filter(Boolean) : [];
+  const unitValue = Math.max(1, Number(banking.unitValue) || EXPERIENCE_UNUSED_CHEAT_BONUS);
+  if (!cheatIds.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  const now = performance.now();
+  const duration = 680;
+  const items = cheatIds.map((cheatId, index) => {
+    const { sourceEl, sourceRect } = getCheatBonusSourceRect(cheatId);
+    if (!sourceRect) return null;
+
+    const clone = sourceEl?.cloneNode(true) || document.createElement("div");
+    clone.classList.add("xp-cheat-fly");
+    clone.classList.remove("has-count-pulse", "is-click-pulsing", "is-consuming", "is-awarded-new");
+    clone.removeAttribute("id");
+    clone.setAttribute("aria-hidden", "true");
+    clone.style.width = `${sourceRect.width}px`;
+    clone.style.height = `${sourceRect.height}px`;
+    clone.style.opacity = "0";
+    clone.style.transform = `translate3d(${sourceRect.left}px, ${sourceRect.top}px, 0) scale(1)`;
+    document.body.appendChild(clone);
+
+    const startX = sourceRect.left + sourceRect.width / 2;
+    const startY = sourceRect.top + sourceRect.height / 2;
+    const curveDirection = index % 2 === 0 ? 1 : -1;
+    const midpointX = (startX + targetX) / 2 + curveDirection * (24 + Math.random() * 22);
+    const midpointY = (startY + targetY) / 2 - (54 + Math.random() * 34);
+
+    return {
+      sourceEl,
+      clone,
+      startX,
+      startY,
+      targetX,
+      targetY,
+      midpointX,
+      midpointY,
+      width: sourceRect.width,
+      height: sourceRect.height,
+      startTime: now + index * EXPERIENCE_UNUSED_CHEAT_STAGGER_MS,
+      delivered: false,
+      launched: false,
+    };
+  }).filter(Boolean);
+
+  if (!items.length) {
+    completeExperienceBankingAnimation({ fade: false });
+    return;
+  }
+
+  banking.cards = items;
+  banking.startedAt = now;
+
+  const tick = (timestamp) => {
+    const activeBanking = state.experienceBanking;
+    if (!activeBanking || activeBanking !== banking) {
+      items.forEach((item) => item.clone.remove());
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    let allDelivered = true;
+    items.forEach((item) => {
+      if (item.delivered) return;
+      allDelivered = false;
+      const elapsed = timestamp - item.startTime;
+      if (elapsed < 0) return;
+
+      if (!item.launched) {
+        item.launched = true;
+        if (item.sourceEl?.classList) {
+          item.sourceEl.classList.add("xp-cheat-source-hidden");
+        }
+        item.clone.style.opacity = "1";
+      }
+
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeInOutSine(progress);
+      const inverse = 1 - eased;
+      const centerX =
+        (inverse * inverse * item.startX) +
+        (2 * inverse * eased * item.midpointX) +
+        (eased * eased * item.targetX);
+      const centerY =
+        (inverse * inverse * item.startY) +
+        (2 * inverse * eased * item.midpointY) +
+        (eased * eased * item.targetY);
+      const scale = 1 - eased * 0.76;
+      const left = centerX - item.width / 2;
+      const top = centerY - item.height / 2;
+      item.clone.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${scale})`;
+      item.clone.style.opacity = String(Math.max(0.12, 1 - eased * 0.18));
+
+      if (progress >= 1) {
+        item.delivered = true;
+        item.clone.remove();
+        activeBanking.delivered += 1;
+        state.displayExperience = Math.min(activeBanking.finalValue, activeBanking.startValue + activeBanking.delivered * unitValue);
+        renderExperienceCounter(true);
+      }
+    });
+
+    if (allDelivered || activeBanking.delivered >= items.length) {
+      finishExperienceBanking(activeBanking, false);
+      experienceBankingAnimationFrame = null;
+      return;
+    }
+
+    experienceBankingAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  experienceBankingAnimationFrame = requestAnimationFrame(tick);
+}
+
 function startExperienceBankingAnimation() {
   const banking = state.experienceBanking;
   const targetEl = document.getElementById("experience-value");
@@ -586,8 +885,13 @@ function startExperienceBankingAnimation() {
   const targetX = targetRect.left + targetRect.width / 2;
   const targetY = targetRect.top + targetRect.height / 2;
 
-  if (banking.type === "completion_bonus") {
+  if (banking.type === "completion_bonus" || banking.type === "milestone_bonus") {
     startCompletionBonusExperienceAnimation(banking, targetX, targetY);
+    return;
+  }
+
+  if (banking.type === "unused_cheats_bonus") {
+    startUnusedCheatExperienceAnimation(banking, targetX, targetY);
     return;
   }
 
@@ -1730,9 +2034,11 @@ function completeCheatChoiceSelectionAnimation(followup) {
   state.cheatChoiceAnimating = null;
   if (typeof runDeferredCheatChoiceFollowup === "function") {
     runDeferredCheatChoiceFollowup(followup);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
   render();
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
 }
 
 function beginCheatChoiceSelection(index, buttonEl) {
@@ -1762,9 +2068,11 @@ function beginCheatChoiceSelection(index, buttonEl) {
     cheatChoiceConfirmAfter = 0;
     if (typeof runDeferredCheatChoiceFollowup === "function") {
       runDeferredCheatChoiceFollowup(selectionResult?.followup || { type: "render" });
+      window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
       return;
     }
     render();
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
 
@@ -1853,9 +2161,11 @@ function completePowerChoiceSelectionAnimation() {
   state.powerChoiceAnimating = null;
   if (Number.isInteger(selectedIndex)) {
     pickPowerFromChoice(selectedIndex);
+    window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
     return;
   }
   render();
+  window.setTimeout(flushPendingExperienceBonusesIfReady, 80);
 }
 
 function playPendingPowerChoiceAnimation() {
@@ -2694,14 +3004,8 @@ function renderMessage() {
   }
 
   if (state.victoryMessageActive) {
-    const shouldPop = state.victoryMessageJustReleased;
     el.innerText = state.message || "CONGRATULATIONS!";
-    if (shouldPop) {
-      el.classList.remove("has-message");
-      void el.offsetWidth;
-      el.classList.add("message-pop");
-      state.victoryMessageJustReleased = false;
-    }
+    state.victoryMessageJustReleased = false;
     el.classList.add("has-message", "is-victory");
     return;
   }
@@ -2741,16 +3045,10 @@ function renderMessage() {
   }
 
   if (state.gameOver) {
-    const shouldPop = pendingReveal?.messageJustReleased || state.gameOverMessageJustReleased;
     el.innerText = "GAME OVER";
     el.classList.add("is-game-over");
-    if (shouldPop) {
-      el.classList.remove("has-message");
-      void el.offsetWidth;
-      el.classList.add("message-pop");
-      if (pendingReveal) pendingReveal.messageJustReleased = false;
-      state.gameOverMessageJustReleased = false;
-    }
+    if (pendingReveal) pendingReveal.messageJustReleased = false;
+    state.gameOverMessageJustReleased = false;
     el.classList.add("has-message");
     return;
   }
@@ -2761,14 +3059,8 @@ function renderMessage() {
     return;
   }
 
-  const shouldPop = pendingReveal?.messageJustReleased;
   el.innerText = state.message;
-  if (shouldPop) {
-    el.classList.remove("has-message");
-    void el.offsetWidth;
-    el.classList.add("message-pop");
-    pendingReveal.messageJustReleased = false;
-  }
+  if (pendingReveal) pendingReveal.messageJustReleased = false;
   el.classList.add("has-message");
   const densitySteps = ["normal", "compact", "tight"];
   for (const density of densitySteps) {
