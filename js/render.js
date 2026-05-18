@@ -1376,7 +1376,7 @@ function renderRestartButton() {
   if (!btn) return;
 
   const runIsActive = !state.gameOver && !!state.current;
-  const hasStartedRun = Array.isArray(state.deck) && state.deck.length > 0;
+  const hasStartedRun = !state.openingPreview && Array.isArray(state.deck) && state.deck.length > 0;
   if (state.runMode === "daily" && state.gameOver) {
     btn.innerText = "Daily Complete";
     btn.disabled = true;
@@ -1763,6 +1763,22 @@ function renderFaceDownDeck() {
   }
 
   const next = peekNext();
+  if (!next) {
+    deckEl.className = `card-empty-slot${getPreservedTutorialFocusClass(deckEl)}`.trim();
+    deckEl.innerHTML = "";
+    deckEl.removeAttribute("data-back-color");
+    deckEl.classList.remove("has-deck-stats-tooltip");
+    setupDeckStatsTooltip(deckEl, {
+      enabled: false,
+      title: "",
+      description: "",
+    });
+    if (remainingValueEl) {
+      setAnimatedText(remainingValueEl, "00");
+    }
+    return;
+  }
+
   const backStatus = next
     ? getCardBackStatus(next.id)
     : { tornCorner: false, backColor: "blue" };

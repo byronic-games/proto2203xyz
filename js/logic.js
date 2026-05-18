@@ -202,12 +202,23 @@ function queueCardRevealAnimation(options = {}) {
   };
 }
 
-function clearGameOverEffects() {
+function clearGameOverEffects(options = {}) {
+  const settleExperience = !!options.settleExperience;
   const gameEl = document.getElementById("game");
   const detailEl = document.getElementById("game-over-detail");
   if (gameOverMessageTimer) {
     clearTimeout(gameOverMessageTimer);
     gameOverMessageTimer = null;
+  }
+  if (
+    settleExperience &&
+    state.gameOver &&
+    !state.openingPreview &&
+    !state.victoryMessageActive &&
+    !state.experienceAwardedForRun &&
+    typeof awardExperienceForCurrentRun === "function"
+  ) {
+    awardExperienceForCurrentRun({ animate: false, pulse: false });
   }
   if (typeof completeExperienceBankingAnimation === "function") {
     completeExperienceBankingAnimation({ fade: true });
@@ -659,6 +670,7 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.index = 0;
   state.current = deck[0];
   state.gameOver = false;
+  state.openingPreview = false;
   state.handCard = null;
   state.currentValueModifier = 0;
   state.nextCardValueModifier = 0;
@@ -697,8 +709,34 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.temporaryMessageUntil = 0;
 }
 
+function previewOpeningRunFromControls() {
+  if (state.current || !state.gameOver) return;
+
+  const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+  const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
+  const { chosenSeed, deck } = buildRunFromControls(false, selectedDeckKey, selectedLevelNumber);
+  if (!Array.isArray(deck) || !deck.length) return;
+
+  previewPendingRunBehindPowerChoice(deck, "standard", selectedDeckKey, selectedLevelNumber);
+  state.gameOver = true;
+  state.openingPreview = true;
+  state.pendingRunSeed = chosenSeed;
+  state.pendingRunDeck = [...deck];
+  state.pendingRunMode = "standard";
+  state.pendingDailyDateKey = "";
+  state.pendingDeckKey = selectedDeckKey;
+  state.pendingLevelNumber = selectedLevelNumber;
+  state.pendingCheatOptions = [];
+  state.pendingPowerOptions = [];
+  state.pendingCheatAwardQueue = [];
+  state.pendingPowerAwardQueue = [];
+  state.cheatChoiceLockedUntil = 0;
+  state.powerChoiceLockedUntil = 0;
+  state.restartConfirmArmed = false;
+}
+
 function openPowerChoice(forceRandom = false) {
-  clearGameOverEffects();
+  clearGameOverEffects({ settleExperience: true });
   clearVictoryEffects({ fade: state.victoryMessageActive || state.gameOver });
   const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
   const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
@@ -737,7 +775,7 @@ function openPowerChoice(forceRandom = false) {
 }
 
 function openDailyPowerChoice(dateKey = "") {
-  clearGameOverEffects();
+  clearGameOverEffects({ settleExperience: true });
   clearVictoryEffects({ fade: state.victoryMessageActive || state.gameOver });
   const { chosenDateKey, chosenSeed, deck } = buildDailyRun(dateKey);
 
@@ -880,6 +918,7 @@ function startRunWithPower(powerId) {
     temporaryMessageText: "",
     temporaryMessageUntil: 0,
     gameOver: false,
+    openingPreview: false,
     gameOverMessageReady: false,
     gameOverMessageJustReleased: false,
     victoryMessageActive: false,
@@ -1126,6 +1165,71 @@ function winCurrentRunForDev() {
   state.message = "Dev: deck cleared. Records disabled.";
   render();
   triggerVictoryEffect();
+  return true;
+}
+
+function nearlyCompleteRunForDev() {
+  if (!isDevModeRun()) return false;
+
+  if (!Array.isArray(state.deck) || state.deck.length < 2) {
+    const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
+    const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
+    const { chosenSeed, deck } = buildRunFromControls(false, selectedDeckKey, selectedLevelNumber);
+    state.deck = deck;
+    state.runSeed = chosenSeed;
+    state.currentDeckKey = selectedDeckKey;
+    state.currentLevelNumber = selectedLevelNumber;
+    state.bestScore = loadBestScore(selectedDeckKey, selectedLevelNumber);
+  }
+
+  if (!Array.isArray(state.deck) || state.deck.length < 2) {
+    state.message = "Dev: no deck available.";
+    render();
+    return false;
+  }
+
+  clearGameOverEffects({ settleExperience: true });
+  clearVictoryEffects({ fade: true });
+
+  const targetIndex = Math.max(0, state.deck.length - 2);
+  state.index = targetIndex;
+  state.current = state.deck[targetIndex] || state.deck[0] || null;
+  state.correctAnswers = targetIndex;
+  state.seenCardIds = new Set(
+    state.deck
+      .slice(0, targetIndex + 1)
+      .map((card) => card?.id)
+      .filter(Boolean)
+  );
+  state.gameOver = false;
+  state.openingPreview = false;
+  state.gameOverDisplayCards = null;
+  state.gameOverMessageReady = false;
+  state.gameOverMessageJustReleased = false;
+  state.victoryMessageActive = false;
+  state.victoryMessageJustReleased = false;
+  state.victoryPromptShown = false;
+  state.pendingRevealAnimation = null;
+  state.pendingCheatOptions = [];
+  state.pendingPowerOptions = [];
+  state.pendingCheatAwardQueue = [];
+  state.pendingPowerAwardQueue = [];
+  state.activeCheatAwardReason = "";
+  state.activePowerAwardReason = "";
+  state.pauseForCheat = false;
+  state.cheatChoiceLockedUntil = 0;
+  state.powerChoiceLockedUntil = 0;
+  state.currentValueModifier = 0;
+  state.nextCardValueModifier = 0;
+  state.streak = 0;
+  state.currentCardFeedback = "";
+  state.currentNudgeAnimation = null;
+  state.experienceBanking = null;
+  state.pendingExperienceBonuses = [];
+  state.message = "Dev: one card remains. Records disabled.";
+  state.temporaryMessageText = "";
+  state.temporaryMessageUntil = 0;
+  render();
   return true;
 }
 

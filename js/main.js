@@ -139,6 +139,9 @@ applyDebugActionsFromUrl();
 const restoredFromSnapshot = restoreGameStateFromUrlIfNeeded();
 if (!restoredFromSnapshot) {
   applyDeckLevelSelectionFromUrl();
+  if (!getRequestedDailyDateKeyFromUrl()) {
+    previewOpeningRunFromControls();
+  }
 }
 render();
 if (!restoredFromSnapshot) {

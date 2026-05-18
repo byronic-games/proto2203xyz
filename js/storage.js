@@ -573,6 +573,7 @@ function serializeGameStateSnapshot(sourceState) {
 
   return {
     ...sourceState,
+    openingPreview: false,
     seenCardIds: Array.from(sourceState.seenCardIds || []),
     experience: loadExperience(),
     displayExperience: null,
@@ -612,6 +613,7 @@ function loadGameStateSnapshot() {
     const snapshot = {
       ...createEmptyState(),
       ...parsed,
+      openingPreview: false,
       seenCardIds: new Set(Array.isArray(parsed.seenCardIds) ? parsed.seenCardIds : []),
       displayExperience: null,
       experienceBanking: null,
