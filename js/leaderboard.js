@@ -1,10 +1,12 @@
 const LEADERBOARD_LOCAL_KEY = "hl_prototype_heroes_local";
+const BLACK_LEADERBOARD_LOCAL_KEY = "hl_prototype_black_scores_local";
 const HERO_NAME_KEY = "hl_prototype_hero_name";
 
 const LEADERBOARD_CONFIG = {
   supabaseUrl: "https://auryndtrodikjfxuqzyv.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1cnluZHRyb2Rpa2pmeHVxenl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTM5MjMsImV4cCI6MjA5MDQ2OTkyM30.Sj7HEKLcwwEeoEmfArjVwpiCHrbDwmu7rWkN3RpO7_Y",
   table: "heroes_52",
+  blackTable: "black_deck_scores_52",
 };
 
 const CROWN_BLUE = "🔵👑";
@@ -33,6 +35,58 @@ function getLocalHeroes() {
 
 function saveLocalHeroes(entries) {
   localStorage.setItem(LEADERBOARD_LOCAL_KEY, JSON.stringify(entries));
+}
+
+function normalizeBlackDeckScore(score) {
+  const value = Math.floor(Number(score));
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(52, value));
+}
+
+function getLocalBlackDeckScores() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BLACK_LEADERBOARD_LOCAL_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalBlackDeckScores(entries) {
+  localStorage.setItem(BLACK_LEADERBOARD_LOCAL_KEY, JSON.stringify(entries));
+}
+
+function normalizeBlackDeckEntry(entry = {}) {
+  return {
+    playerName: sanitizeHeroName(entry.playerName || entry.player_name || "Unknown") || "Unknown",
+    score: normalizeBlackDeckScore(entry.score),
+    seed: String(entry.seed || "").trim(),
+    gameVersion: String(entry.gameVersion || entry.game_version || "prototype").trim() || "prototype",
+    createdAt: String(entry.createdAt || entry.created_at || new Date().toISOString()),
+  };
+}
+
+function compareBlackDeckEntries(a, b) {
+  const scoreDelta = normalizeBlackDeckScore(b.score) - normalizeBlackDeckScore(a.score);
+  if (scoreDelta) return scoreDelta;
+  return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+}
+
+function getBlackDeckEntryKey(entry = {}) {
+  const normalized = normalizeBlackDeckEntry(entry);
+  return `${normalized.seed}::${normalized.playerName}::${normalized.score}`;
+}
+
+function addLocalBlackDeckScore(entry) {
+  const normalized = normalizeBlackDeckEntry(entry);
+  const scores = getLocalBlackDeckScores().map(normalizeBlackDeckEntry);
+  if (scores.some((score) => getBlackDeckEntryKey(score) === getBlackDeckEntryKey(normalized))) {
+    return { saved: false, reason: "duplicate" };
+  }
+  scores.push(normalized);
+  scores.sort(compareBlackDeckEntries);
+  saveLocalBlackDeckScores(scores.slice(0, 20));
+  return { saved: true };
 }
 
 function addLocalHero(entry) {
@@ -242,6 +296,81 @@ function buildHeroEntry(name, seed, deck = "-", startingPower = "-", deckLevel =
     dailyClears: crownSnapshot.dailyClears,
     crownSummary: crownSnapshot.summary,
   };
+}
+
+function buildBlackDeckEntry(name, score, seed = "") {
+  return normalizeBlackDeckEntry({
+    playerName: sanitizeHeroName(name) || "Unknown",
+    score,
+    seed,
+    gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : "prototype",
+    createdAt: new Date().toISOString(),
+  });
+}
+
+async function submitBlackDeckScore(name, score, seed = "") {
+  const entry = buildBlackDeckEntry(name, score, seed);
+  addLocalBlackDeckScore(entry);
+
+  if (!leaderboardRemoteEnabled()) {
+    return { ok: true, message: "Black Deck score recorded locally." };
+  }
+
+  try {
+    const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.blackTable}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
+        Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        player_name: entry.playerName,
+        score: entry.score,
+        seed: entry.seed,
+        game_version: entry.gameVersion,
+      }),
+    });
+
+    if (response.ok || response.status === 409) {
+      return { ok: true, message: "Black Deck score recorded." };
+    }
+    return { ok: true, message: "Black Deck score saved locally." };
+  } catch {
+    return { ok: true, message: "Black Deck score saved locally." };
+  }
+}
+
+async function fetchBlackDeckLeader() {
+  const localScores = getLocalBlackDeckScores().map(normalizeBlackDeckEntry);
+  let scores = [...localScores];
+
+  if (leaderboardRemoteEnabled()) {
+    try {
+      const query = "select=player_name,score,seed,game_version,created_at&order=score.desc,created_at.asc&limit=1";
+      const url = `${LEADERBOARD_CONFIG.supabaseUrl}/rest/v1/${LEADERBOARD_CONFIG.blackTable}?${query}`;
+      const response = await fetch(url, {
+        headers: {
+          apikey: LEADERBOARD_CONFIG.supabaseAnonKey,
+          Authorization: `Bearer ${LEADERBOARD_CONFIG.supabaseAnonKey}`,
+        },
+      });
+
+      if (response.ok) {
+        const rows = await response.json();
+        if (Array.isArray(rows)) {
+          scores = scores.concat(rows.map(normalizeBlackDeckEntry));
+        }
+      }
+    } catch {
+      // Local scores remain available while offline or before the Supabase table exists.
+    }
+  }
+
+  scores.sort(compareBlackDeckEntries);
+  return scores[0] || null;
 }
 
 async function submitHeroWin(name, seed, deck, startingPower, deckLevel = DEFAULT_LEVEL_NUMBER) {

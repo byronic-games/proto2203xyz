@@ -742,6 +742,30 @@ function openPowerChoice(forceRandom = false) {
   const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   const { chosenSeed, deck } = buildRunFromControls(forceRandom, selectedDeckKey, selectedLevelNumber);
 
+  if (selectedDeckKey === "black") {
+    state.pendingRunSeed = chosenSeed;
+    state.pendingRunDeck = deck;
+    state.pendingRunMode = "standard";
+    state.pendingDailyDateKey = "";
+    state.pendingDeckKey = "black";
+    state.pendingLevelNumber = 1;
+    state.pendingCheatOptions = [];
+    state.pendingPowerOptions = [];
+    state.pendingCheatAwardQueue = [];
+    state.pendingPowerAwardQueue = [];
+    state.cheatChoiceLockedUntil = 0;
+    state.cheatChoicePreviewIndex = -1;
+    state.cheatChoiceAnimating = null;
+    state.powerChoiceAnimating = null;
+    state.powerChoiceLockedUntil = 0;
+    state.activePowerAwardReason = "";
+    state.pauseForCheat = false;
+    state.restartConfirmArmed = false;
+    state.deckStatsTooltipOpen = false;
+    startRunWithPower(null);
+    return;
+  }
+
   state.pendingRunSeed = chosenSeed;
   state.pendingRunDeck = deck;
   const tutorialAssistActive = shouldApplyTutorialAssistForStandardRun("standard");
@@ -873,7 +897,6 @@ function makeTutorialFriendlyOpeningCard(deck) {
 function startRunWithPower(powerId) {
   clearGameOverEffects();
   clearVictoryEffects();
-  const selectedPower = getPowerById(powerId);
   const chosenSeed =
     state.pendingRunSeed ||
     normalizeSeed(document.getElementById("run-seed-input")?.value) ||
@@ -883,21 +906,25 @@ function startRunWithPower(powerId) {
     : buildRunFromControls(false).deck;
   const runMode = state.pendingRunMode || "standard";
   const dailyDateKey = runMode === "daily" ? state.pendingDailyDateKey || getCurrentDailyDateKey() : "";
-  const selectedPowerId = selectedPower?.id || POWERS[0]?.id || null;
   const selectedDeckKey = normalizeDeckKey(state.selectedDeckKey || loadSelectedDeck());
   const selectedLevelNumber = normalizeLevelNumber(state.selectedLevelNumber || loadSelectedLevel());
   const currentDeckKey = runMode === "daily"
     ? "blue"
     : normalizeDeckKey(state.pendingDeckKey || selectedDeckKey);
+  const blackRun = runMode !== "daily" && currentDeckKey === "black";
+  const selectedPower = blackRun ? null : getPowerById(powerId);
   const greenRun = runMode !== "daily" && currentDeckKey === "green";
   const currentLevelNumber = runMode === "daily"
     ? DEFAULT_LEVEL_NUMBER
     : normalizeLevelNumber(state.pendingLevelNumber || selectedLevelNumber);
-  const activePowers = selectedPowerId
+  const selectedPowerId = blackRun ? null : (selectedPower?.id || POWERS[0]?.id || null);
+  const activePowers = blackRun
+    ? []
+    : selectedPowerId
     ? Array.from(new Set([selectedPowerId, "nudge_engine"]))
     : ["nudge_engine"];
 
-  if (shouldApplyTutorialAssistForStandardRun(runMode)) {
+  if (!blackRun && shouldApplyTutorialAssistForStandardRun(runMode)) {
     makeTutorialFriendlyOpeningCard(deck);
   }
 
@@ -1041,6 +1068,16 @@ function startRunWithPower(powerId) {
 
 function handleRunFinished(finalScore) {
   if (isDevModeRun()) return;
+  if (state.runMode !== "daily" && normalizeDeckKey(state.currentDeckKey) === "black") {
+    const playerName = typeof loadPreferredHeroName === "function"
+      ? loadPreferredHeroName()
+      : loadPreferredPlayerName();
+    const blackScore = getRunScoreFromCorrectAnswers(finalScore);
+    if (typeof submitBlackDeckScore === "function") {
+      submitBlackDeckScore(playerName || "Unknown", blackScore, state.runSeed);
+    }
+    return;
+  }
   if (state.runMode !== "daily") return;
 
   const dateKey = state.dailyDateKey || getCurrentDailyDateKey();
@@ -2189,7 +2226,7 @@ function makeGuessLegacy(type) {
     render();
     triggerVictoryEffect();
     handleRunFinished(state.correctAnswers);
-    if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+    if (!isDevModeRun() && normalizeDeckKey(state.currentDeckKey) !== "black" && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
       if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
       window.setTimeout(() => {
@@ -2611,7 +2648,7 @@ function makeGuess(type) {
       render();
       triggerVictoryEffect();
       handleRunFinished(state.correctAnswers);
-      if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+      if (!isDevModeRun() && normalizeDeckKey(state.currentDeckKey) !== "black" && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
         if (state.runMode === "daily") return;
         state.victoryPromptShown = true;
         window.setTimeout(() => {
@@ -2985,7 +3022,7 @@ function makeGuess(type) {
     render();
     triggerVictoryEffect();
     handleRunFinished(state.correctAnswers);
-    if (!isDevModeRun() && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
+    if (!isDevModeRun() && normalizeDeckKey(state.currentDeckKey) !== "black" && !state.victoryPromptShown && typeof window.promptHeroNameForVictory === "function") {
       if (state.runMode === "daily") return;
       state.victoryPromptShown = true;
       window.setTimeout(() => {

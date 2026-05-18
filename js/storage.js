@@ -189,6 +189,7 @@ function normalizeDeckKey(deckKey = "blue") {
   if (normalized === "red") return "red";
   if (normalized === "green") return "green";
   if (normalized === "yellow") return "yellow";
+  if (normalized === "black") return "black";
   return "blue";
 }
 
@@ -198,6 +199,7 @@ function normalizeDeckWins(wins = {}) {
     red: Number.isFinite(wins.red) ? wins.red : 0,
     green: Number.isFinite(wins.green) ? wins.green : 0,
     yellow: Number.isFinite(wins.yellow) ? wins.yellow : 0,
+    black: Number.isFinite(wins.black) ? wins.black : 0,
   };
 }
 
@@ -211,6 +213,7 @@ function normalizeProfileStats(stats = {}) {
     redRunsStarted: Number.isFinite(stats.redRunsStarted) ? stats.redRunsStarted : 0,
     greenRunsStarted: Number.isFinite(stats.greenRunsStarted) ? stats.greenRunsStarted : 0,
     yellowRunsStarted: Number.isFinite(stats.yellowRunsStarted) ? stats.yellowRunsStarted : 0,
+    blackRunsStarted: Number.isFinite(stats.blackRunsStarted) ? stats.blackRunsStarted : 0,
     totalDecksCleared: Number.isFinite(stats.totalDecksCleared) ? stats.totalDecksCleared : 0,
     decksClearedByColor: normalizeDeckWins(stats.decksClearedByColor),
     dailyAttempts: Number.isFinite(stats.dailyAttempts) ? stats.dailyAttempts : 0,
@@ -432,6 +435,11 @@ function isDeckUnlocked(deckKey) {
   if (normalizedDeckKey === "green") return hasVerifiedDeckLevelClear("blue", 1);
   if (normalizedDeckKey === "red") return hasVerifiedDeckLevelClear("blue", 2);
   if (normalizedDeckKey === "yellow") return hasVerifiedDeckLevelClear("blue", 3);
+  if (normalizedDeckKey === "black") {
+    return ["blue", "green", "red", "yellow"].every((deckKey) =>
+      [1, 2, 3, 4].every((levelNumber) => hasVerifiedDeckLevelClear(deckKey, levelNumber))
+    );
+  }
   return false;
 }
 
@@ -522,6 +530,8 @@ function recordRunStarted(deckKey, runMode = "standard") {
       stats.greenRunsStarted += 1;
     } else if (normalizedDeckKey === "yellow") {
       stats.yellowRunsStarted += 1;
+    } else if (normalizedDeckKey === "black") {
+      stats.blackRunsStarted += 1;
     } else {
       stats.blueRunsStarted += 1;
     }

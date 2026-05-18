@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="intro.css?v=20260515c">
+  <link rel="stylesheet" href="intro.css?v=20260518r">
 </head>
 <body class="intro-page">
   <main class="intro-shell">
@@ -24,6 +24,10 @@
     <section class="intro-card">
       <section class="intro-main">
         <img class="intro-logo" src="images/52logo.png" alt="52!" width="1222" height="1222">
+        <div class="black-leader-strip" aria-live="polite">
+          <span>Current Black Deck High Score:</span>
+          <strong id="black-leader-value">--/52...</strong>
+        </div>
 
         <div class="intro-copy">
           <p class="premise emphasis">
@@ -77,7 +81,7 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue starts unlocked. Clear Blue Level 1 for Green, Blue Level 2 for Red, and Blue Level 3 for Yellow.</p>
+          <p class="deck-copy">Pick a deck before heading into the run. Blue starts unlocked. Clear Blue Level 1 for Green, Blue Level 2 for Red, Blue Level 3 for Yellow, and every level on every deck for Black.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
@@ -94,6 +98,10 @@
             <button class="deck-choice-card deck-choice-yellow locked" id="deck-pick-yellow" type="button">
               <span class="deck-choice-label">Yellow Deck</span>
               <span class="deck-choice-desc" id="deck-yellow-desc">Unlock by clearing Blue Deck Level 3.</span>
+            </button>
+            <button class="deck-choice-card deck-choice-black locked" id="deck-pick-black" type="button">
+              <span class="deck-choice-label">Black Deck</span>
+              <span class="deck-choice-desc" id="deck-black-desc">Unlock by clearing every level on every deck.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -184,7 +192,8 @@
   </main>
 
   <script src="js/fullscreen.js?v=20260427a"></script>
-  <script src="js/pwa-update.js?v=20260515a"></script>
+  <script src="js/leaderboard.js?v=20260518r"></script>
+  <script src="js/pwa-update.js?v=20260518r"></script>
   <script>
     (function () {
       const modal = document.getElementById("howto-modal");
@@ -194,6 +203,7 @@
       const nameInput = document.getElementById("intro-name-input");
       const dailyLaunchCard = document.getElementById("daily-launch-card");
       const dailyLaunchSub = document.getElementById("daily-launch-sub");
+      const blackLeaderValue = document.getElementById("black-leader-value");
       const playBtn = document.getElementById("play-open-btn");
       const deckModal = document.getElementById("deck-modal");
       const deckCloseBtn = document.getElementById("deck-close-btn");
@@ -208,6 +218,8 @@
       const greenDeckDesc = document.getElementById("deck-green-desc");
       const yellowDeckBtn = document.getElementById("deck-pick-yellow");
       const yellowDeckDesc = document.getElementById("deck-yellow-desc");
+      const blackDeckBtn = document.getElementById("deck-pick-black");
+      const blackDeckDesc = document.getElementById("deck-black-desc");
       const levelCopy = document.getElementById("level-copy");
       const levelOneBtn = document.getElementById("level-pick-1");
       const levelTwoBtn = document.getElementById("level-pick-2");
@@ -238,7 +250,7 @@
         return;
       }
 
-      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !yellowDeckBtn || !yellowDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelFourBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !levelFourDesc || !nameInput) {
+      if (!modal || !openBtn || !closeBtn || !closeBackdrop || !playBtn || !deckModal || !deckCloseBtn || !deckCloseBackdrop || !levelModal || !levelCloseBtn || !levelCloseBackdrop || !blueDeckBtn || !redDeckBtn || !redDeckDesc || !greenDeckBtn || !greenDeckDesc || !yellowDeckBtn || !yellowDeckDesc || !blackDeckBtn || !blackDeckDesc || !levelCopy || !levelOneBtn || !levelTwoBtn || !levelThreeBtn || !levelFourBtn || !levelOneDesc || !levelTwoDesc || !levelThreeDesc || !levelFourDesc || !nameInput) {
         return;
       }
 
@@ -275,8 +287,20 @@
         }
       }
 
+      async function refreshBlackLeader() {
+        if (!blackLeaderValue || typeof fetchBlackDeckLeader !== "function") return;
+        try {
+          const leader = await fetchBlackDeckLeader();
+          blackLeaderValue.innerText = leader
+            ? `${leader.score}/52... ${leader.playerName}`
+            : "--/52...";
+        } catch {
+          blackLeaderValue.innerText = "--/52...";
+        }
+      }
+
       function getDeckLevelKey(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         return `${normalizedDeck}|${normalizeLevelNumber(levelNumber)}`;
       }
 
@@ -341,6 +365,7 @@
           red: !!(unlocks && unlocks.red),
           green: !!(unlocks && unlocks.green),
           yellow: !!(unlocks && unlocks.yellow),
+          black: !!(unlocks && unlocks.black),
         };
       }
 
@@ -360,14 +385,14 @@
       }
 
       function isDeckManuallyLevelOneUnlocked(deckKey) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         if (normalizedDeck === "blue") return true;
         const unlocks = loadManualLevelOneUnlocks();
         return !!unlocks[normalizedDeck];
       }
 
       function unlockDeckLevelOneForTesting(deckKey) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         if (normalizedDeck === "blue") return;
         const unlocks = loadManualLevelOneUnlocks();
         unlocks[normalizedDeck] = true;
@@ -446,11 +471,21 @@
         return hasDeckUnlock() || isDeckManuallyLevelOneUnlocked("yellow") || hasVerifiedDeckLevelClear("blue", 3);
       }
 
+      function isBlackDeckUnlocked() {
+        if (hasDeckUnlock() || isDeckManuallyLevelOneUnlocked("black")) return true;
+        return ["blue", "green", "red", "yellow"].every((deckKey) =>
+          [1, 2, 3, 4].every((levelNumber) => hasVerifiedDeckLevelClear(deckKey, levelNumber))
+        );
+      }
+
       function isDeckLevelUnlocked(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         const normalizedLevel = normalizeLevelNumber(levelNumber);
 
         if (hasDebugUnlock()) return true;
+        if (normalizedDeck === "black") {
+          return normalizedLevel === 1 && isBlackDeckUnlocked();
+        }
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return true;
           return hasVerifiedDeckLevelClear("blue", normalizedLevel - 1);
@@ -483,8 +518,12 @@
       }
 
       function getLevelDescription(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+        if (normalizedDeck === "black") {
+          return "Pure 52. No Powers, no Cheats, no Nudges. Just higher or lower.";
+        }
 
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return "Classic pacing. Cheats appear every 3 correct guesses, or every 2 with Quick Fingers.";
@@ -514,8 +553,10 @@
       }
 
       function getLevelUnlockText(deckKey, levelNumber) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         const normalizedLevel = normalizeLevelNumber(levelNumber);
+
+        if (normalizedDeck === "black") return "Unlock by clearing every level on every deck.";
 
         if (normalizedDeck === "blue") {
           if (normalizedLevel === 1) return getLevelDescription("blue", 1);
@@ -553,7 +594,7 @@
       }
 
       function setSelectedDeck(deckKey) {
-        const normalizedDeck = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        const normalizedDeck = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         localStorage.setItem(selectedDeckKey, normalizedDeck);
       }
 
@@ -575,13 +616,16 @@
         const redUnlocked = isRedDeckUnlocked();
         const greenUnlocked = isGreenDeckPrereqMet();
         const yellowUnlocked = isYellowDeckUnlocked();
+        const blackUnlocked = isBlackDeckUnlocked();
         const redManual = isDeckManuallyLevelOneUnlocked("red");
         const greenManual = isDeckManuallyLevelOneUnlocked("green");
         const yellowManual = isDeckManuallyLevelOneUnlocked("yellow");
+        const blackManual = isDeckManuallyLevelOneUnlocked("black");
         setChoiceCardState(blueDeckBtn, true);
         setChoiceCardState(redDeckBtn, redUnlocked);
         setChoiceCardState(greenDeckBtn, greenUnlocked);
         setChoiceCardState(yellowDeckBtn, yellowUnlocked);
+        setChoiceCardState(blackDeckBtn, blackUnlocked);
         redDeckDesc.textContent = redUnlocked
           ? (redManual
             ? "Testing unlock active. Red Level 1 is permanently unlocked on this device."
@@ -597,6 +641,11 @@
             ? "Testing unlock active. Yellow Level 1 is permanently unlocked on this device."
             : "Hazard run: Jokers enter after three correct guesses and trigger harmful effects.")
           : "Unlock by clearing Blue Deck Level 3.";
+        blackDeckDesc.textContent = blackUnlocked
+          ? (blackManual
+            ? "Testing unlock active. Black Deck is unlocked on this device."
+            : "Pure 52: no Powers, no Cheats, no Nudges.")
+          : "Unlock by clearing every level on every deck.";
       }
 
       function openDeckModal() {
@@ -611,7 +660,7 @@
       }
 
       function openLevelModal(deckKey) {
-        pendingDeckSelection = deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue"));
+        pendingDeckSelection = deckKey === "black" ? "black" : (deckKey === "red" ? "red" : (deckKey === "green" ? "green" : (deckKey === "yellow" ? "yellow" : "blue")));
         const isBlueDeck = pendingDeckSelection === "blue";
         const isGreenDeck = pendingDeckSelection === "green";
         const isYellowDeck = pendingDeckSelection === "yellow";
@@ -626,7 +675,9 @@
             ? "Green progression unlocks from Blue Level 1, then advances by clearing each Green level in order (10 → 8 → 6 → 5 starting Energy)."
             : (isYellowDeck
               ? "Yellow progression unlocks from Blue Level 3. Each level adds another Joker hazard to the run."
-              : "Red progression unlocks from Blue Level 2, then advances by clearing each Red level in order."));
+              : (pendingDeckSelection === "black"
+                ? "Black Deck is the final pure test: no Powers, no Cheats, no Nudges."
+                : "Red progression unlocks from Blue Level 2, then advances by clearing each Red level in order.")));
 
         setLevelDescription(
           levelOneDesc,
@@ -680,11 +731,20 @@
         if (deckKey === "red" && !isRedDeckUnlocked()) return;
         if (deckKey === "green" && !isGreenDeckPrereqMet()) return;
         if (deckKey === "yellow" && !isYellowDeckUnlocked()) return;
+        if (deckKey === "black" && !isBlackDeckUnlocked()) return;
+        if (deckKey === "black") {
+          setSelectedDeck("black");
+          setSelectedLevel(1);
+          sessionStorage.removeItem("hl_prototype_game_state_snapshot");
+          const params = new URLSearchParams({ deck: "black", level: "1" });
+          window.location.href = `game.html?${params.toString()}`;
+          return;
+        }
         openLevelModal(deckKey);
       }
 
       function attachDeckHoldUnlock(buttonEl, deckKey) {
-        if (!buttonEl || (deckKey !== "red" && deckKey !== "green" && deckKey !== "yellow")) return;
+        if (!buttonEl || (deckKey !== "red" && deckKey !== "green" && deckKey !== "yellow" && deckKey !== "black")) return;
 
         let holdTimer = null;
         let holdTriggered = false;
@@ -755,9 +815,11 @@
       redDeckBtn.addEventListener("click", () => chooseDeck("red"));
       greenDeckBtn.addEventListener("click", () => chooseDeck("green"));
       yellowDeckBtn.addEventListener("click", () => chooseDeck("yellow"));
+      blackDeckBtn.addEventListener("click", () => chooseDeck("black"));
       attachDeckHoldUnlock(redDeckBtn, "red");
       attachDeckHoldUnlock(greenDeckBtn, "green");
       attachDeckHoldUnlock(yellowDeckBtn, "yellow");
+      attachDeckHoldUnlock(blackDeckBtn, "black");
       levelOneBtn.addEventListener("click", () => chooseLevel(1));
       levelTwoBtn.addEventListener("click", () => chooseLevel(2));
       levelThreeBtn.addEventListener("click", () => chooseLevel(3));
@@ -795,6 +857,7 @@
       });
 
       refreshDailyLaunchState();
+      refreshBlackLeader();
 
       window.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {

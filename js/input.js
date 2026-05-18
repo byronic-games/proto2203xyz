@@ -1034,7 +1034,7 @@ document.getElementById("settings-experience-toggle")?.addEventListener("change"
 document.getElementById("settings-unlock-decks-toggle")?.addEventListener("change", (event) => {
   saveUnlockDecks(!!event.target.checked);
   setSettingsModalStatus(event.target.checked
-    ? "Level 1 unlocked for every deck on this device."
+    ? "All decks, including Black Deck, are unlocked on this device."
     : "Normal deck progression restored.");
 });
 

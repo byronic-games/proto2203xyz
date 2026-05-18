@@ -3,6 +3,7 @@ function getDeckBackColor(deckKey) {
   if (normalizedDeck === "red") return "pink";
   if (normalizedDeck === "green") return "green";
   if (normalizedDeck === "yellow") return "yellow";
+  if (normalizedDeck === "black") return "black";
   return "blue";
 }
 
@@ -1156,6 +1157,7 @@ function renderHeaderStatus() {
   if (gameEl) {
     gameEl.dataset.deck = runDeckKey;
   }
+  document.body.classList.toggle("black-deck-active", runDeckKey === "black");
 
   if (brandTitleEl) {
     brandTitleEl.dataset.deck = runDeckKey;
@@ -1174,7 +1176,7 @@ function renderHeaderStatus() {
     powerChipEl.setAttribute("aria-label", hasPower ? `${visiblePowerIds.length} current power${visiblePowerIds.length === 1 ? "" : "s"} details` : "No starting power selected");
     setupHeaderPowerTooltip(powerChipEl, {
       enabled: hasPower && !!runPowerTooltipBody,
-      title: `${runDeckName} Deck - Level ${runLevelNumber} Powers`,
+      title: runDeckKey === "black" ? "Black Deck" : `${runDeckName} Deck - Level ${runLevelNumber} Powers`,
       description: runPowerTooltipBody,
     });
   }

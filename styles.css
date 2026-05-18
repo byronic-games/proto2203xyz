@@ -82,6 +82,32 @@ body::before {
     radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1.2px) 0 0 / 18px 18px;
 }
 
+body.game-page.black-deck-active {
+  background:
+    radial-gradient(circle at 44% 18%, rgba(74, 144, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, #02030a 0%, #070811 54%, #010207 100%);
+}
+
+body.game-page.black-deck-active::before {
+  inset: -45%;
+  opacity: 0.28;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.98) 1px, transparent 1.4px) 0 0 / 56px 56px,
+    radial-gradient(circle, rgba(160, 205, 255, 0.75) 1px, transparent 1.35px) 18px 26px / 88px 88px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.55) 0.8px, transparent 1.15px) 34px 12px / 38px 38px;
+  animation: black-starfield-scroll 92s linear infinite;
+  transform: translate3d(0, 0, 0);
+}
+
+@keyframes black-starfield-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(14%, 22%, 0);
+  }
+}
+
 button,
 input,
 a {
@@ -561,6 +587,14 @@ a {
   position: relative;
   transform-origin: center top;
   flex: 0 0 auto;
+}
+
+#game[data-deck="black"] #header-power-chip,
+#game[data-deck="black"] #nudge-down-btn,
+#game[data-deck="black"] #nudge-up-btn,
+#game[data-deck="black"] #cheats-panel .cheat-scroll-window {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 #game.game-over-effect #play-area {
@@ -1278,6 +1312,12 @@ body[data-visuals="new"] .card-nudge-old-rank-br {
 
 .card-back.card-back-yellow {
   background: linear-gradient(180deg, rgba(255, 216, 86, 0.98), rgba(210, 142, 34, 0.98));
+}
+
+.card-back.card-back-black {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(255, 255, 255, 0.16), transparent 18%),
+    linear-gradient(180deg, rgba(34, 38, 51, 0.98), rgba(3, 4, 10, 0.98));
 }
 
 .card-back-symbol {
