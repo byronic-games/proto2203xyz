@@ -5898,6 +5898,89 @@ body[data-visuals="new"] .card-center-suit[data-suit="♣"] {
   background-image: url('images/Suits/ClubIcon.png');
 }
 
+body[data-visuals="new"] .card-pip-grid {
+  position: absolute;
+  inset: 18cqh 14cqw;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body[data-visuals="new"] .card-pip {
+  position: absolute;
+  width: 21cqw;
+  height: 21cqw;
+  transform: translate(-50%, -50%);
+}
+
+body[data-visuals="new"] .card-pip::before {
+  content: attr(data-suit);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 1.18em;
+  font-weight: 900;
+  line-height: 1;
+}
+
+body[data-visuals="new"] .card-pip-large {
+  width: 39cqw;
+  height: 39cqw;
+}
+
+body[data-visuals="new"] .card-pip-large::before {
+  font-size: 1.28em;
+}
+
+body[data-visuals="new"] .card-pip-invert {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+body[data-visuals="new"] .card-pip-tl { left: 25%; top: 16%; }
+body[data-visuals="new"] .card-pip-tc { left: 50%; top: 16%; }
+body[data-visuals="new"] .card-pip-tr { left: 75%; top: 16%; }
+body[data-visuals="new"] .card-pip-uc { left: 50%; top: 31%; }
+body[data-visuals="new"] .card-pip-uml { left: 25%; top: 37%; }
+body[data-visuals="new"] .card-pip-umr { left: 75%; top: 37%; }
+body[data-visuals="new"] .card-pip-ml { left: 25%; top: 50%; }
+body[data-visuals="new"] .card-pip-c { left: 50%; top: 50%; }
+body[data-visuals="new"] .card-pip-mr { left: 75%; top: 50%; }
+body[data-visuals="new"] .card-pip-lml { left: 25%; top: 63%; }
+body[data-visuals="new"] .card-pip-lmr { left: 75%; top: 63%; }
+body[data-visuals="new"] .card-pip-lc { left: 50%; top: 69%; }
+body[data-visuals="new"] .card-pip-bl { left: 25%; top: 84%; }
+body[data-visuals="new"] .card-pip-bc { left: 50%; top: 84%; }
+body[data-visuals="new"] .card-pip-br { left: 75%; top: 84%; }
+
+body[data-visuals="new"] .card-pip[data-suit="♠"],
+body[data-visuals="new"] .card-pip[data-suit="♣"] {
+  color: #1a1a1a;
+}
+
+body[data-visuals="new"] .card-pip[data-suit="♥"],
+body[data-visuals="new"] .card-pip[data-suit="♦"] {
+  color: #dc2626;
+}
+
+body[data-visuals="new"] .card-court-art {
+  position: absolute;
+  z-index: 1;
+  inset: 8cqh 9cqw;
+  width: calc(100% - 18cqw);
+  height: calc(100% - 16cqh);
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+body[data-visuals="new"] .choice-current-card-visual .card-court-art {
+  inset: 8% 9%;
+  width: 82%;
+  height: 84%;
+}
+
 /* --- Card back --- */
 body[data-visuals="new"] .card-back {
   --card-ring: clamp(2px, 2.6cqw, 5px);

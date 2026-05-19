@@ -1525,8 +1525,11 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
     : "";
   const nudgeValueActive = !!nudgeFromRank && nudgeFromRank !== shownRank;
   const isNewTheme = document.body.dataset.visuals === "new";
+  const minimalFacePreview = isNewTheme && !!options.minimalFacePreview && isFaceRank(shownRank);
+  const pipLayout = isNewTheme && !options.suppressPips ? getCardPipLayout(shownRank) : null;
+  const faceCardArt = isNewTheme ? getFaceCardImagePath(card, shownRank) : "";
   const labelHtml = isNewTheme
-    ? `<div class="card-corner card-corner-tl"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span><span class="card-suit" data-suit="${card.suit}" aria-hidden="true"></span></div><div class="card-center-suit" data-suit="${card.suit}" aria-hidden="true"></div><div class="card-corner card-corner-br" aria-hidden="true"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span><span class="card-suit" data-suit="${card.suit}"></span></div>`
+    ? `<div class="card-corner card-corner-tl"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span>${minimalFacePreview ? "" : `<span class="card-suit" data-suit="${card.suit}" aria-hidden="true"></span>`}</div>${faceCardArt ? renderFaceCardArtMarkup(faceCardArt, shownRank, card.suit) : (minimalFacePreview ? "" : (pipLayout ? renderPipGridMarkup(card.suit, shownRank, pipLayout) : `<div class="card-center-suit" data-suit="${card.suit}" aria-hidden="true"></div>`))}<div class="card-corner card-corner-br" aria-hidden="true"><span class="card-rank ${nudgeValueActive ? "card-nudge-new-rank" : ""}">${shownRank}</span>${minimalFacePreview ? "" : `<span class="card-suit" data-suit="${card.suit}"></span>`}</div>`
     : `<span class="card-face-label ${nudgeValueActive ? "card-nudge-new-label" : ""}">${shownRank}${card.suit}</span>`;
   const nudgeOldRankHtml = nudgeValueActive
     ? isNewTheme
@@ -1540,6 +1543,58 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
     ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
   `;
+}
+
+function isFaceRank(rank) {
+  return rank === "J" || rank === "Q" || rank === "K";
+}
+
+function getFaceCardImagePath(card, shownRank) {
+  const rankName = {
+    J: "jack",
+    Q: "queen",
+    K: "king",
+  }[String(shownRank || "").toUpperCase()];
+  const suitName = {
+    "♣": "clubs",
+    "♦": "diamonds",
+    "♥": "hearts",
+    "♠": "spades",
+  }[card?.suit || ""];
+  return rankName && suitName ? `images/face_cards/${rankName}_${suitName}.png` : "";
+}
+
+function renderFaceCardArtMarkup(src, rank, suit) {
+  return `<img class="card-court-art" src="${src}" alt="" data-rank="${rank}" data-suit="${suit}" aria-hidden="true" draggable="false">`;
+}
+
+function getCardPipLayout(rank) {
+  const layouts = {
+    A: [{ pos: "c", large: true }],
+    "2": [{ pos: "tc" }, { pos: "bc", invert: true }],
+    "3": [{ pos: "tc" }, { pos: "c" }, { pos: "bc", invert: true }],
+    "4": [{ pos: "tl" }, { pos: "tr" }, { pos: "bl", invert: true }, { pos: "br", invert: true }],
+    "5": [{ pos: "tl" }, { pos: "tr" }, { pos: "c" }, { pos: "bl", invert: true }, { pos: "br", invert: true }],
+    "6": [{ pos: "tl" }, { pos: "ml" }, { pos: "bl", invert: true }, { pos: "tr" }, { pos: "mr" }, { pos: "br", invert: true }],
+    "7": [{ pos: "tl" }, { pos: "tr" }, { pos: "uc" }, { pos: "ml" }, { pos: "mr" }, { pos: "bl", invert: true }, { pos: "br", invert: true }],
+    "8": [{ pos: "tl" }, { pos: "uml" }, { pos: "lml", invert: true }, { pos: "bl", invert: true }, { pos: "tr" }, { pos: "umr" }, { pos: "lmr", invert: true }, { pos: "br", invert: true }],
+    "9": [{ pos: "tl" }, { pos: "uml" }, { pos: "lml", invert: true }, { pos: "bl", invert: true }, { pos: "tr" }, { pos: "umr" }, { pos: "lmr", invert: true }, { pos: "br", invert: true }, { pos: "c" }],
+    "10": [{ pos: "tl" }, { pos: "tr" }, { pos: "uc" }, { pos: "uml" }, { pos: "umr" }, { pos: "lml", invert: true }, { pos: "lmr", invert: true }, { pos: "lc", invert: true }, { pos: "bl", invert: true }, { pos: "br", invert: true }],
+  };
+  return layouts[String(rank || "").toUpperCase()] || null;
+}
+
+function renderPipGridMarkup(suit, rank, layout) {
+  const pips = layout.map((pip) => {
+    const classes = [
+      "card-pip",
+      `card-pip-${pip.pos}`,
+      pip.invert ? "card-pip-invert" : "",
+      pip.large ? "card-pip-large" : "",
+    ].filter(Boolean).join(" ");
+    return `<span class="${classes}" data-suit="${suit}" aria-hidden="true"></span>`;
+  }).join("");
+  return `<div class="card-pip-grid card-pip-grid-${String(rank || "").toLowerCase()}" aria-hidden="true">${pips}</div>`;
 }
 
 function renderBlankSpaceFaceMarkup(displayValue) {
@@ -2677,7 +2732,10 @@ function renderChoiceCurrentCard(el, mode = "cheat", label = "Current card") {
       ? "red"
       : "black";
   const cardValue = Number.isFinite(card.value) ? card.value : getCurrentEffectiveValue();
-  const cardMarkup = renderCardFaceMarkup(card, cardValue, false, false);
+  const cardMarkup = renderCardFaceMarkup(card, cardValue, false, false, {
+    suppressPips: true,
+    minimalFacePreview: true,
+  });
   el.innerHTML = `
     <div class="choice-current-card-label">${label}:</div>
     <div class="choice-current-card-visual card-face ${cardFaceClass}" aria-label="${label}: ${describeCard(card)}">

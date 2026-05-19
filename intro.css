@@ -591,6 +591,104 @@ h1 {
   }
 }
 
+@media (min-width: 621px) {
+  .intro-card {
+    padding-top: clamp(4px, 1vh, 10px);
+    padding-bottom: clamp(8px, 1.4vh, 14px);
+  }
+
+  .intro-main {
+    width: min(100%, 430px);
+  }
+
+  .intro-logo {
+    width: min(25vh, 205px);
+    margin-top: clamp(2px, 0.7vh, 8px);
+    margin-bottom: clamp(4px, 0.8vh, 8px);
+  }
+
+  .black-leader-strip {
+    width: min(100%, 300px);
+    margin-bottom: clamp(4px, 0.8vh, 8px);
+    padding: 6px 10px;
+    font-size: 0.66rem;
+    line-height: 1.12;
+  }
+
+  .black-leader-strip strong {
+    font-size: 0.76rem;
+  }
+
+  .intro-copy {
+    margin-top: clamp(4px, 0.8vh, 8px);
+    gap: 5px;
+  }
+
+  .premise {
+    font-size: clamp(0.74rem, 1.55vh, 0.88rem);
+    line-height: 1.24;
+  }
+
+  .premise.emphasis {
+    font-size: clamp(0.82rem, 1.8vh, 1rem);
+    line-height: 1.22;
+  }
+
+  .card-action-fan {
+    margin-top: clamp(6px, 1vh, 10px);
+    gap: 8px;
+  }
+
+  .action-card {
+    min-height: clamp(72px, 10.5vh, 96px);
+    padding: 8px 9px 7px;
+  }
+
+  .action-card-title {
+    font-size: clamp(0.95rem, 2.1vh, 1.12rem);
+  }
+
+  .action-card-sub {
+    font-size: 0.5rem;
+  }
+
+  .intro-footer-row {
+    margin-top: clamp(6px, 0.9vh, 10px);
+    grid-template-columns: minmax(0, 1fr) 124px;
+    gap: 8px;
+  }
+
+  .intro-name-card {
+    padding: 8px 9px;
+  }
+
+  .intro-name {
+    gap: 4px;
+  }
+
+  .intro-name label {
+    font-size: 0.6rem;
+  }
+
+  .intro-name input {
+    min-height: 34px;
+    font-size: 0.9rem;
+  }
+
+  .profile-launch {
+    min-height: 34px;
+    padding: 8px 10px;
+  }
+
+  .profile-launch-label {
+    font-size: 0.88rem;
+  }
+
+  .profile-launch-sub {
+    font-size: 0.48rem;
+  }
+}
+
 @media (max-width: 620px) {
   .intro-shell {
     padding: 0;
