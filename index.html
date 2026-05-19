@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="intro.css?v=20260519c">
+  <link rel="stylesheet" href="intro.css?v=20260519d">
 </head>
 <body class="intro-page">
   <main class="intro-shell">
@@ -81,27 +81,27 @@
           <div class="deck-backdrop" id="deck-close-backdrop"></div>
           <article class="deck-dialog" role="dialog" aria-modal="true" aria-labelledby="deck-title">
           <h2 id="deck-title">Choose Your Deck</h2>
-          <p class="deck-copy">Pick a deck before heading into the run. Blue starts unlocked. Clear Blue Level 1 for Green, Blue Level 2 for Red, Blue Level 3 for Yellow, and every level on every deck for Black.</p>
+          <p class="deck-copy">Pick a deck; locked decks show their unlock requirement.</p>
           <div class="deck-choice-grid">
             <button class="deck-choice-card deck-choice-blue" id="deck-pick-blue" type="button">
               <span class="deck-choice-label">Blue Deck</span>
-              <span class="deck-choice-desc">Classic run with nudge rewards on correct guesses.</span>
+              <span class="deck-choice-desc">Classic 52 with nudge rewards.</span>
             </button>
             <button class="deck-choice-card deck-choice-green locked" id="deck-pick-green" type="button">
               <span class="deck-choice-label">Green Deck</span>
-              <span class="deck-choice-desc" id="deck-green-desc">Unlock by clearing Blue Deck Level 1.</span>
+              <span class="deck-choice-desc" id="deck-green-desc">Unlock: clear Blue L1.</span>
             </button>
             <button class="deck-choice-card deck-choice-red locked" id="deck-pick-red" type="button">
               <span class="deck-choice-label">Red Deck</span>
-              <span class="deck-choice-desc" id="deck-red-desc">Unlock by clearing Blue Deck Level 2.</span>
+              <span class="deck-choice-desc" id="deck-red-desc">Unlock: clear Blue L2.</span>
             </button>
             <button class="deck-choice-card deck-choice-yellow locked" id="deck-pick-yellow" type="button">
               <span class="deck-choice-label">Yellow Deck</span>
-              <span class="deck-choice-desc" id="deck-yellow-desc">Unlock by clearing Blue Deck Level 3.</span>
+              <span class="deck-choice-desc" id="deck-yellow-desc">Unlock: clear Blue L3.</span>
             </button>
             <button class="deck-choice-card deck-choice-black locked" id="deck-pick-black" type="button">
               <span class="deck-choice-label">Black Deck</span>
-              <span class="deck-choice-desc" id="deck-black-desc">Unlock by clearing every level on every deck.</span>
+              <span class="deck-choice-desc" id="deck-black-desc">Unlock: clear every deck level.</span>
             </button>
           </div>
           <button id="deck-close-btn" class="deck-close-btn" type="button">Close</button>
@@ -192,8 +192,8 @@
   </main>
 
   <script src="js/fullscreen.js?v=20260427a"></script>
-  <script src="js/leaderboard.js?v=20260519c"></script>
-  <script src="js/pwa-update.js?v=20260519c"></script>
+  <script src="js/leaderboard.js?v=20260519d"></script>
+  <script src="js/pwa-update.js?v=20260519d"></script>
   <script>
     (function () {
       const modal = document.getElementById("howto-modal");
@@ -628,24 +628,24 @@
         setChoiceCardState(blackDeckBtn, blackUnlocked);
         redDeckDesc.textContent = redUnlocked
           ? (redManual
-            ? "Testing unlock active. Red Level 1 is permanently unlocked on this device."
-            : "Stats-driven run. No Nudge rewards; hold the next card for live face-up card history.")
-          : "Unlock by clearing Blue Deck Level 2.";
+            ? "Testing unlock active."
+            : "Stats run with no nudge rewards.")
+          : "Unlock: clear Blue L2.";
         greenDeckDesc.textContent = greenUnlocked
           ? (greenManual
-            ? "Testing unlock active. Green Level 1 is permanently unlocked on this device."
-            : "Hard mode: start with 10 Energy, spend 1 per nudge, and hunt for +5 Energy cheats.")
-          : "Unlock by clearing Blue Deck Level 1.";
+            ? "Testing unlock active."
+            : "Energy run: nudges spend Energy.")
+          : "Unlock: clear Blue L1.";
         yellowDeckDesc.textContent = yellowUnlocked
           ? (yellowManual
-            ? "Testing unlock active. Yellow Level 1 is permanently unlocked on this device."
-            : "Hazard run: Jokers enter after three correct guesses and trigger harmful effects.")
-          : "Unlock by clearing Blue Deck Level 3.";
+            ? "Testing unlock active."
+            : "Hazard run with harmful Jokers.")
+          : "Unlock: clear Blue L3.";
         blackDeckDesc.textContent = blackUnlocked
           ? (blackManual
-            ? "Testing unlock active. Black Deck is unlocked on this device."
-            : "Pure 52: no Powers, no Cheats, no Nudges.")
-          : "Unlock by clearing every level on every deck.";
+            ? "Testing unlock active."
+            : "Pure 52: no Powers, Cheats, or Nudges.")
+          : "Unlock: clear every deck level.";
       }
 
       function openDeckModal() {

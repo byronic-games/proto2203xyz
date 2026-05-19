@@ -820,11 +820,31 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+#deck-modal {
+  padding: max(8px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom));
+}
+
+#deck-modal .deck-dialog {
+  width: min(92vw, 520px);
+  height: min(88dvh, 680px);
+  max-height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom)));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(12px, 2.5dvh, 18px);
+}
+
 .deck-dialog h2 {
   margin: 0 0 10px;
   color: var(--pink);
   font-size: 1.35rem;
   font-weight: 800;
+}
+
+#deck-modal .deck-dialog h2 {
+  margin-bottom: clamp(4px, 0.8dvh, 8px);
+  font-size: clamp(1.5rem, 6.4vw, 2rem);
+  line-height: 0.95;
 }
 
 .deck-copy {
@@ -834,9 +854,22 @@ h1 {
   line-height: 1.4;
 }
 
+#deck-modal .deck-copy {
+  margin-bottom: clamp(8px, 1.4dvh, 12px);
+  font-size: clamp(0.72rem, 3vw, 0.88rem);
+  line-height: 1.15;
+}
+
 .deck-choice-grid {
   display: grid;
   gap: 12px;
+}
+
+#deck-modal .deck-choice-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 1.15dvh, 10px);
 }
 
 .deck-choice-card {
@@ -849,6 +882,14 @@ h1 {
   text-align: left;
   color: #fff;
   cursor: pointer;
+}
+
+#deck-modal .deck-choice-card {
+  min-height: 0;
+  align-content: center;
+  gap: clamp(2px, 0.55dvh, 5px);
+  border-radius: clamp(10px, 3vw, 14px);
+  padding: clamp(8px, 1.6dvh, 12px) clamp(10px, 3.5vw, 14px);
 }
 
 .deck-choice-blue {
@@ -904,9 +945,19 @@ h1 {
   font-weight: 800;
 }
 
+#deck-modal .deck-choice-label {
+  font-size: clamp(0.98rem, 4.5vw, 1.18rem);
+  line-height: 1;
+}
+
 .deck-choice-desc {
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+#deck-modal .deck-choice-desc {
+  font-size: clamp(0.68rem, 3vw, 0.82rem);
+  line-height: 1.12;
 }
 
 .deck-close-btn {
@@ -918,4 +969,49 @@ h1 {
   background: rgba(255, 255, 255, 0.12);
   color: var(--text);
   font-weight: 800;
+}
+
+#deck-modal .deck-close-btn {
+  flex: 0 0 auto;
+  min-height: clamp(36px, 6.2dvh, 44px);
+  margin-top: clamp(8px, 1.4dvh, 12px);
+  border-radius: 10px;
+}
+
+@media (max-height: 700px) {
+  #deck-modal .deck-dialog {
+    height: calc(100dvh - 18px);
+    padding: 10px;
+  }
+
+  #deck-modal .deck-dialog h2 {
+    font-size: 1.45rem;
+  }
+
+  #deck-modal .deck-copy {
+    margin-bottom: 6px;
+    font-size: 0.68rem;
+  }
+
+  #deck-modal .deck-choice-grid {
+    gap: 5px;
+  }
+
+  #deck-modal .deck-choice-card {
+    padding: 7px 10px;
+  }
+
+  #deck-modal .deck-choice-label {
+    font-size: 0.92rem;
+  }
+
+  #deck-modal .deck-choice-desc {
+    font-size: 0.64rem;
+    line-height: 1.08;
+  }
+
+  #deck-modal .deck-close-btn {
+    min-height: 34px;
+    margin-top: 6px;
+  }
 }
