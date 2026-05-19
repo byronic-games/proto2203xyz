@@ -134,17 +134,46 @@ body.game-page.black-deck-active #cheat-tooltip {
 body.game-page.black-deck-active #game::before {
   content: "";
   position: absolute;
-  inset: -36% 0;
+  inset: -48% 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.72;
+  opacity: 0.9;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.2px, transparent 1.45px) 18px 26px / 96px 96px,
-    radial-gradient(circle, rgba(255, 255, 255, 0.68) 0 1px, transparent 1.25px) 56px 74px / 136px 136px,
-    radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 0.9px, transparent 1.1px) 12px 92px / 178px 178px,
-    radial-gradient(circle, rgba(255, 255, 255, 0.32) 0 1.6px, transparent 1.9px) 84px 18px / 224px 224px;
-  transform: translate3d(0, -12%, 0);
-  animation: black-starfield-scroll 54s linear infinite;
+    radial-gradient(circle at 8% 5%, rgba(255,255,255,0.75) 0 0.8px, transparent 1.05px),
+    radial-gradient(circle at 19% 13%, rgba(255,255,255,0.42) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 38% 4%, rgba(255,255,255,0.9) 0 1.3px, transparent 1.65px),
+    radial-gradient(circle at 63% 11%, rgba(112,224,255,0.78) 0 1.15px, transparent 1.45px),
+    radial-gradient(circle at 86% 7%, rgba(255,255,255,0.52) 0 0.75px, transparent 1px),
+    radial-gradient(circle at 14% 22%, rgba(255,255,255,0.84) 0 1.45px, transparent 1.8px),
+    radial-gradient(circle at 31% 28%, rgba(255,116,241,0.5) 0 1px, transparent 1.35px),
+    radial-gradient(circle at 54% 19%, rgba(255,255,255,0.66) 0 0.85px, transparent 1.1px),
+    radial-gradient(circle at 76% 25%, rgba(255,255,255,0.95) 0 1.55px, transparent 1.9px),
+    radial-gradient(circle at 95% 18%, rgba(255,255,255,0.35) 0 0.7px, transparent 0.95px),
+    radial-gradient(circle at 5% 37%, rgba(255,255,255,0.34) 0 0.8px, transparent 1px),
+    radial-gradient(circle at 24% 41%, rgba(255,255,255,0.88) 0 1.25px, transparent 1.6px),
+    radial-gradient(circle at 42% 35%, rgba(184,255,92,0.44) 0 0.9px, transparent 1.25px),
+    radial-gradient(circle at 69% 43%, rgba(255,255,255,0.5) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 91% 34%, rgba(112,224,255,0.7) 0 1.25px, transparent 1.55px),
+    radial-gradient(circle at 12% 58%, rgba(255,255,255,0.72) 0 1.1px, transparent 1.45px),
+    radial-gradient(circle at 35% 52%, rgba(255,255,255,0.36) 0 0.7px, transparent 0.95px),
+    radial-gradient(circle at 48% 61%, rgba(255,255,255,0.9) 0 1.55px, transparent 1.9px),
+    radial-gradient(circle at 73% 55%, rgba(255,116,241,0.48) 0 1px, transparent 1.3px),
+    radial-gradient(circle at 88% 64%, rgba(255,255,255,0.62) 0 0.85px, transparent 1.1px),
+    radial-gradient(circle at 7% 76%, rgba(112,224,255,0.54) 0 0.9px, transparent 1.2px),
+    radial-gradient(circle at 22% 84%, rgba(255,255,255,0.96) 0 1.45px, transparent 1.85px),
+    radial-gradient(circle at 45% 79%, rgba(255,255,255,0.46) 0 0.8px, transparent 1.05px),
+    radial-gradient(circle at 61% 88%, rgba(255,255,255,0.76) 0 1.1px, transparent 1.4px),
+    radial-gradient(circle at 82% 82%, rgba(184,255,92,0.36) 0 0.8px, transparent 1.1px),
+    radial-gradient(circle at 97% 91%, rgba(255,255,255,0.52) 0 1px, transparent 1.3px),
+    radial-gradient(circle at 17% 96%, rgba(255,255,255,0.3) 0 0.65px, transparent 0.9px),
+    radial-gradient(circle at 56% 99%, rgba(112,224,255,0.58) 0 0.95px, transparent 1.25px);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))
+    drop-shadow(0 0 6px rgba(112, 224, 255, 0.16));
+  transform: translate3d(0, -16%, 0);
+  animation: black-starfield-scroll 42s linear infinite;
   will-change: transform;
 }
 
@@ -159,10 +188,10 @@ body.game-page.black-deck-active #main-layout {
 
 @keyframes black-starfield-scroll {
   from {
-    transform: translate3d(0, -12%, 0);
+    transform: translate3d(0, -16%, 0);
   }
   to {
-    transform: translate3d(0, 12%, 0);
+    transform: translate3d(0, 16%, 0);
   }
 }
 
@@ -5210,11 +5239,13 @@ body.choice-modal-open #controls,
 }
 
 body.game-page.black-deck-active #game {
-  background: linear-gradient(180deg, #05080f 0%, #03060d 46%, #010309 100%) !important;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(30, 68, 112, 0.2), transparent 34%),
+    linear-gradient(180deg, #060a12 0%, #03060d 46%, #010309 100%) !important;
 }
 
 body.game-page.black-deck-active #game.game-over-effect::before {
-  animation: black-starfield-scroll 54s linear infinite;
+  animation: black-starfield-scroll 42s linear infinite;
 }
 
 #app-header,
