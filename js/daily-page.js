@@ -199,7 +199,7 @@ async function refreshDailyPageForDate(activeDateKey) {
   if (!dailyUnlocked) {
     resultPanel?.classList.add("hidden");
     if (statusEl) {
-      statusEl.innerText = "Daily unlocks after your first run.";
+      statusEl.innerText = "Unlocks after your first run.";
     }
     if (startBtn) {
       startBtn.disabled = true;
@@ -217,7 +217,7 @@ async function refreshDailyPageForDate(activeDateKey) {
     } else {
       resultPanel?.classList.add("hidden");
       if (statusEl) {
-        statusEl.innerText = "This Daily is in progress on this device. Resume to finish your attempt.";
+        statusEl.innerText = "Daily in progress. Resume to finish.";
       }
     }
     if (shareBtn) {
@@ -232,8 +232,8 @@ async function refreshDailyPageForDate(activeDateKey) {
       resultPanel?.classList.add("hidden");
       if (statusEl) {
         statusEl.innerText = activeDateKey === todayKey
-          ? "You have one attempt on today's Daily. High scores revealed after your run."
-          : "This Daily is archived.";
+          ? "One attempt. Scores reveal after your run."
+          : "Archived Daily.";
       }
     if (startBtn) {
       startBtn.disabled = activeDateKey !== todayKey;

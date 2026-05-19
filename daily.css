@@ -46,12 +46,12 @@ body::before {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 12px;
+  padding: clamp(6px, 1.4vw, 12px);
 }
 
 .daily-card {
   width: min(900px, 100%);
-  padding: clamp(18px, 3vw, 28px);
+  padding: clamp(12px, 2.4vw, 22px);
   border-radius: 26px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 16%),
@@ -62,7 +62,7 @@ body::before {
     inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: clamp(8px, 1.5vw, 12px);
   position: relative;
 }
 
@@ -84,7 +84,7 @@ th {
 
 h1 {
   margin: 0;
-  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-size: clamp(2.05rem, 5.4vw, 3.55rem);
   line-height: 0.92;
   color: var(--pink);
   letter-spacing: -0.05em;
@@ -93,9 +93,9 @@ h1 {
 .lead {
   margin: 0;
   color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.45;
-  max-width: 42ch;
+  font-size: clamp(0.86rem, 2.4vw, 1rem);
+  line-height: 1.22;
+  max-width: 46ch;
 }
 
 .daily-summary,
@@ -114,7 +114,7 @@ h1 {
 .daily-result,
 .daily-board {
   border-radius: 16px;
-  padding: 14px 16px;
+  padding: clamp(10px, 2.2vw, 14px) clamp(12px, 2.5vw, 16px);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
     var(--surface-strong);
@@ -122,7 +122,7 @@ h1 {
 }
 
 .summary-value {
-  margin-top: 7px;
+  margin-top: 4px;
   font-size: 1.24rem;
   font-weight: 800;
   line-height: 1.1;
@@ -176,8 +176,8 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .daily-nav-wrapper .summary-value {
@@ -189,8 +189,8 @@ h1 {
 
 .daily-nav-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
@@ -232,12 +232,12 @@ h1 {
 
 .daily-player {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 #daily-name-input {
   width: 100%;
-  min-height: 44px;
+  min-height: 38px;
   padding: 0 12px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -248,12 +248,13 @@ h1 {
 .daily-status {
   margin: 0;
   color: var(--muted);
-  font-size: 0.84rem;
-  min-height: 1.3em;
+  font-size: 0.78rem;
+  line-height: 1.18;
+  min-height: 1.18em;
 }
 
 .daily-board-status {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 
 .daily-result.hidden {
@@ -261,7 +262,7 @@ h1 {
 }
 
 .btn {
-  min-height: 48px;
+  min-height: 42px;
   border: 0;
   border-radius: 999px;
   font-weight: 800;
@@ -284,7 +285,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .section-chip {
@@ -374,18 +375,59 @@ td.score {
 
 @media (max-width: 640px) {
   .daily-shell {
-    padding: 8px;
+    padding: 6px;
   }
 
   .daily-card {
-    max-height: calc(100dvh - 16px);
-    padding: 16px 14px;
-    border-radius: 22px;
+    padding: 12px 12px;
+    border-radius: 20px;
+    gap: 8px;
   }
 
-  .daily-summary,
-  .daily-actions {
+  .daily-summary {
     grid-template-columns: 1fr;
+  }
+
+  .daily-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .eyebrow,
+  .summary-label,
+  .field-label,
+  .section-title,
+  th {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 11vw, 3.2rem);
+  }
+
+  .lead {
+    font-size: 0.86rem;
+    line-height: 1.16;
+  }
+
+  .summary-block,
+  .daily-player,
+  .daily-result,
+  .daily-board {
+    border-radius: 14px;
+    padding: 10px;
+  }
+
+  .daily-nav-wrapper .summary-value {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: clamp(1rem, 5.6vw, 1.3rem);
+  }
+
+  .btn {
+    min-height: 42px;
+    font-size: 0.82rem;
   }
 
   .daily-share-btn {
