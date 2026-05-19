@@ -97,7 +97,8 @@ body.game-page.black-deck-active .bg-orb {
 
 body.game-page.black-deck-active #game {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  overflow: hidden;
 }
 
 body.game-page.black-deck-active #app-header,
@@ -130,26 +131,38 @@ body.game-page.black-deck-active #cheat-tooltip {
   z-index: 50;
 }
 
-@keyframes black-starfield-background {
+body.game-page.black-deck-active #game::before {
+  content: "";
+  position: absolute;
+  inset: -36% 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.72;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.2px, transparent 1.45px) 18px 26px / 96px 96px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.68) 0 1px, transparent 1.25px) 56px 74px / 136px 136px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 0.9px, transparent 1.1px) 12px 92px / 178px 178px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.32) 0 1.6px, transparent 1.9px) 84px 18px / 224px 224px;
+  transform: translate3d(0, -12%, 0);
+  animation: black-starfield-scroll 54s linear infinite;
+  will-change: transform;
+}
+
+body.game-page.black-deck-active #app-header {
+  grid-row: 1;
+  align-self: start;
+}
+
+body.game-page.black-deck-active #main-layout {
+  grid-row: 2;
+}
+
+@keyframes black-starfield-scroll {
   from {
-    background-position:
-      8px 12px,
-      34px 28px,
-      18px 44px,
-      72px 18px,
-      18px 26px,
-      90px 74px,
-      0 0;
+    transform: translate3d(0, -12%, 0);
   }
   to {
-    background-position:
-      8px 154px,
-      34px 238px,
-      18px 292px,
-      72px 318px,
-      18px 386px,
-      90px 474px,
-      0 0;
+    transform: translate3d(0, 12%, 0);
   }
 }
 
@@ -5197,21 +5210,11 @@ body.choice-modal-open #controls,
 }
 
 body.game-page.black-deck-active #game {
-  background:
-    radial-gradient(circle, #ffffff 0 1.4px, transparent 1.6px) 8px 12px / 58px 58px,
-    radial-gradient(circle, #7ce8ff 0 1.2px, transparent 1.45px) 34px 28px / 92px 92px,
-    radial-gradient(circle, #ff7df6 0 1px, transparent 1.3px) 18px 44px / 124px 124px,
-    radial-gradient(circle, rgba(199, 255, 84, 0.9) 0 1px, transparent 1.25px) 72px 18px / 150px 150px,
-    radial-gradient(circle, rgba(255, 255, 255, 0.82) 0 2px, transparent 2.25px) 18px 26px / 180px 180px,
-    radial-gradient(circle, rgba(124, 232, 255, 0.68) 0 2px, transparent 2.3px) 90px 74px / 240px 240px,
-    linear-gradient(180deg, rgba(1, 3, 10, 0.96) 0%, rgba(3, 6, 21, 0.9) 48%, rgba(1, 2, 8, 0.96) 100%) !important;
-  animation: black-starfield-background 24s linear infinite;
+  background: linear-gradient(180deg, #05080f 0%, #03060d 46%, #010309 100%) !important;
 }
 
-body.game-page.black-deck-active #game.game-over-effect {
-  animation:
-    black-starfield-background 24s linear infinite,
-    game-over-drain 630ms ease-out;
+body.game-page.black-deck-active #game.game-over-effect::before {
+  animation: black-starfield-scroll 54s linear infinite;
 }
 
 #app-header,
