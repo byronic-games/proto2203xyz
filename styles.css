@@ -72,6 +72,10 @@ body.modal-open {
   overflow: hidden;
 }
 
+#orientation-overlay {
+  display: none;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -89,6 +93,64 @@ body.game-page.black-deck-active {
 
 body.game-page.black-deck-active::before {
   opacity: 0;
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  body.game-page #orientation-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    background:
+      radial-gradient(circle at 24% 18%, rgba(247, 125, 246, 0.18), transparent 30%),
+      radial-gradient(circle at 76% 20%, rgba(0, 232, 255, 0.14), transparent 32%),
+      linear-gradient(180deg, rgba(6, 3, 10, 0.98), rgba(17, 9, 24, 0.98));
+  }
+
+  body.game-page #orientation-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.25px) 0 0 / 24px 24px;
+    pointer-events: none;
+  }
+
+  body.game-page .orientation-card {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    max-width: min(86vw, 420px);
+    padding: 22px 24px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(24, 14, 34, 0.92);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+    text-align: center;
+  }
+
+  body.game-page .orientation-mark {
+    color: var(--pink);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(2.8rem, 12vw, 4.5rem);
+    font-weight: 800;
+    line-height: 0.8;
+    letter-spacing: -0.06em;
+    text-shadow: 0 0 22px rgba(247, 125, 246, 0.24);
+  }
+
+  body.game-page .orientation-card p {
+    margin: 0;
+    color: var(--text);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1rem, 4.2vw, 1.35rem);
+    font-weight: 800;
+    line-height: 1.12;
+  }
 }
 
 body.game-page.black-deck-active .bg-orb {

@@ -956,8 +956,8 @@ h1 {
 }
 
 #deck-modal .deck-choice-desc {
-  font-size: clamp(0.68rem, 3vw, 0.82rem);
-  line-height: 1.12;
+  font-size: clamp(0.82rem, 3.45vw, 1rem);
+  line-height: 1.16;
 }
 
 .deck-close-btn {
@@ -1006,8 +1006,8 @@ h1 {
   }
 
   #deck-modal .deck-choice-desc {
-    font-size: 0.64rem;
-    line-height: 1.08;
+    font-size: 0.76rem;
+    line-height: 1.1;
   }
 
   #deck-modal .deck-close-btn {
