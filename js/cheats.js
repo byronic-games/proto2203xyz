@@ -213,6 +213,7 @@ const CHEAT_DESCRIPTIONS = {
   "You Can Cheat A Cheater": "After your next three correct guesses, choose two extra Cheats in addition to any normal rewards.",
   "Suits You, Sir": "If the next card is the same suit as the current card, gain 5 Nudge +1 and 5 Nudge -1 charges.",
   "Cursed Shield": "Lose all currently stored nudges now. Your next wrong guess is survived.",
+  "One Life Left": "Adds one stored life. Each life survives one wrong guess, and multiple lives can be stacked.",
   "The Higher The Better": "Locks this card's value. You must choose Higher on your next guess and gain Nudge +1 charges equal to the card-value difference.",
   "The Lower The Better": "Locks this card's value. You must choose Lower on your next guess and gain Nudge -1 charges equal to the card-value difference.",
   "Suited and Booted": "Survive your next guess regardless of outcome unless the revealed next card matches the current card's suit.",
@@ -1247,6 +1248,20 @@ const CHEATS = [
       state.nudgeDownCharges = 0;
       state.cursedShieldArmed = true;
       return "Cursed Shield armed - nudges wiped now, and your next wrong guess is survived.";
+    },
+  },
+  {
+    id: "one_life_left",
+    name: "One Life Left",
+    rarity: "rare",
+    weight: 0.75,
+    included: true,
+    unlockAt: 0,
+    stacking: "stackable",
+    consumeOnUse: true,
+    use: () => {
+      state.oneLifeLeftLives = Math.max(0, Number(state.oneLifeLeftLives) || 0) + 1;
+      return `One Life Left stored - ${state.oneLifeLeftLives} ${state.oneLifeLeftLives === 1 ? "life" : "lives"} left.`;
     },
   },
   {

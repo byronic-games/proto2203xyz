@@ -1381,6 +1381,7 @@ function getCheatIcon(name) {
   if (name === "A Stitch In Time Saves...") return "9+";
   if (name === "Catch-22") return "22";
   if (name === "Sixth Sense") return "6?";
+  if (name === "One Life Left") return "♥1";
   return CHEAT_ICON_BY_NAME[name] || "✦";
 }
 
@@ -1519,6 +1520,7 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
     `;
   }
   const showShieldBadge = !!options.showShieldBadge;
+  const lifeBadgeCount = Math.max(0, Number(options.lifeBadgeCount) || 0);
   const shownRank = isTemporarilyModified ? valueToRank(displayValue) : card.rank;
   const nudgeFromRank = Number.isFinite(options.nudgeFromValue)
     ? valueToRank(options.nudgeFromValue)
@@ -1541,6 +1543,7 @@ function renderCardFaceMarkup(card, displayValue, isTemporarilyModified, include
     ${nudgeOldRankHtml}
     ${isTemporarilyModified ? '<span class="card-temp-chip">TEMP</span>' : ""}
     ${showShieldBadge ? '<span class="card-shield-badge" aria-label="Cursed Shield active" title="Cursed Shield active">🛡️</span>' : ""}
+    ${lifeBadgeCount > 0 ? `<span class="card-life-badge" aria-label="${lifeBadgeCount} ${lifeBadgeCount === 1 ? "life" : "lives"} left" title="${lifeBadgeCount} ${lifeBadgeCount === 1 ? "life" : "lives"} left"><span aria-hidden="true">♥</span>${lifeBadgeCount > 1 ? `<span class="card-life-count">${lifeBadgeCount}</span>` : ""}</span>` : ""}
     ${includeTornCorner ? '<span class="tear-mark-face"></span>' : ""}
   `;
 }
@@ -1658,6 +1661,7 @@ function renderCurrentCard() {
     backStatus.tornCorner,
     {
       showShieldBadge: !!state.cursedShieldArmed,
+      lifeBadgeCount: state.oneLifeLeftLives || 0,
       nudgeFromValue: nudgeAnimation?.fromValue,
     }
   );
@@ -2615,6 +2619,7 @@ function renderCheats() {
             alwaysBetBlack: !!state.alwaysBetBlackArmed,
             oddOneOut: !!state.oddOneOutArmed,
             cursedShield: !!state.cursedShieldArmed,
+            oneLifeLeftLives: Number(state.oneLifeLeftLives) || 0,
             suitedAndBooted: !!state.suitedAndBootedArmed,
             suitedAndBootedSuit: state.suitedAndBootedSuit || "",
             blankSpaceActive: !!state.blankSpaceActive,

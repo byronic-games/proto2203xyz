@@ -107,6 +107,15 @@ const POWERS = [
     weight: 1,
     included: true,
   },
+  {
+    id: "bingo",
+    name: "Bingo",
+    description: "Gain 5 Nudge +1 and 5 Nudge -1 when you complete the four corners, your first rank line, and your second rank line.",
+    rarity: "common",
+    unlockAt: 0,
+    weight: 1,
+    included: true,
+  },
 ];
 
 const START_POWER_SEED_RULESET = "start-power-v1";
@@ -179,6 +188,8 @@ function getPowerIcon(powerId) {
       return "♣";
     case "brucie_bonus":
       return "+";
+    case "bingo":
+      return "B";
     default:
       return "•";
   }

@@ -702,6 +702,9 @@ function previewPendingRunBehindPowerChoice(deck, runMode = "standard", deckKey 
   state.cheats = [];
   state.nudgeUpCharges = 0;
   state.nudgeDownCharges = 0;
+  state.bingoCornersAwarded = false;
+  state.bingoLineAwardCount = 0;
+  state.oneLifeLeftLives = 0;
   state.energy = 0;
   state.lastJokerMessage = "";
   state.currentDeckKey = normalizedDeckKey;
@@ -884,6 +887,9 @@ function applyRunPowerSetup(powerId) {
     case "lucky_opening":
       addCheatCopiesToHand("lucky_7", 2);
       break;
+    case "bingo":
+      initializeBingoProgressFromCurrentGrid();
+      break;
     default:
       break;
   }
@@ -1051,6 +1057,8 @@ function startRunWithPower(powerId) {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
+    bingoCornersAwarded: false,
+    bingoLineAwardCount: 0,
     energy: greenRun
       ? (currentLevelNumber >= 4 ? 5 : (currentLevelNumber >= 3 ? 6 : (currentLevelNumber === 2 ? 8 : 10)))
       : 0,
@@ -1067,6 +1075,7 @@ function startRunWithPower(powerId) {
     lockySevensActive: false,
     oddOneOutArmed: false,
     cursedShieldArmed: false,
+    oneLifeLeftLives: 0,
     suitedAndBootedArmed: false,
     suitedAndBootedSuit: "",
     blankSpaceActive: false,
@@ -1329,10 +1338,78 @@ function isPictureCard(card) {
   return !!card && (card.rank === "J" || card.rank === "Q" || card.rank === "K");
 }
 
-function markCardSeen(card) {
-  if (!card || isJokerCard(card)) return;
+function getBingoCornerCardIds() {
+  return [
+    getCardId(SUITS[0], "A"),
+    getCardId(SUITS[0], "K"),
+    getCardId(SUITS[3], "A"),
+    getCardId(SUITS[3], "K"),
+  ];
+}
+
+function getCompletedBingoLineCount() {
+  if (!(state.seenCardIds instanceof Set)) return 0;
+  return RANKS.reduce((count, rank) => {
+    const rankComplete = SUITS.every((suit) => state.seenCardIds.has(getCardId(suit, rank.r)));
+    return rankComplete ? count + 1 : count;
+  }, 0);
+}
+
+function initializeBingoProgressFromCurrentGrid() {
+  if (!(state.seenCardIds instanceof Set)) {
+    state.seenCardIds = new Set();
+  }
+  state.bingoCornersAwarded = false;
+  state.bingoLineAwardCount = 0;
+  maybeAwardBingoMilestones();
+}
+
+function maybeAwardBingoMilestones() {
+  if (!runHasPower("bingo") || !(state.seenCardIds instanceof Set)) return [];
+
+  const awards = [];
+  if (!state.bingoCornersAwarded && getBingoCornerCardIds().every((cardId) => state.seenCardIds.has(cardId))) {
+    state.bingoCornersAwarded = true;
+    awards.push("four corners");
+  }
+
+  const completedLines = Math.min(2, getCompletedBingoLineCount());
+  while ((state.bingoLineAwardCount || 0) < completedLines) {
+    state.bingoLineAwardCount = (state.bingoLineAwardCount || 0) + 1;
+    awards.push(state.bingoLineAwardCount === 1 ? "first line" : "second line");
+  }
+
+  if (awards.length > 0) {
+    const bonus = awards.length * 5;
+    state.nudgeUpCharges = (state.nudgeUpCharges || 0) + bonus;
+    state.nudgeDownCharges = (state.nudgeDownCharges || 0) + bonus;
+    appendRunDebugLog("bingo_awarded", {
+      awards,
+      nudgeUpBonus: bonus,
+      nudgeDownBonus: bonus,
+      seenCount: state.seenCardIds.size,
+      completedLines: getCompletedBingoLineCount(),
+    });
+  }
+
+  return awards;
+}
+
+function formatBingoAwardText(awards) {
+  if (!Array.isArray(awards) || awards.length === 0) return "";
+  const bonus = awards.length * 5;
+  return ` Bingo: ${awards.join(" + ")} complete, gained ${bonus} Nudge +1 and ${bonus} Nudge -1.`;
+}
+
+function markCardSeen(card, options = {}) {
+  if (!card || isJokerCard(card)) return [];
+  if (!(state.seenCardIds instanceof Set)) {
+    state.seenCardIds = new Set();
+  }
+  const wasSeen = state.seenCardIds.has(card.id);
   state.seenCardIds.add(card.id);
   setRecentlySeenCard(card.id);
+  return !wasSeen && options.awardBingo ? maybeAwardBingoMilestones() : [];
 }
 
 function unmarkCardSeen(card) {
@@ -1340,10 +1417,11 @@ function unmarkCardSeen(card) {
   state.seenCardIds.delete(card.id);
 }
 
-function advanceToCard(card) {
+function advanceToCard(card, options = {}) {
   state.current = card;
   state.index += 1;
   state.cheatUsesOnCurrentCard = 0;
+  return markCardSeen(card, options);
 }
 
 function removeCheatAt(index) {
@@ -1777,6 +1855,7 @@ function clearArmedPowerEffects() {
   state.lockySevensActive = false;
   state.oddOneOutArmed = false;
   state.cursedShieldArmed = false;
+  state.oneLifeLeftLives = 0;
   state.suitedAndBootedArmed = false;
   state.suitedAndBootedSuit = "";
   state.forcedNextGuess = "";
@@ -2025,6 +2104,7 @@ function makeGuessLegacy(type) {
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const cursedShieldWasArmed = !!state.cursedShieldArmed;
+  const oneLifeLeftLivesBeforeGuess = Math.max(0, Number(state.oneLifeLeftLives) || 0);
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const equals11WasArmed = !!state.equals11Armed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
@@ -2058,6 +2138,7 @@ function makeGuessLegacy(type) {
   let rescuedBySuitSave = false;
   let rescuedByAlwaysBetBlack = false;
   let rescuedByCursedShield = false;
+  let rescuedByOneLifeLeft = false;
   let rescuedBySuitedAndBooted = false;
   let rescuedByMarginForError = false;
   let rescuedByHotOrCold = false;
@@ -2152,6 +2233,19 @@ function makeGuessLegacy(type) {
     rescuedByCursedShield = !comparisonCorrect && cursedShieldWasArmed;
     rescuedBySuitedAndBooted = !comparisonCorrect && suitedAndBootedWasArmed && !!suitedAndBootedSuit && next.suit !== suitedAndBootedSuit;
     rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
+    rescuedByOneLifeLeft =
+      !comparisonCorrect &&
+      !rescuedByLucky7 &&
+      !rescuedByFiveAlive &&
+      !rescuedByMarginForError &&
+      !rescuedByHotOrCold &&
+      !rescuedByStitchInTime &&
+      !rescuedByGodSaveKing &&
+      !rescuedByAlwaysBetBlack &&
+      !rescuedByCursedShield &&
+      !rescuedBySuitedAndBooted &&
+      !rescuedBySuitSave &&
+      oneLifeLeftLivesBeforeGuess > 0;
     correct =
       comparisonCorrect ||
       rescuedByLucky7 ||
@@ -2162,10 +2256,14 @@ function makeGuessLegacy(type) {
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
       rescuedByCursedShield ||
+      rescuedByOneLifeLeft ||
       rescuedBySuitedAndBooted ||
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
+    }
+    if (rescuedByOneLifeLeft) {
+      state.oneLifeLeftLives = Math.max(0, oneLifeLeftLivesBeforeGuess - 1);
     }
   }
 
@@ -2214,7 +2312,7 @@ function makeGuessLegacy(type) {
   const prevCard = state.current;
   recordCurrentCardGuess(state.current, type, true);
   recordFaceDownOutcome(next, false, currentWasBase);
-  advanceToCard(next);
+  const bingoAwards = advanceToCard(next, { awardBingo: true });
   state.correctAnswers += 1;
   if (!isDevModeRun()) {
     recordCorrectGuessProgress(1);
@@ -2282,6 +2380,7 @@ function makeGuessLegacy(type) {
   }
 
   const powerAwards = awardOnCorrectGuessPowers(type);
+  const bingoAwardText = formatBingoAwardText(bingoAwards);
   const blankSpacePowerTriggered = blankSpaceWasActive;
   const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
   let cheatACheaterTriggered = false;
@@ -2349,6 +2448,8 @@ function makeGuessLegacy(type) {
     oddOneOutWasArmed,
     sixSevenWasArmed,
     cursedShieldWasArmed,
+    oneLifeLeftLivesBeforeGuess,
+    oneLifeLeftLivesAfterGuess: state.oneLifeLeftLives || 0,
     suitedAndBootedWasArmed,
     suitedAndBootedSuit,
     forcedNextGuessDirection,
@@ -2358,6 +2459,7 @@ function makeGuessLegacy(type) {
     rescuedBySuitSave,
       rescuedByAlwaysBetBlack,
       rescuedByCursedShield,
+      rescuedByOneLifeLeft,
       rescuedBySuitedAndBooted,
       blankSpaceWasActive,
       wlStageBeforeGuess,
@@ -2378,10 +2480,10 @@ function makeGuessLegacy(type) {
     state.pauseForCheat = true;
     state.message = appendEnergyFeedback(
       wlCompleted
-        ? "Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued."
+        ? `Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued.${bingoAwardText}`
         : sixSevenWasArmed
-          ? "Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next."
-          : "Blank Space hit! Choose 1 power now.",
+          ? `Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next.${bingoAwardText}`
+          : `Blank Space hit! Choose 1 power now.${bingoAwardText}`,
       revealDistance
     );
     render();
@@ -2403,10 +2505,10 @@ function makeGuessLegacy(type) {
     state.pauseForCheat = true;
     state.message = appendEnergyFeedback(
       wlCompleted
-        ? "Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued."
+        ? `Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued.${bingoAwardText}`
         : sixSevenWasArmed
-          ? "Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next."
-          : "Blank Space hit! Choose 1 power now.",
+          ? `Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next.${bingoAwardText}`
+          : `Blank Space hit! Choose 1 power now.${bingoAwardText}`,
       revealDistance
     );
     render();
@@ -2531,6 +2633,11 @@ function makeGuessLegacy(type) {
   }
   if (rescuedByAlwaysBetBlack) {
     state.message = `Always Bet On The Black saved the run - it was ${describeCard(next)}.`;
+    render();
+    return;
+  }
+  if (rescuedByOneLifeLeft) {
+    state.message = `One Life Left saved the run - it was ${describeCard(next)}. ${state.oneLifeLeftLives || 0} ${state.oneLifeLeftLives === 1 ? "life" : "lives"} left.`;
     render();
     return;
   }
@@ -2722,6 +2829,7 @@ function makeGuess(type) {
   const oddOneOutWasArmed = !!state.oddOneOutArmed;
   const sixSevenWasArmed = !!state.sixSevenArmed;
   const cursedShieldWasArmed = !!state.cursedShieldArmed;
+  const oneLifeLeftLivesBeforeGuess = Math.max(0, Number(state.oneLifeLeftLives) || 0);
   const suitedAndBootedWasArmed = !!state.suitedAndBootedArmed;
   const suitedAndBootedSuit = state.suitedAndBootedSuit || "";
   const blankSpaceWasActive = !!state.blankSpaceActive;
@@ -2756,6 +2864,7 @@ function makeGuess(type) {
   let rescuedBySuitSave = false;
   let rescuedByAlwaysBetBlack = false;
   let rescuedByCursedShield = false;
+  let rescuedByOneLifeLeft = false;
   let rescuedBySuitedAndBooted = false;
   let rescuedByMarginForError = false;
   let rescuedByHotOrCold = false;
@@ -2872,6 +2981,19 @@ function makeGuess(type) {
     rescuedByCursedShield = !comparisonCorrect && cursedShieldWasArmed;
     rescuedBySuitedAndBooted = !comparisonCorrect && suitedAndBootedWasArmed && !!suitedAndBootedSuit && nextSuitForResolution !== suitedAndBootedSuit;
     rescuedBySuitSave = !comparisonCorrect && !!passiveSuitSavePower;
+    rescuedByOneLifeLeft =
+      !comparisonCorrect &&
+      !rescuedByLucky7 &&
+      !rescuedByFiveAlive &&
+      !rescuedByMarginForError &&
+      !rescuedByHotOrCold &&
+      !rescuedByStitchInTime &&
+      !rescuedByGodSaveKing &&
+      !rescuedByAlwaysBetBlack &&
+      !rescuedByCursedShield &&
+      !rescuedBySuitedAndBooted &&
+      !rescuedBySuitSave &&
+      oneLifeLeftLivesBeforeGuess > 0;
     correct =
       comparisonCorrect ||
       rescuedByLucky7 ||
@@ -2882,10 +3004,14 @@ function makeGuess(type) {
       rescuedByGodSaveKing ||
       rescuedByAlwaysBetBlack ||
       rescuedByCursedShield ||
+      rescuedByOneLifeLeft ||
       rescuedBySuitedAndBooted ||
       rescuedBySuitSave;
     if (rescuedByCursedShield) {
       state.cursedShieldArmed = false;
+    }
+    if (rescuedByOneLifeLeft) {
+      state.oneLifeLeftLives = Math.max(0, oneLifeLeftLivesBeforeGuess - 1);
     }
     wlLossSatisfied = wlStageBeforeGuess === "need_loss" && !comparisonCorrect;
     if (wlLossSatisfied) {
@@ -2967,7 +3093,7 @@ function makeGuess(type) {
   const prevCard = state.current;
   recordCurrentCardGuess(state.current, type, true);
   recordFaceDownOutcome(next, false, currentWasBase);
-  advanceToCard(next);
+  const bingoAwards = advanceToCard(next, { awardBingo: true });
   queueCardRevealAnimation({
     outcome: "correct",
     fromCard: prevCard,
@@ -3078,6 +3204,7 @@ function makeGuess(type) {
   }
 
   const powerAwards = awardOnCorrectGuessPowers(type);
+  const bingoAwardText = formatBingoAwardText(bingoAwards);
   const blankSpacePowerTriggered = blankSpaceWasActive;
   const brucieBonusTriggered = runHasPower("brucie_bonus") && match;
   let cheatACheaterTriggered = false;
@@ -3164,6 +3291,8 @@ function makeGuess(type) {
     oddOneOutWasArmed,
     sixSevenWasArmed,
     cursedShieldWasArmed,
+    oneLifeLeftLivesBeforeGuess,
+    oneLifeLeftLivesAfterGuess: state.oneLifeLeftLives || 0,
     suitedAndBootedWasArmed,
     suitedAndBootedSuit,
     forcedNextGuessDirection,
@@ -3173,6 +3302,7 @@ function makeGuess(type) {
     rescuedBySuitSave,
     rescuedByAlwaysBetBlack,
     rescuedByCursedShield,
+    rescuedByOneLifeLeft,
     rescuedBySuitedAndBooted,
     rescuedByMarginForError,
     rescuedByHotOrCold,
@@ -3197,10 +3327,10 @@ function makeGuess(type) {
     state.pauseForCheat = true;
     state.message = appendEnergyFeedback(
       wlCompleted
-        ? "Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued."
+        ? `Blank Space hit! Choose 1 power now. WL also landed - 3 bonus cheats queued.${bingoAwardText}`
         : sixSevenWasArmed
-          ? "Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next."
-          : "Blank Space hit! Choose 1 power now.",
+          ? `Blank Space hit! Choose 1 power now. 6/7 bonus cheats are queued next.${bingoAwardText}`
+          : `Blank Space hit! Choose 1 power now.${bingoAwardText}`,
       revealDistance
     );
     render();
@@ -3220,7 +3350,7 @@ function makeGuess(type) {
     state.message = powerAwards.length > 0
       ? `✅ 6/7 hit! Choose 3 cheats - power gained: ${powerAwards.join(", ")}.`
       : "✅ 6/7 hit! Choose 3 cheats.";
-    state.message = appendEnergyFeedback(state.message, revealDistance);
+    state.message = appendEnergyFeedback(`${state.message}${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3232,7 +3362,7 @@ function makeGuess(type) {
 
   if (wlCompleted) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("WL complete! Wrong guess survived - choose 3 bonus cheats.", revealDistance);
+    state.message = appendEnergyFeedback(`WL complete! Wrong guess survived - choose 3 bonus cheats.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3245,7 +3375,7 @@ function makeGuess(type) {
 
   if (higherHigherHigherCompleted) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("Higher, Higher, Higher complete! Choose a new Power.", revealDistance);
+    state.message = appendEnergyFeedback(`Higher, Higher, Higher complete! Choose a new Power.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3258,7 +3388,7 @@ function makeGuess(type) {
 
   if (catch22Hit) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("Catch-22 hit! The next card was a 2 - choose a new Power.", revealDistance);
+    state.message = appendEnergyFeedback(`Catch-22 hit! The next card was a 2 - choose a new Power.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3271,7 +3401,7 @@ function makeGuess(type) {
 
   if (psychoCompleted) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("Psycho complete! Choose a new Power.", revealDistance);
+    state.message = appendEnergyFeedback(`Psycho complete! Choose a new Power.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3292,6 +3422,7 @@ function makeGuess(type) {
     if (powerAwards.length > 0) {
       equalsMessage += ` Power gained: ${powerAwards.join(", ")}.`;
     }
+    equalsMessage += bingoAwardText;
     state.pauseForCheat = true;
     state.message = appendEnergyFeedback(equalsMessage, revealDistance);
     render();
@@ -3320,7 +3451,10 @@ function makeGuess(type) {
     : higherHigherHigherRemainingBeforeGuess > 0 && !higherHigherHigherCompleted
       ? ` Higher, Higher, Higher: ${state.higherHigherHigherRemaining} to go.`
       : "";
-  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByHotOrCold ? " Margin Of Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${forcedRewardText}${wlAdvanceText}${equals11MissText}${higherHigherHigherText}`;
+  const oneLifeLeftText = rescuedByOneLifeLeft
+    ? ` One Life Left saved this guess. ${state.oneLifeLeftLives || 0} ${state.oneLifeLeftLives === 1 ? "life" : "lives"} left.`
+    : "";
+  const rescueBonusText = `${rescuedByCursedShield ? " Cursed Shield saved this guess." : ""}${rescuedBySuitedAndBooted ? " Suited and Booted saved this guess." : ""}${rescuedByMarginForError ? " Margin For Error saved this guess." : ""}${rescuedByHotOrCold ? " Margin Of Error saved this guess." : ""}${rescuedByStitchInTime ? " A Stitch In Time saved this guess." : ""}${oneLifeLeftText}${forcedRewardText}${wlAdvanceText}${equals11MissText}${higherHigherHigherText}${bingoAwardText}`;
 
 
   if (state.streak >= getCheatRewardThreshold()) {
@@ -3346,7 +3480,7 @@ function makeGuess(type) {
 
   if (brucieBonusTriggered) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("Brucie Bonus! Match hit - choose 1 power.", revealDistance);
+    state.message = appendEnergyFeedback(`Brucie Bonus! Match hit - choose 1 power.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3359,7 +3493,7 @@ function makeGuess(type) {
 
   if (cheatACheaterTriggered) {
     state.pauseForCheat = true;
-    state.message = appendEnergyFeedback("You Can Cheat A Cheater paid out - choose 2 bonus cheats.", revealDistance);
+    state.message = appendEnergyFeedback(`You Can Cheat A Cheater paid out - choose 2 bonus cheats.${bingoAwardText}`, revealDistance);
     render();
     setTimeout(() => {
       state.pauseForCheat = false;
@@ -3419,6 +3553,11 @@ function makeGuess(type) {
   }
   if (rescuedByCursedShield) {
     state.message = appendEnergyFeedback(`Cursed Shield saved the run - it was ${describeCard(next)}.${forcedRewardText}`, revealDistance);
+    render();
+    return;
+  }
+  if (rescuedByOneLifeLeft) {
+    state.message = appendEnergyFeedback(`One Life Left saved the run - it was ${describeCard(next)}. ${state.oneLifeLeftLives || 0} ${state.oneLifeLeftLives === 1 ? "life" : "lives"} left.${bingoAwardText}`, revealDistance);
     render();
     return;
   }

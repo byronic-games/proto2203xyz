@@ -94,6 +94,7 @@ function createEmptyState() {
     lockySevensActive: false,
     oddOneOutArmed: false,
     cursedShieldArmed: false,
+    oneLifeLeftLives: 0,
     suitedAndBootedArmed: false,
     suitedAndBootedSuit: "",
     blankSpaceActive: false,
@@ -120,6 +121,8 @@ function createEmptyState() {
     recentlySeenCardId: "",
     nudgeUpCharges: 0,
     nudgeDownCharges: 0,
+    bingoCornersAwarded: false,
+    bingoLineAwardCount: 0,
     energy: 0,
     lastJokerMessage: "",
   };
